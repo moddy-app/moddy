@@ -131,6 +131,10 @@ class BumpSuggestionService:
             return
 
         stored = await manager.get_module_config(guild.id, MODULE_ID)
+        # Another app (Moddy or the Bump Reminder mini-bot) runs the module
+        # here: it is not this one's to offer.
+        if hasattr(manager, "owns") and not manager.owns(stored):
+            return
         if not should_suggest(stored, spec.key):
             return
 

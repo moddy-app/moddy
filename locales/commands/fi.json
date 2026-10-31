@@ -662,6 +662,10 @@
           "description": "Kohdemuoto (jätä tyhjäksi valitaksesi luettelosta)"
         }
       }
+    },
+    "about": {
+      "name": "tietoja",
+      "description": "Tietoja tästä botista"
     }
   },
   "choices": {

@@ -662,6 +662,10 @@
           "description": "Format cible (laisse vide pour choisir dans une liste)"
         }
       }
+    },
+    "about": {
+      "name": "a-propos",
+      "description": "En savoir plus sur ce bot"
     }
   },
   "choices": {

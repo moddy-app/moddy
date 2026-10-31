@@ -662,6 +662,10 @@
           "description": "Målformat (la stå tomt for å velge fra en liste)"
         }
       }
+    },
+    "about": {
+      "name": "om",
+      "description": "Om denne boten"
     }
   },
   "choices": {

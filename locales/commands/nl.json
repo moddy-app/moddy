@@ -662,6 +662,10 @@
           "description": "Doelformaat (laat leeg om uit een lijst te kiezen)"
         }
       }
+    },
+    "about": {
+      "name": "over",
+      "description": "Over deze bot"
     }
   },
   "choices": {

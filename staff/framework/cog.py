@@ -21,8 +21,9 @@ from discord.ext import commands
 from staff.base import StaffCommandsCog
 from staff.framework import design, registry
 from staff.framework.context import StaffContext
-from utils.staff_permissions import staff_permissions, CommandType
-from utils.staff_logger import staff_logger
+from utils import staff_permissions as _perms_module
+from utils import staff_logger as _staff_logger_module
+from utils.staff_permissions import CommandType
 from utils.i18n import t
 
 logger = logging.getLogger("moddy.staff.router")
@@ -67,8 +68,32 @@ class StaffCommandsRouter(StaffCommandsCog):
 
     # --- permission helpers ------------------------------------------------
 
+    @staticmethod
+    def _permissions():
+        # Read at call time: the manager is created after this module may have
+        # been imported (and the mini-bots process creates its own).
+        return _perms_module.staff_permissions
+
+    def _staff_logger(self):
+        # A mini-bot logs under its own name (MiniBotClient.staff_logger).
+        return getattr(self.bot, "staff_logger", None) or _staff_logger_module.staff_logger
+
+    def _parse(self, content: str):
+        """Moddy answers its historical mention; a mini-bot answers its own."""
+        perms = self._permissions()
+        if getattr(self.bot, "app_id", None) and self.bot.user:
+            return perms.parse_staff_command(content, bot_id=self.bot.user.id)
+        return perms.parse_staff_command(content)
+
+    async def _unknown_command(self, message, command_type, command_name: str) -> None:
+        await self.reply_with_tracking(message, design.error(
+            t("staff.common.unknown_command.title", locale="en-US"),
+            t("staff.common.unknown_command.description", locale="en-US",
+              command=f"{command_type.value}.{command_name}"),
+        ))
+
     async def _has_permission(self, command, user_id: int) -> tuple[bool, str]:
-        allowed, reason = await staff_permissions.check_command_permission(
+        allowed, reason = await self._permissions().check_command_permission(
             user_id, command.command_type, command.name
         )
         if not allowed:
@@ -88,9 +113,9 @@ class StaffCommandsRouter(StaffCommandsCog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot or not staff_permissions or not self.bot.db:
+        if message.author.bot or not self._permissions() or not self.bot.db:
             return
-        parsed = staff_permissions.parse_staff_command(message.content)
+        parsed = self._parse(message.content)
         if not parsed:
             return
         command_type, command_name, args = parsed
@@ -110,11 +135,7 @@ class StaffCommandsRouter(StaffCommandsCog):
             bucket = self.subgroup_index.get((command_type.value, command_name))
             if not bucket:
                 # Owned type but unknown command — the legacy cog is gone.
-                await self.reply_with_tracking(message, design.error(
-                    t("staff.common.unknown_command.title", locale="en-US"),
-                    t("staff.common.unknown_command.description", locale="en-US",
-                      command=f"{command_type.value}.{command_name}"),
-                ))
+                await self._unknown_command(message, command_type, command_name)
                 return
             parts = (args or "").split(maxsplit=1)
             sub = parts[0].lower() if parts else ""
@@ -160,6 +181,7 @@ class StaffCommandsRouter(StaffCommandsCog):
     # --- shared invocation -------------------------------------------------
 
     async def _invoke(self, command, ctx: StaffContext):
+        staff_logger = self._staff_logger()
         if staff_logger:
             try:
                 await staff_logger.log_command(

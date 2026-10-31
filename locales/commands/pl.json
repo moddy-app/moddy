@@ -662,6 +662,10 @@
           "description": "Format docelowy (zostaw puste, aby wybrać z listy)"
         }
       }
+    },
+    "about": {
+      "name": "o-bocie",
+      "description": "Informacje o tym bocie"
     }
   },
   "choices": {

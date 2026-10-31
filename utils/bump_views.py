@@ -182,8 +182,9 @@ class BumpReminderPersistence(BaseView):
 # --------------------------------------------------------------------------- #
 def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
                       *, locale: str, ping_mode: str, guild_name: str,
-                      armed: bool = False) -> ui.LayoutView:
-    """The card posted right after a successful bump."""
+                      armed: bool = False, note: Optional[str] = None) -> ui.LayoutView:
+    """The card posted right after a successful bump. ``note`` adds one
+    discreet ``-#`` line at the bottom."""
     view = ui.LayoutView(timeout=None)
     container = ui.Container(accent_colour=discord.Colour(ACCENT))
 
@@ -206,6 +207,9 @@ def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
         row.add_item(BumpOptInButton(spec.key, bumper_id, locale=locale, armed=armed))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(row)
+
+    if note:
+        container.add_item(ui.TextDisplay(f"-# {note}"))
 
     view.add_item(container)
     return view

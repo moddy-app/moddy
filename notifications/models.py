@@ -166,6 +166,7 @@ SERVICES: Dict[str, ServiceInfo] = {
         # its name — not Moddy's — that belongs on a receipt, so the invoice DM
         # attributes itself to Stripe rather than to the subscription service.
         _svc("stripe", "DOLLARS"),                   # services/invoice_notifier.py
+        _svc("minibots", "MODDY_SQUARE_MIN"),        # minibots/builtin.py (a mini-bot's welcome)
     )
 }
 

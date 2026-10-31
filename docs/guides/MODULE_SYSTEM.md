@@ -333,6 +333,18 @@ que comme « réinitialiser » : il reste `False` pour `ai_detector`.
 « actif avec les valeurs par défaut » pour ces modules ; écrire
 `{"state": "paused", ...}` pour les éteindre.
 
+### 3 sexies. Propriétaire d'une config : Moddy ou un mini-bot (`app`)
+
+Moddy et les mini-bots partagent `guilds.data.modules.<id>`. La clé `app` dit
+quelle application exécute le module sur ce serveur ; **absente = Moddy**.
+Le `ModuleManager` d'une application ignore les configs d'une autre (pas de
+chargement, pas de valeurs par défaut, `save`/`delete`/état/push refusés),
+et `get_module_statuses` les marque `external`. Un module avec un côté
+Discord (panneau…) hérite de deux hooks pour le transfert vers Moddy :
+`on_transfer_out(to_app)` et `on_transfer_in(from_app)` — par défaut les
+mêmes que `on_external_config_change(deleted/updated)`. Détails →
+[MINIBOTS.md](../features/MINIBOTS.md).
+
 ### 4. Stockage en base de données
 
 Les configurations sont stockées dans PostgreSQL :

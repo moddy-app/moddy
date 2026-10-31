@@ -226,7 +226,7 @@ class ConfigMainView(BaseView):
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
                  locale: str = "en-US", limited: bool = False,
-                 statuses: Optional[dict] = None):
+                 statuses: Optional[dict] = None, foreign: Optional[dict] = None):
         """
         Initialise la vue principale
 
@@ -250,6 +250,9 @@ class ConfigMainView(BaseView):
         # {module_id: state or STATUS_NOT_CONFIGURED}, see
         # ModuleManager.get_module_statuses(); empty -> no state prefix.
         self.statuses = statuses or {}
+        # {module_id: app} run here by a mini-bot — a "Transfer to Moddy"
+        # banner per mini-bot (utils/minibot_transfer.py).
+        self.foreign = foreign or {}
 
         self._build_view()
 
@@ -260,7 +263,9 @@ class ConfigMainView(BaseView):
         ``modules.configs._common.open_main_config``) for every "Back" button:
         the plain constructor shows no state."""
         statuses = await bot.module_manager.get_module_statuses(guild_id)
-        return cls(bot, guild_id, user_id, locale, limited=limited, statuses=statuses)
+        foreign = await bot.module_manager.get_foreign_modules(guild_id)
+        return cls(bot, guild_id, user_id, locale, limited=limited, statuses=statuses,
+                   foreign=foreign)
 
     # ----------------------------------------------------------------- #
     # Rendering
@@ -285,6 +290,13 @@ class ConfigMainView(BaseView):
                 f"{EMOJIS['warning']} **{t('global_sanctions.limited.banner_title', locale=self.locale)}**\n"
                 f"-# {t('global_sanctions.limited.no_new_modules', locale=self.locale)}"
             ))
+
+        # Modules a mini-bot runs here: offer to move them to Moddy.
+        if self.foreign and self.guild_id:
+            from utils.minibot_transfer import config_banner_items
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            for item in config_banner_items(self.guild_id, self.foreign, self.bot, self.locale):
+                container.add_item(item)
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(
@@ -358,6 +370,23 @@ class ConfigMainView(BaseView):
     def _links_row(self) -> ui.ActionRow:
         """AI setup, dashboard, support and documentation — outside the container."""
         row = ui.ActionRow()
+        if getattr(self.bot, "app_id", None):
+            # A mini-bot has no dashboard (docs/features/MINIBOTS.md): its way
+            # to "more options" is Moddy itself.
+            from config import MODDY_INVITE_URL
+            row.add_item(ui.Button(
+                label=t('minibots.links.get_moddy', locale=self.locale),
+                style=discord.ButtonStyle.link, url=MODDY_INVITE_URL,
+            ))
+            row.add_item(ui.Button(
+                label=t('modules.config.main.links.support', locale=self.locale),
+                style=discord.ButtonStyle.link, url=SUPPORT_URL,
+            ))
+            row.add_item(ui.Button(
+                label=t('modules.config.main.links.docs', locale=self.locale),
+                style=discord.ButtonStyle.link, url=DOCS_URL,
+            ))
+            return row
         row.add_item(ui.Button(
             label=t('modules.config.main.links.ai_configure', locale=self.locale),
             style=discord.ButtonStyle.link,
@@ -411,6 +440,16 @@ class ConfigMainView(BaseView):
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
+
+        # Run here by a mini-bot: its settings are not editable from Moddy
+        # until they are transferred (manual handoff, docs/features/MINIBOTS.md).
+        if module_class and not bot.module_manager.owns(module_config):
+            from minibots.ownership import config_app
+            from utils.minibot_transfer import build_external_module_view
+            await interaction.edit_original_response(view=build_external_module_view(
+                bot, guild_id, locale, module_id, config_app(module_config),
+                viewer_app=bot.module_manager.app))
+            return
 
         # One combined check: baseline + module permissions guild-wide AND the
         # permissions needed in the channels already configured. Everything
@@ -533,6 +572,7 @@ class Config(commands.Cog):
 
         # Affiche le menu principal de configuration
         statuses = await self.bot.module_manager.get_module_statuses(interaction.guild.id)
+        foreign = await self.bot.module_manager.get_foreign_modules(interaction.guild.id)
         main_view = ConfigMainView(
             self.bot,
             interaction.guild.id,
@@ -540,6 +580,7 @@ class Config(commands.Cog):
             str(interaction.locale),
             limited=limited,
             statuses=statuses,
+            foreign=foreign,
         )
 
         await interaction.followup.send(view=main_view, ephemeral=ephemeral)

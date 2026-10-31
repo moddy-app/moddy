@@ -150,6 +150,21 @@ moddy/
 │   ├── sauce.py                                                                  # inspection
 │   └── music.py, langdetect.py (py3langid)                                       # modules
 │
+├── minibots/                  # Mini-bots core: single-feature Discord apps sharing Moddy's code + DB
+│   ├── ownership.py           #   Pure: who runs a module config (`app` key, absent = moddy), can_claim
+│   ├── spec.py                #   MiniBotSpec + SPECS registry (empty for now), app_display_name
+│   ├── status.py              #   Redis contract (minibots:status / apps / control / ack)
+│   ├── resources.py           #   Shared once: 1 small DB pool, Redis, i18n, TechLogger
+│   ├── client.py              #   MiniBotClient(commands.Bot): lean cache (no members/messages), ModuleManager(app=…)
+│   ├── builtin.py             #   Automatic per bot: /config (single module), /about, welcome DM, command sync
+│   ├── staff.py               #   Staff commands on a mini-bot (@Bot d.jsk …), allowlist
+│   ├── queries.py             #   Info questions Moddy's staff commands ask the mini-bots (mutuals, servers…)
+│   ├── emojis.py              #   Moddy's app emojis copied to each mini-bot app + send-time id swap
+│   ├── branding.py            #   Under a mini-bot, translated texts name the bot instead of "Moddy"
+│   └── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
+│   ├── runtime.py             #   N clients in ONE process: supervision, heartbeat, control, periodic jobs
+│   └── main.py                #   `python -m minibots.main` (second Railway service)
+│
 ├── stats/                     # Statistics (aggregate before writing)
 │   ├── registry.py            #   Every metric declared once (no migration to add one)
 │   ├── service.py             #   bot.stats — incr()/observe_unique(), 60s flush to PG
@@ -205,7 +220,7 @@ moddy/
 │   │   ├── registry.py        #     Discovery + dynamic /dev,/team… group build
 │   │   ├── design.py          #     Standardized Components V2 panels (accents)
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
-│   ├── commands/dev/          #   /dev commands (one file each)
+│   ├── commands/dev/          #   /dev commands (one file each; incl. /dev minibots, /dev minibot)
 │   ├── commands/team/         #   /team commands (incl. help, /team user — full
 │   │                          #   user card: account, billing, cases, notifications;
 │   │                          #   /team role, /team access, /team ticket — the
@@ -249,6 +264,7 @@ moddy/
 │       ├── member_applications.py # Review cards of Discord join requests (member_applications)
 │       ├── announcement_translations.py # Stored announcement translations
 │       ├── announcement_verifications.py # Authenticated announcements + their relayed copies
+│       ├── app_guilds.py      #   Which app (Moddy / mini-bot) is in which guild + module ownership CAS
 │       ├── stats.py           #   Statistics: counters, snapshots, guild lifecycle,
 │       │                      #   acquisition (guild_installs), partitions
 │       └── _utils.py
@@ -289,6 +305,7 @@ moddy/
 │   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
 │   ├── support_request_views.py # Support requests: staff card, reply DM, modals, buttons
 │   ├── install_welcome.py     #   DM sent to whoever adds Moddy to a server
+│   ├── minibot_transfer.py    #   "Transfer to Moddy": DM offer on join, /config banner + screen, persistent button
 │   ├── beta_announcement.py   #   Beta-launch campaign card (temporary — see docs)
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── ticket_rating_views.py #   Ticket rating Modal V2 + persistent DM "leave a review" button
@@ -368,6 +385,7 @@ moddy/
 │   ├── ticket_closure_detector.py   # Spots a finished conversation, offers the closure (embeddings)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── bump_prospect_service.py # Bump prospects: scan queue, one team card per server, follow-up
+│   ├── module_transfer.py     #   Mini-bot → Moddy handoff (lock, release, ownership CAS, adopt, logs)
 │   ├── bump_suggestion_service.py # DMs a one-pick Bump Reminder activation when a directory joins
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
@@ -440,7 +458,8 @@ moddy/
     ├── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
     ├── test_tools_{text,security,web,lookup,media,inspect}.py # Utility tools per theme
     ├── test_announcement_verification.py # Relay detection, Manager/Dev gate, copies answered once, edits
-    └── test_music_links.py, test_translate_button.py          # Music links (default-enabled) + translate button (opt-in)
+    ├── test_music_links.py, test_translate_button.py          # Music links (default-enabled) + translate button (opt-in)
+    └── test_minibots.py       #   Mini-bots: ownership, manager, transfer, runtime, Redis contract, light imports
 ```
 
 ---
@@ -691,6 +710,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/LINKED_ROLES.md](docs/features/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
 | [docs/features/LOGS.md](docs/features/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/features/MEMBER_APPLICATIONS.md](docs/features/MEMBER_APPLICATIONS.md) | **Member Applications** — Discord "Apply to Join" reviewed from a channel: what the API allows bots, gateway hook + poll, the card, Approve/Reject, the `member_applications` table |
+| [docs/features/MINIBOTS.md](docs/features/MINIBOTS.md) | **Mini-bots** — single-feature apps sharing Moddy's code + DB: `app` ownership key, one-process runtime (RAM budget), `app_guilds`, Redis contract, manual transfer to Moddy (panel re-posted), staff commands, logs, no dashboard |
 | [docs/features/MODERATION_CASES.md](docs/features/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/features/OCR.md](docs/features/OCR.md) | **OCR** — `/ocr` and the Transcribe menu on images (Google Vision, monthly free tier) |
 | [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |

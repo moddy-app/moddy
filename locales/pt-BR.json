@@ -1076,7 +1076,8 @@
         "errors": {
           "not_configured": "Este módulo ainda não tem uma configuração salva.",
           "failed": "Não foi possível alterar o estado do módulo. Tente novamente."
-        }
+        },
+        "external": "Gerenciado por um mini-bot"
       },
       "breadcrumb": {
         "root": "Configuração",
@@ -1103,6 +1104,9 @@
           "confirm_body": "Todas as configurações deste módulo serão apagadas e ele vai parar. Esta ação é irreversível.",
           "confirm": "Sim, excluir"
         }
+      },
+      "external": {
+        "save_refused": "Este módulo é gerenciado por **{app}** neste servidor. Transfira-o para o Moddy para editá-lo aqui."
       }
     },
     "welcome_channel": {
@@ -4203,7 +4207,8 @@
         "database": "Banco de dados",
         "errors": "Erros",
         "system": "Sistema",
-        "extensions": "Extensões"
+        "extensions": "Extensões",
+        "minibots": "Mini-bots"
       },
       "cogs": {
         "title": "Cogs Carregados",
@@ -4262,7 +4267,9 @@
         "page": "Página {current}/{total}",
         "empty": "Nenhum servidor encontrado.",
         "members": "Membros",
-        "joined": "Entrou em"
+        "joined": "Entrou em",
+        "minibots": "Mini-bots",
+        "minibots_hint": "Lista de um mini-bot: d.servers <id>"
       },
       "sql": {
         "done_title": "Consulta Executada",
@@ -4310,6 +4317,42 @@
         "done": "Anúncios configurados para {name} ({id}).",
         "fail_title": "Falha na Configuração",
         "fail": "Não foi possível configurar anúncios para {name}."
+      },
+      "minibots": {
+        "title": "Mini-bots",
+        "description": "{count} mini-bot(s) declarado(s) • Moddy em {moddy} servidores",
+        "process": "**Processo:** RAM {ram} • versão {version} • iniciado {since}",
+        "process_down": "**Processo:** nenhum sinal de vida recente (serviço parado ou travado).",
+        "none": "Nenhum mini-bot declarado por enquanto (minibots/spec.py).",
+        "state": "Estado",
+        "guilds": "Servidores",
+        "latency": "Latência",
+        "since": "Conectado",
+        "restarts": "Reinícios",
+        "last_error": "Último erro",
+        "states": {
+          "ready": "online",
+          "connecting": "conectando",
+          "crashed": "caiu",
+          "silent": "silencioso",
+          "stopped": "parado",
+          "no_token": "sem token"
+        }
+      },
+      "minibot": {
+        "unknown": {
+          "title": "Mini-bot desconhecido",
+          "description": "Nenhum mini-bot tem o id {app}."
+        },
+        "unreachable": {
+          "title": "Processo inacessível",
+          "description": "O serviço dos mini-bots não está escutando (parado, ou Redis indisponível)."
+        },
+        "sent": {
+          "title": "Pedido enviado",
+          "restart": "{app} vai se reconectar.",
+          "reload": "{app} vai reler os módulos do servidor {guild}."
+        }
       }
     },
     "team": {
@@ -4323,7 +4366,8 @@
         "title": "Convite do Servidor",
         "open": "Abrir Convite",
         "fail_title": "Não É Possível Criar Convite",
-        "no_perm": "O Moddy não pode criar convites em {name}."
+        "no_perm": "O Moddy não pode criar convites em {name}.",
+        "via_minibot": "Convite criado por {app} (o Moddy não está neste servidor)."
       },
       "server": {
         "title": "Servidor — {name}",
@@ -4341,7 +4385,11 @@
         "boost": "Impulso",
         "level": "Nível",
         "boosts": "Impulsos",
-        "features": "Recursos"
+        "features": "Recursos",
+        "minibots": "Mini-bots",
+        "minibots_present": "Presentes",
+        "minibots_modules": "Módulos gerenciados",
+        "via_minibot": "O Moddy não está neste servidor. Informações vistas por: {apps}."
       },
       "user": {
         "title": "Informações do Usuário",
@@ -4379,7 +4427,9 @@
         "none": "O Moddy não compartilha nenhum servidor com {user}.",
         "top_role": "Cargo Principal",
         "perms": "Permissões Principais",
-        "no_perms": "Nenhuma"
+        "no_perms": "Nenhuma",
+        "minibots_unreachable": "Mini-bots inacessíveis: só os servidores do Moddy estão listados.",
+        "minibot_truncated": "Busca limitada aos {scanned} maiores servidores de {total}."
       },
       "subscription": {
         "title": "Assinatura",
@@ -5182,7 +5232,8 @@
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
       "subscription": "Assinatura Moddy",
-      "stripe": "Stripe"
+      "stripe": "Stripe",
+      "minibots": "Mini-bot"
     },
     "attribution": {
       "unknown_guild": "Servidor desconhecido",
@@ -6678,6 +6729,78 @@
         "title": "Análise de prospects de bump concluída",
         "description": "Servidores analisados: {scanned}\nNovos prospects: {new}\nConvertidos: {converted}\nNão verificados: {skipped}\nDuração: {minutes} min",
         "requested_by": "Solicitado por"
+      }
+    }
+  },
+  "minibots": {
+    "transfer": {
+      "button": "Transferir para o Moddy",
+      "errors": {
+        "title": "Transferência impossível",
+        "forbidden": "Você precisa da permissão **Gerenciar servidor** nesse servidor para transferir os módulos dele."
+      },
+      "done": {
+        "title": "Transferência concluída",
+        "partial_title": "Transferência parcial",
+        "body": "O Moddy assumiu o que **{app}** gerenciava, com as mesmas configurações:",
+        "nothing": "**{app}** não gerencia mais nada neste servidor: tudo já está no Moddy."
+      },
+      "reasons": {
+        "unavailable": "serviço indisponível, tente novamente em instantes",
+        "unknown_module": "módulo desconhecido",
+        "in_progress": "já há uma transferência em andamento",
+        "not_configured": "nenhuma configuração para transferir",
+        "already_owned": "já gerenciado pelo Moddy",
+        "changed": "a configuração mudou nesse meio-tempo, tente novamente",
+        "internal_error": "erro interno, a equipe foi avisada",
+        "invalid_config": "configuração inválida, abra /config para corrigi-la",
+        "not_owned": "a configuração ainda não pertence ao Moddy"
+      },
+      "offer": {
+        "title": "Assumir a configuração de {app}",
+        "body": "**{server}** usa **{app}** para: {modules}.\n\nO Moddy pode assumir esses módulos com **exatamente as mesmas configurações**: nada para configurar de novo. Os painéis são publicados novamente pelo Moddy, e você ganha todas as opções extras do Moddy e o painel web.",
+        "hint": "Nada muda até você clicar. Depois você pode remover {app} do servidor."
+      },
+      "banner": {
+        "title": "{app} gerencia módulos aqui",
+        "body": "{modules}: transfira-os para o Moddy para ter todas as opções."
+      },
+      "external": {
+        "title": "Gerenciado por {app}",
+        "body": "Neste servidor, **{module}** é gerenciado por **{app}**. As configurações não podem ser editadas pelo Moddy até serem transferidas.\n\nA transferência mantém a configuração como está, publica os painéis novamente pelo Moddy e tira {app} de cena.",
+        "elsewhere": "Neste servidor, **{module}** é gerenciado por **{app}**. As configurações são editadas pelo {app}."
+      }
+    },
+    "links": {
+      "get_moddy": "Obter o Moddy",
+      "add_bot": "Adicionar {name}"
+    },
+    "about": {
+      "title": "Sobre {name}",
+      "body": "**{name}** faz uma coisa e faz bem: {modules}.\n\nTudo é configurado com /config, direto no seu servidor.",
+      "moddy": "{name} é feito pela equipe do **Moddy**. Quer mais opções, mais módulos e um painel web? O Moddy assume sua configuração como está.",
+      "stats": "Em {guilds} servidores • latência {latency}"
+    },
+    "welcome": {
+      "title": "Obrigado por adicionar {name}",
+      "body": "**{name}** agora está em **{server}** para: {modules}.\n\nUse {config} no seu servidor para configurá-lo, e {about} para saber mais.\n\n{name} é feito pela equipe do **Moddy**: se um dia quiser mais opções, o Moddy assume sua configuração com um clique, sem refazer nada."
+    },
+    "staff": {
+      "moddy_only": {
+        "title": "Comando exclusivo do Moddy",
+        "description": "`{command}` não roda no {name}. Use com @Moddy: os comandos de informação do Moddy já incluem todos os mini-bots."
+      }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Lembretes ativados automaticamente neste canal. Cargos a mencionar, intervalo: {config}.",
+        "welcome": {
+          "title": "{name} está pronto",
+          "present": "Obrigado por adicionar **{name}** em **{server}**!\n\nEstou vendo {directories} no seu servidor. **Não precisa fazer nada**: dê bump como sempre e, a partir do primeiro bump bem-sucedido, agradeço quem deu e chamo o canal quando o próximo for possível.\n\nPara mencionar um cargo ou mudar o intervalo: {config}.",
+          "none": "Obrigado por adicionar **{name}** em **{server}**!\n\nAdicione um site de bump (DISBOARD, DiscordL, French.gg…) e dê bump como sempre: a partir do primeiro bump bem-sucedido, agradeço quem deu e chamo o canal quando o próximo for possível. Nada para configurar.\n\nPara mencionar um cargo ou mudar o intervalo: {config}.",
+          "elsewhere": "Obrigado por adicionar **{name}** em **{server}**!\n\nNeste servidor, os lembretes de bump já são feitos pelo **Moddy**: fico de fora para nunca duplicar lembretes. Você pode me remover sem perder nada.",
+          "pick": "Prefere escolher o canal agora? Opcional:"
+        }
       }
     }
   }

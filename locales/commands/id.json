@@ -662,6 +662,10 @@
           "description": "Format tujuan (kosongkan untuk memilih dari daftar)"
         }
       }
+    },
+    "about": {
+      "name": "tentang",
+      "description": "Tentang bot ini"
     }
   },
   "choices": {

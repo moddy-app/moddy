@@ -662,6 +662,10 @@
           "description": "目標格式（留空則從清單中選擇）"
         }
       }
+    },
+    "about": {
+      "name": "about",
+      "description": "關於此機器人"
     }
   },
   "choices": {

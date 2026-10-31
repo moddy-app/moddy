@@ -662,6 +662,10 @@
           "description": "Célformátum (hagyd üresen, hogy listából válassz)"
         }
       }
+    },
+    "about": {
+      "name": "névjegy",
+      "description": "A botról"
     }
   },
   "choices": {

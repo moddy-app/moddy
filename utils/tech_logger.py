@@ -34,7 +34,7 @@ from discord import ui, SeparatorSpacing
 from config import LOG_WEBHOOKS, LOG_WEBHOOK_DEFAULT, ENV_MODE
 from utils.emojis import (
     DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
-    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE,
+    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE, SYNC,
 )
 from utils.members import fetch_all_members
 
@@ -90,15 +90,41 @@ def _trunc(text: Any, limit: int = 300) -> str:
 class TechLogger:
     """Webhook-based technical logger. One instance lives on ``bot.tech_logger``."""
 
-    def __init__(self, bot):
+    def __init__(self, bot, *, app: str = "moddy", app_name: str = "Moddy",
+                 parent: Optional["TechLogger"] = None):
         self.bot = bot
+        # Which Discord application this logger speaks for. Moddy and every
+        # mini-bot write to the SAME webhooks (same categories); each card
+        # names its bot (footer, webhook username, avatar) — see
+        # docs/features/MINIBOTS.md §7.
+        self.app = app
+        self.app_name = app_name
+        self._parent = parent
         self._session: Optional[aiohttp.ClientSession] = None
         # category -> resolved url (specific or default fallback)
         self._urls = dict(LOG_WEBHOOKS)
-        active = ", ".join(sorted(self._urls)) or "none"
-        if LOG_WEBHOOK_DEFAULT:
-            active += " (+default fallback)"
-        logger.info("Tech logger ready — configured categories: %s", active)
+        if parent is None:
+            active = ", ".join(sorted(self._urls)) or "none"
+            if LOG_WEBHOOK_DEFAULT:
+                active += " (+default fallback)"
+            logger.info("Tech logger ready — configured categories: %s", active)
+
+    def for_app(self, bot, app: str, app_name: str) -> "TechLogger":
+        """A logger for another application (a mini-bot), sharing this one's
+        HTTP session: same webhooks, cards labelled with that bot."""
+        return TechLogger(bot, app=app, app_name=app_name, parent=self._parent or self)
+
+    def _get_session(self) -> aiohttp.ClientSession:
+        root = self._parent or self
+        if root._session is None or root._session.closed:
+            root._session = aiohttp.ClientSession()
+        return root._session
+
+    def _username(self, category: str) -> str:
+        name = _USERNAMES.get(category, "Moddy • Logs")
+        if self.app_name != "Moddy" and name.startswith("Moddy"):
+            name = self.app_name + name[len("Moddy"):]
+        return name[:80]
 
     # ------------------------------------------------------------------ core
 
@@ -118,25 +144,28 @@ class TechLogger:
         if not url:
             return
         try:
-            if self._session is None or self._session.closed:
-                self._session = aiohttp.ClientSession()
-            webhook = discord.Webhook.from_url(url, session=self._session)
+            webhook = discord.Webhook.from_url(url, session=self._get_session())
             avatar = None
-            if self.bot.user and self.bot.user.display_avatar:
-                avatar = self.bot.user.display_avatar.url
+            user = getattr(self.bot, "user", None)
+            if user and user.display_avatar:
+                avatar = user.display_avatar.url
             mentions = (
                 discord.AllowedMentions(users=True, everyone=False, roles=False)
                 if allow_mentions else discord.AllowedMentions.none()
             )
             kwargs: dict = {
                 "view": view,
-                "username": _USERNAMES.get(category, "Moddy • Logs"),
+                "username": self._username(category),
                 "avatar_url": avatar,
                 "allowed_mentions": mentions,
             }
             if files:
                 kwargs["files"] = files
-            await webhook.send(**kwargs)
+            # Technical webhooks keep Moddy's own emoji ids, even when a
+            # mini-bot is the one logging (minibots/emojis.py).
+            from minibots.emojis import suspend
+            with suspend():
+                await webhook.send(**kwargs)
         except Exception as exc:  # never let logging break the caller
             logger.warning("Tech log dispatch failed (%s): %s", category, exc)
 
@@ -175,7 +204,7 @@ class TechLogger:
             for name in attachment_names:
                 container.add_item(ui.File(f"attachment://{name}"))
 
-        footer = f"-# {TIME} <t:{_ts()}:F> • `{ENV_MODE}`"
+        footer = f"-# {TIME} <t:{_ts()}:F> • `{ENV_MODE}` • bot `{self.app_name}`"
         if footer_extra:
             footer += f" • {footer_extra}"
         container.add_item(ui.TextDisplay(footer))
@@ -184,7 +213,7 @@ class TechLogger:
         return view
 
     async def close(self):
-        if self._session and not self._session.closed:
+        if self._parent is None and self._session and not self._session.closed:
             await self._session.close()
 
     # -------------------------------------------------------------- guilds
@@ -326,6 +355,8 @@ class TechLogger:
                     f" • guild `{error_details.get('guild', '?')}`"
                     f" • channel `{error_details.get('channel', '?')}`"
                 )
+            if error_details.get("app"):
+                lines.append(f"**App** `{error_details['app']}` (mini-bot)")
             if is_fatal and error_details.get("traceback"):
                 lines.append(f"**Traceback**\n```py\n{_trunc(error_details['traceback'], 600)}```")
             lines.append(f"{_b(bool(self.bot.db))} saved to database")
@@ -342,6 +373,47 @@ class TechLogger:
             await self._dispatch("error", view, allow_mentions=is_fatal)
         except Exception as exc:
             logger.warning("log_error failed: %s", exc)
+
+    # -------------------------------------------------------------- mini-bots
+
+    async def log_minibot_lifecycle(self, event: str,
+                                    lines: Optional[list[str]] = None) -> None:
+        """A mini-bot became ready, reconnected, crashed or restarted.
+
+        Same ``lifecycle`` webhook as Moddy's start/stop; the card names the bot.
+        """
+        try:
+            down = event in ("crashed", "stopped")
+            view = self._card(
+                "error" if event == "crashed" else ("shutdown" if down else "lifecycle"),
+                PAUSE if down else MODDY, f"{self.app_name} {event.replace('_', ' ')}",
+                [f"**App** `{self.app}` • **Event** `{event}`", *(lines or [])],
+            )
+            await self._dispatch("lifecycle", view)
+        except Exception as exc:
+            logger.warning("log_minibot_lifecycle failed: %s", exc)
+
+    async def log_module_transfer(self, *, guild_id: int, module_id: str, from_app: str,
+                                  to_app: str, actor_id: Optional[int], ok: bool,
+                                  release: str, error: Optional[str] = None,
+                                  via: str = "config") -> None:
+        """A module moved from a mini-bot to Moddy — a config change, so it goes
+        to the ``database`` webhook like every other important write."""
+        try:
+            lines = [
+                f"**Guild** `{guild_id}` • **Module** `{module_id}`",
+                f"**From** `{from_app}` → **To** `{to_app}` • **Via** `{via}`",
+                f"**By** `{actor_id or 'unknown'}`",
+                f"{_b(ok)} transferred • **Release** `{release}`"
+                + (f" • **Error** `{error}`" if error else ""),
+            ]
+            view = self._card(
+                "database" if ok else "error_warn", SYNC,
+                "Module transferred" if ok else "Module transfer failed", lines,
+            )
+            await self._dispatch("database", view)
+        except Exception as exc:
+            logger.warning("log_module_transfer failed: %s", exc)
 
     # ----------------------------------------------------------------- staff
 

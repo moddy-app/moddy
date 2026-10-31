@@ -1076,7 +1076,8 @@
         "errors": {
           "not_configured": "This module has no saved configuration yet.",
           "failed": "Could not change the module state. Please try again."
-        }
+        },
+        "external": "Run by a mini-bot"
       },
       "breadcrumb": {
         "root": "Config",
@@ -1103,6 +1104,9 @@
           "confirm_body": "Every setting of this module will be erased and it will stop. This cannot be undone.",
           "confirm": "Yes, delete"
         }
+      },
+      "external": {
+        "save_refused": "This module is run by **{app}** on this server. Transfer it to Moddy to edit it here."
       }
     },
     "welcome_channel": {
@@ -4203,7 +4207,8 @@
         "database": "Database",
         "errors": "Errors",
         "system": "System",
-        "extensions": "Extensions"
+        "extensions": "Extensions",
+        "minibots": "Mini-bots"
       },
       "cogs": {
         "title": "Loaded Cogs",
@@ -4262,7 +4267,9 @@
         "page": "Page {current}/{total}",
         "empty": "No servers found.",
         "members": "Members",
-        "joined": "Joined"
+        "joined": "Joined",
+        "minibots": "Mini-bots",
+        "minibots_hint": "One mini-bot's list: d.servers <id>"
       },
       "sql": {
         "done_title": "Query Executed",
@@ -4310,6 +4317,42 @@
         "done": "Set up announcements for {name} ({id}).",
         "fail_title": "Setup Failed",
         "fail": "Could not set up announcements for {name}."
+      },
+      "minibots": {
+        "title": "Mini-bots",
+        "description": "{count} mini-bot(s) declared • Moddy on {moddy} servers",
+        "process": "**Process:** RAM {ram} • version {version} • started {since}",
+        "process_down": "**Process:** no recent sign of life (service stopped or stuck).",
+        "none": "No mini-bot declared yet (minibots/spec.py).",
+        "state": "State",
+        "guilds": "Servers",
+        "latency": "Latency",
+        "since": "Connected",
+        "restarts": "Restarts",
+        "last_error": "Last error",
+        "states": {
+          "ready": "online",
+          "connecting": "connecting",
+          "crashed": "crashed",
+          "silent": "silent",
+          "stopped": "stopped",
+          "no_token": "no token"
+        }
+      },
+      "minibot": {
+        "unknown": {
+          "title": "Unknown mini-bot",
+          "description": "No mini-bot has the id {app}."
+        },
+        "unreachable": {
+          "title": "Process unreachable",
+          "description": "The mini-bots service is not listening (stopped, or Redis unavailable)."
+        },
+        "sent": {
+          "title": "Request sent",
+          "restart": "{app} will reconnect.",
+          "reload": "{app} will re-read its modules for server {guild}."
+        }
       }
     },
     "team": {
@@ -4323,7 +4366,8 @@
         "title": "Server Invite",
         "open": "Open Invite",
         "fail_title": "Cannot Create Invite",
-        "no_perm": "Moddy can't create invites in {name}."
+        "no_perm": "Moddy can't create invites in {name}.",
+        "via_minibot": "Invite created by {app} (Moddy is not on this server)."
       },
       "server": {
         "title": "Server — {name}",
@@ -4341,7 +4385,11 @@
         "boost": "Boost",
         "level": "Level",
         "boosts": "Boosts",
-        "features": "Features"
+        "features": "Features",
+        "minibots": "Mini-bots",
+        "minibots_present": "Present",
+        "minibots_modules": "Modules run",
+        "via_minibot": "Moddy is not on this server. Information seen by: {apps}."
       },
       "user": {
         "title": "User Information",
@@ -4379,7 +4427,9 @@
         "none": "Moddy shares no servers with {user}.",
         "top_role": "Top Role",
         "perms": "Key Permissions",
-        "no_perms": "None"
+        "no_perms": "None",
+        "minibots_unreachable": "Mini-bots unreachable: only Moddy's servers are listed.",
+        "minibot_truncated": "Search limited to the {scanned} biggest servers out of {total}."
       },
       "subscription": {
         "title": "Subscription",
@@ -5182,7 +5232,8 @@
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
       "subscription": "Moddy Subscription",
-      "stripe": "Stripe"
+      "stripe": "Stripe",
+      "minibots": "Mini-bot"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
@@ -6764,6 +6815,78 @@
         "title": "Bump prospect rescan finished",
         "description": "Servers scanned: {scanned}\nNew prospects: {new}\nConverted: {converted}\nNot checked: {skipped}\nDuration: {minutes} min",
         "requested_by": "Requested by"
+      }
+    }
+  },
+  "minibots": {
+    "transfer": {
+      "button": "Transfer to Moddy",
+      "errors": {
+        "title": "Transfer not possible",
+        "forbidden": "You need the **Manage Server** permission on that server to transfer its modules."
+      },
+      "done": {
+        "title": "Transfer complete",
+        "partial_title": "Partial transfer",
+        "body": "Moddy took over what **{app}** was running, with the same settings:",
+        "nothing": "**{app}** no longer runs anything on this server: everything is already on Moddy."
+      },
+      "reasons": {
+        "unavailable": "service unavailable, try again in a moment",
+        "unknown_module": "unknown module",
+        "in_progress": "a transfer is already in progress",
+        "not_configured": "no configuration to transfer",
+        "already_owned": "already run by Moddy",
+        "changed": "the configuration changed in the meantime, try again",
+        "internal_error": "internal error, the team has been notified",
+        "invalid_config": "invalid configuration, open /config to fix it",
+        "not_owned": "the configuration does not belong to Moddy yet"
+      },
+      "offer": {
+        "title": "Take over {app}'s setup",
+        "body": "**{server}** uses **{app}** for: {modules}.\n\nModdy can take these modules over with **exactly the same settings**: nothing to set up again. Any panels are re-posted by Moddy, and you get every extra Moddy option plus the dashboard.",
+        "hint": "Nothing changes until you click. You can then remove {app} from the server."
+      },
+      "banner": {
+        "title": "{app} runs modules here",
+        "body": "{modules}: transfer them to Moddy to get every option."
+      },
+      "external": {
+        "title": "Run by {app}",
+        "body": "On this server, **{module}** is run by **{app}**. Its settings cannot be edited from Moddy until they are transferred.\n\nThe transfer keeps the configuration as is, re-posts the panels under Moddy and steps {app} back.",
+        "elsewhere": "On this server, **{module}** is run by **{app}**. Its settings are edited from {app}."
+      }
+    },
+    "links": {
+      "get_moddy": "Get Moddy",
+      "add_bot": "Add {name}"
+    },
+    "about": {
+      "title": "About {name}",
+      "body": "**{name}** does one thing and does it well: {modules}.\n\nEverything is set up with /config, right on your server.",
+      "moddy": "{name} is made by the **Moddy** team. Want more options, more modules and a dashboard? Moddy takes your setup over as is.",
+      "stats": "On {guilds} servers • latency {latency}"
+    },
+    "welcome": {
+      "title": "Thanks for adding {name}",
+      "body": "**{name}** is now on **{server}** for: {modules}.\n\nRun {config} on your server to set it up, and {about} to learn more.\n\n{name} is made by the **Moddy** team: if you ever want more options, Moddy takes your setup over in one click, with nothing to redo."
+    },
+    "staff": {
+      "moddy_only": {
+        "title": "Moddy-only command",
+        "description": "`{command}` does not run on {name}. Run it with @Moddy: Moddy's info commands already include every mini-bot."
+      }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Reminders turned on automatically in this channel. Roles to ping, delay: {config}.",
+        "welcome": {
+          "title": "{name} is ready",
+          "present": "Thanks for adding **{name}** to **{server}**!\n\nI can see {directories} on your server. **There is nothing to do**: bump as usual, and from the first successful bump I thank whoever did it and call the channel back when the next one is possible.\n\nTo ping a role or change the delay: {config}.",
+          "none": "Thanks for adding **{name}** to **{server}**!\n\nAdd a bump site (DISBOARD, DiscordL, French.gg…), then bump as usual: from the first successful bump I thank whoever did it and call the channel back when the next one is possible. Nothing to set up.\n\nTo ping a role or change the delay: {config}.",
+          "elsewhere": "Thanks for adding **{name}** to **{server}**!\n\nOn this server, bump reminders are already handled by **Moddy**: I stay out of the way so reminders are never doubled. You can remove me without losing anything.",
+          "pick": "Rather pick the channel right now? Optional:"
+        }
       }
     }
   }

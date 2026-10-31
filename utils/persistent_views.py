@@ -108,6 +108,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.beta_announcement import BetaPersistence
     from cogs.announcement_translation import AnnouncementTranslationView
     from cogs.announcement_verification import AnnouncementVerificationView
+    from utils.minibot_transfer import MinibotTransferPersistence
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -256,6 +257,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Translate button under each relayed copy (public), both dynamic items
         # keyed by the announcement's message id.
         AnnouncementVerificationView,
+        # Group 12n — mini-bots: "Transfer to Moddy" (dynamic item keyed by
+        # guild + app; Manage Server in THAT guild re-checked on every click,
+        # from /config or from the installer's DM) and the Back button of the
+        # external-module screen (Manage Server, guild from the interaction).
+        MinibotTransferPersistence,
         # Group 13 — /config automod panel (guild permission auth). Every
         # screen has static custom_ids and is a registered shell; the
         # infraction type screen and the precedents browser are dynamic items

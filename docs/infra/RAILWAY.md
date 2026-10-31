@@ -185,6 +185,27 @@ mémoire résidente. Si elle venait à manquer, `utils/compression.py` retombe s
 `zlib` de la bibliothèque standard et enregistre le codec utilisé ligne par
 ligne — les deux coexistent sans migration, donc son absence ne casse rien.
 
+## Service des mini-bots
+
+Un **second service Railway**, depuis le même dépôt, fait tourner tous les
+mini-bots dans un seul process (voir [MINIBOTS.md](../features/MINIBOTS.md)).
+
+- Commande de démarrage : `python -m minibots.main`
+- Mêmes `DATABASE_URL`, `REDIS_URL`, `REDIS_PASSWORD` que Moddy.
+- **Pas de `DISCORD_TOKEN`** : le point d'entrée pose `MODDY_SERVICE=minibots`,
+  ce qui lève cette vérification de `config.py`.
+- `MINIBOT_<X>_TOKEN` : un token par mini-bot (nom déclaré dans `minibots/spec.py`).
+- `MINIBOTS_ENABLED` (optionnel) : ids séparés par des virgules ; vide = tous.
+- `MINIBOTS_DB_POOL_MAX` (optionnel, défaut `3`) : le pool PostgreSQL de
+  **tous** les mini-bots réunis.
+- Les mêmes `LOG_WEBHOOK_*` que Moddy : chaque carte indique de quel bot elle vient.
+- `MODDY_INVITE_URL` (optionnel) : le lien « Obtenir Moddy » des mini-bots.
+- `MALLOC_ARENA_MAX=2` : comme pour Moddy.
+
+Coût fixe mesuré : ~57-59 Mo au chargement (dont ~45 Mo pour discord.py), payés
+une seule fois quel que soit le nombre de mini-bots. Ordre de déploiement :
+Moddy d'abord (il crée `app_guilds`), puis les mini-bots.
+
 ## Variables optionnelles
 
 ### DEBUG

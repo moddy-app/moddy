@@ -662,6 +662,10 @@
           "description": "Cílový formát (nech prázdné pro výběr ze seznamu)"
         }
       }
+    },
+    "about": {
+      "name": "o-botovi",
+      "description": "Informace o tomto botovi"
     }
   },
   "choices": {

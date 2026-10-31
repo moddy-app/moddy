@@ -66,6 +66,12 @@ class StatsCommand(StaffCommand):
         except Exception:
             pass
 
+        # Moddy's stats include every mini-bot (from their 30 s heartbeat).
+        if not getattr(bot, "app_id", None):
+            field = await _minibots_field(bot, locale)
+            if field:
+                fields.append(field)
+
         fields.append({
             "name": f"{emojis.COMMANDS} {t('staff.dev.stats.extensions', locale=locale)}",
             "value": f"**Loaded:** `{len(bot.extensions)}`\n**Cogs:** `{len(bot.cogs)}`",
@@ -77,3 +83,23 @@ class StatsCommand(StaffCommand):
             t("staff.dev.stats.description", locale=locale),
             fields=fields,
         ))
+
+
+async def _minibots_field(bot, locale):
+    import time
+    from minibots import status as mstatus
+    from minibots.spec import app_display_name
+    apps, process = await mstatus.read_statuses(getattr(bot, "redis", None))
+    if not apps:
+        return None
+    now = time.time()
+    lines = []
+    for app, status in sorted(apps.items()):
+        state = status.effective_state(now)
+        latency = f" • `{status.latency_ms}ms`" if status.latency_ms is not None else ""
+        lines.append(f"**{app_display_name(app)}** `{t(f'staff.dev.minibots.states.{state}', locale=locale)}`"
+                     f" • `{status.guilds}` {t('staff.dev.stats.guilds', locale=locale).lower()}{latency}")
+    if process is not None and process.rss_mb is not None:
+        lines.append(f"-# RAM `{process.rss_mb} MB`")
+    return {"name": f"{emojis.MODDY} {t('staff.dev.stats.minibots', locale=locale)}",
+            "value": "\n".join(lines)[:1000]}

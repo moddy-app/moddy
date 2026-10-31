@@ -12,6 +12,10 @@ from pathlib import Path
 import importlib
 import inspect
 
+from minibots.ownership import (
+    APP_KEY, MODDY_APP, config_app, is_foreign, is_owned_by, stamp,
+)
+
 logger = logging.getLogger('moddy.modules')
 
 # Modules whose MODULE_ID changed: the stored config key is migrated in place the
@@ -56,6 +60,9 @@ ALL_STATES = (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION)
 # Status of a module on the /config main screen: its state, or this when the
 # guild never saved a config for it.
 STATUS_NOT_CONFIGURED = "not_configured"
+# ...or this when the stored config belongs to another Discord application (a
+# mini-bot, see minibots/ownership.py): it runs there, not here.
+STATUS_EXTERNAL = "external"
 
 
 def normalize_state(raw: Any, supports_simulation: bool = False) -> str:
@@ -349,6 +356,27 @@ class ModuleBase(ABC):
         """
         return {}
 
+    async def on_transfer_out(self, to_app: str) -> Dict[str, Any]:
+        """This app is handing the module over to ``to_app`` (mini-bots).
+
+        Take down everything this app posted for the module in Discord — a
+        panel's buttons only ever reach the application that sent the message,
+        so a panel left behind would be dead for the new owner. The stored
+        config is NOT gone (the new owner keeps it), so never write anything
+        back. Default: the same clean-up as an external deletion.
+        """
+        return await self.on_external_config_change(EXTERNAL_DELETED)
+
+    async def on_transfer_in(self, from_app: str) -> Dict[str, Any]:
+        """This app has just taken the module over from ``from_app``.
+
+        Re-apply the visible half of the configuration under this app: re-post
+        the panel, re-apply permissions, resync external services. Default: the
+        same work as a dashboard push. A module with more Discord state than a
+        panel (messages with buttons in open tickets, ...) overrides it.
+        """
+        return await self.on_external_config_change(EXTERNAL_UPDATED)
+
 
 class ModuleManager:
     """
@@ -356,35 +384,89 @@ class ModuleManager:
     Charge, configure et gère les modules
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot, app: str = MODDY_APP):
         """
         Initialise le gestionnaire de modules
 
         Args:
-            bot: Instance du bot Moddy
+            bot: Instance du bot Moddy (ou d'un mini-bot)
+            app: application qui exécute les modules gérés ici. Moddy et les
+                mini-bots partagent la même base : une config stockée n'est
+                chargée que par l'application qui la possède (clé ``app``,
+                voir minibots/ownership.py).
         """
         self.bot = bot
+        self.app = app
         self.registered_modules: Dict[str, Type[ModuleBase]] = {}  # module_id -> Module class
         self.active_modules: Dict[int, Dict[str, ModuleBase]] = {}  # guild_id -> {module_id -> Module instance}
+        # Optional async gate deciding whether a DEFAULT_ENABLED module may run
+        # its defaults in a guild (mini-bots: not where Moddy already does).
+        # Signature: (guild_id, module_class) -> bool. None = always.
+        self.default_gate = None
+        # (guild_id, module_id) -> monotonic deadline: modules just released to
+        # another app, kept unloaded while the ownership write lands (a lazy
+        # reload in between would otherwise start them again).
+        self._suspended: Dict[tuple, float] = {}
+
+    def suspend(self, guild_id: int, module_id: str, seconds: float = 60.0) -> None:
+        import time
+        self._suspended[(guild_id, module_id)] = time.monotonic() + seconds
+
+    def is_suspended(self, guild_id: int, module_id: str) -> bool:
+        import time
+        deadline = self._suspended.get((guild_id, module_id))
+        if deadline is None:
+            return False
+        if time.monotonic() >= deadline:
+            self._suspended.pop((guild_id, module_id), None)
+            return False
+        return True
+
+    def owns(self, config: Optional[Dict[str, Any]]) -> bool:
+        """True when this app runs ``config`` (an empty config belongs to nobody)."""
+        return not is_foreign(config, self.app)
 
     def effective_config(self, module_id: str,
                          config: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """The config a module runs with: the stored one, or — for a
         ``DEFAULT_ENABLED`` module never configured (absent or ``{}``) — its
-        defaults. None when the module is unknown or simply not configured."""
+        defaults. None when the module is unknown, simply not configured, or
+        owned by another application (it runs there, not here)."""
         if config:
-            return config
+            return config if self.owns(config) else None
         module_class = self.registered_modules.get(module_id)
         if module_class is not None and module_class.DEFAULT_ENABLED:
             return module_class(self.bot, 0).get_default_config()
         return config
 
-    async def _load_default_modules(self, guild_id: int) -> None:
-        """Instantiate every DEFAULT_ENABLED module the guild has no config for."""
+    async def _load_default_modules(self, guild_id: int,
+                                    stored: Optional[Dict[str, Any]] = None) -> None:
+        """Instantiate every DEFAULT_ENABLED module the guild has no config for.
+
+        ``stored`` is the guild's ``data.modules`` when the caller already has
+        it: a module whose config belongs to another app is not "unconfigured"
+        here — that app runs it, and running the defaults too would double it.
+        """
         loaded = self.active_modules.setdefault(guild_id, {})
+        if stored is None:
+            try:
+                guild_data = await self.bot.db.get_guild(guild_id)
+                stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+            except Exception as e:
+                logger.error(f"[FAIL] Could not read modules of guild {guild_id}: {e}")
+                return
         for module_id, module_class in self.registered_modules.items():
             if not module_class.DEFAULT_ENABLED or module_id in loaded:
                 continue
+            if is_foreign(stored.get(module_id), self.app):
+                continue
+            if self.default_gate is not None:
+                try:
+                    if not await self.default_gate(guild_id, module_class):
+                        continue
+                except Exception as e:
+                    logger.error(f"[FAIL] Default gate failed for {module_id} in {guild_id}: {e}")
+                    continue
             module_instance = module_class(self.bot, guild_id)
             if await self._load_instance(module_instance, module_instance.get_default_config()):
                 loaded[module_id] = module_instance
@@ -490,6 +572,15 @@ class ModuleManager:
                     # This can happen when modules are renamed or removed
                     logger.debug(f"Skipping module {module_id} (configured but not registered - likely obsolete)")
                     continue
+                if not self.owns(config_data) or self.is_suspended(guild_id, module_id):
+                    # Another application (a mini-bot) runs this one here.
+                    stale = self.active_modules[guild_id].pop(module_id, None)
+                    if stale is not None:
+                        try:
+                            await stale.disable()
+                        except Exception:
+                            pass
+                    continue
 
                 # Crée une instance du module
                 module_class = self.registered_modules[module_id]
@@ -506,7 +597,7 @@ class ModuleManager:
                     logger.error(f"[FAIL] Failed to load module {module_id} for guild {guild_id}")
 
             # Opt-out modules run with their defaults where nothing is stored.
-            await self._load_default_modules(guild_id)
+            await self._load_default_modules(guild_id, modules_config)
 
             logger.info(f"Loaded {len(self.active_modules[guild_id])} modules for guild {guild_id}")
 
@@ -575,6 +666,19 @@ class ModuleManager:
         except Exception as e:
             logger.error(f"[FAIL] Could not read {module_id} config for guild {guild_id}: {e}")
             return {"ok": False, "error": "config_unreadable"}
+
+        # Owned by another application: it is not ours to apply. Drop whatever
+        # instance we still hold (without touching Discord — the owner's
+        # panel is the owner's) and tell the caller who runs it.
+        if not self.owns(config):
+            stale = self.active_modules.get(guild_id, {}).pop(module_id, None)
+            if stale is not None:
+                try:
+                    await stale.disable()
+                except Exception as e:
+                    logger.error(f"[FAIL] Error disabling {module_id} for guild {guild_id}: {e}")
+                await self._sync_module_commands(guild_id, module_id)
+            return {"ok": False, "error": "foreign_app", "app": config_app(config)}
 
         # ``delete_module_config`` stores an empty object rather than removing the
         # key, so an empty config *is* a deletion however the event labelled it —
@@ -797,11 +901,22 @@ class ModuleManager:
             # otherwise silently resume a paused module) and keep it out of
             # validation.
             config_data = dict(config_data)
-            if STATE_KEY not in config_data:
-                previous = await self.get_module_config(guild_id, module_id) or {}
-                if STATE_KEY in previous:
-                    config_data[STATE_KEY] = previous[STATE_KEY]
+            previous = await self.get_module_config(guild_id, module_id) or {}
+            # A config another application runs is not editable from here:
+            # it has to be transferred first (manual handoff, never a silent
+            # takeover — see minibots/ownership.py).
+            if not self.owns(previous):
+                from utils.guild_language import guild_locale
+                from utils.i18n import t
+                from minibots.spec import app_display_name
+                locale = await guild_locale(self.bot, guild_id)
+                return False, t('modules.config.external.save_refused', locale=locale,
+                                app=app_display_name(config_app(previous)))
+            if STATE_KEY not in config_data and STATE_KEY in previous:
+                config_data[STATE_KEY] = previous[STATE_KEY]
             state_value = config_data.pop(STATE_KEY, None)
+            # Ownership is not part of any module's schema either.
+            config_data.pop(APP_KEY, None)
 
             # Vérifie que tous les champs obligatoires sont remplis
             required_fields = temp_instance.get_required_fields()
@@ -833,6 +948,7 @@ class ModuleManager:
 
             if state_value is not None:
                 config_data[STATE_KEY] = state_value
+            config_data = stamp(config_data, self.app)
 
             # S'assure que le serveur existe dans la DB
             await self.bot.db.get_guild(guild_id)
@@ -893,6 +1009,12 @@ class ModuleManager:
             return False
 
         try:
+            # Never delete another application's configuration.
+            if not self.owns(await self.get_module_config(guild_id, module_id)):
+                logger.warning(f"Refusing to delete {module_id} of guild {guild_id}: "
+                               f"owned by another app")
+                return False
+
             # Désactive le module s'il est actif
             if guild_id in self.active_modules and module_id in self.active_modules[guild_id]:
                 module_instance = self.active_modules[guild_id][module_id]
@@ -940,8 +1062,10 @@ class ModuleManager:
         module_class = self.registered_modules.get(module_id)
         if module_class is None:
             return None
-        config = self.effective_config(
-            module_id, await self.get_module_config(guild_id, module_id))
+        stored = await self.get_module_config(guild_id, module_id)
+        if not self.owns(stored):
+            return STATUS_EXTERNAL
+        config = self.effective_config(module_id, stored)
         if not config:
             return None
         return module_class.stored_state(config)
@@ -962,10 +1086,102 @@ class ModuleManager:
             for old_id, new_id in LEGACY_MODULE_IDS.items():
                 if not config and new_id == module_id:
                     config = stored.get(old_id)
+            if not self.owns(config):
+                statuses[module_id] = STATUS_EXTERNAL
+                continue
             config = self.effective_config(module_id, config)
             if config:
                 statuses[module_id] = module_class.stored_state(config)
         return statuses
+
+    async def get_foreign_modules(self, guild_id: int) -> Dict[str, str]:
+        """``{module_id: owning app}`` for the registered modules another
+        application runs in this guild (one DB read)."""
+        if not self.bot.db:
+            return {}
+        try:
+            guild_data = await self.bot.db.get_guild(guild_id)
+            stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+        except Exception as e:
+            logger.error(f"[FAIL] Could not read module owners for guild {guild_id}: {e}")
+            return {}
+        return {
+            module_id: config_app(config)
+            for module_id, config in stored.items()
+            if module_id in self.registered_modules and is_foreign(config, self.app)
+        }
+
+    # ----------------------------------------------------------------- #
+    # Ownership handoff between applications (Moddy <-> mini-bots)
+    # The orchestration (locks, the other process, logs) lives in
+    # services/module_transfer.py; these are the two local halves.
+    # ----------------------------------------------------------------- #
+
+    async def release_module(self, guild_id: int, module_id: str,
+                             to_app: str) -> Dict[str, Any]:
+        """Stop running ``module_id`` here and take its Discord side down.
+
+        Called on the CURRENT owner right before ownership moves to ``to_app``.
+        The stored config is kept as is (the new owner inherits it).
+        """
+        module_class = self.registered_modules.get(module_id)
+        if module_class is None:
+            return {"ok": False, "error": "unknown_module"}
+        if guild_id not in self.active_modules:
+            await self.load_guild_modules(guild_id)
+        module = self.active_modules.get(guild_id, {}).get(module_id)
+        if module is None:
+            config = await self.get_module_config(guild_id, module_id)
+            if not config:
+                return {"ok": True, "released": False}
+            module = module_class(self.bot, guild_id)
+            await self._load_instance(module, config)
+        try:
+            recap = await module.on_transfer_out(to_app) or {}
+        except Exception as e:
+            logger.error(f"[FAIL] {module_id}.on_transfer_out failed for guild "
+                         f"{guild_id}: {e}", exc_info=True)
+            recap = {"hook_error": str(e)}
+        try:
+            await module.disable()
+        except Exception as e:
+            logger.error(f"[FAIL] Error disabling {module_id} for guild {guild_id}: {e}")
+        self.active_modules.get(guild_id, {}).pop(module_id, None)
+        self.suspend(guild_id, module_id)
+        await self._sync_module_commands(guild_id, module_id)
+        logger.info(f"Module {module_id} released to {to_app} in guild {guild_id}")
+        return {"ok": True, "released": True, **recap}
+
+    async def adopt_module(self, guild_id: int, module_id: str,
+                           from_app: str) -> Dict[str, Any]:
+        """Start running ``module_id`` here once the stored config is ours.
+
+        Called on the NEW owner after the ``app`` key was rewritten: loads the
+        inherited config and re-applies its Discord side (``on_transfer_in``).
+        """
+        module_class = self.registered_modules.get(module_id)
+        if module_class is None:
+            return {"ok": False, "error": "unknown_module"}
+        config = await self.get_module_config(guild_id, module_id)
+        if not config or not self.owns(config):
+            return {"ok": False, "error": "not_owned"}
+        self._suspended.pop((guild_id, module_id), None)
+        module = module_class(self.bot, guild_id)
+        if not await self._load_instance(module, config):
+            return {"ok": False, "error": "invalid_config"}
+        self.active_modules.setdefault(guild_id, {})[module_id] = module
+        if module.enabled:
+            await module.enable()
+        try:
+            recap = await module.on_transfer_in(from_app) or {}
+        except Exception as e:
+            logger.error(f"[FAIL] {module_id}.on_transfer_in failed for guild "
+                         f"{guild_id}: {e}", exc_info=True)
+            recap = {"hook_error": str(e)}
+        await self._sync_module_commands(guild_id, module_id)
+        logger.info(f"Module {module_id} adopted from {from_app} in guild {guild_id} "
+                    f"(enabled: {module.enabled})")
+        return {"ok": True, "enabled": module.enabled, **recap}
 
     async def set_module_state(self, guild_id: int, module_id: str, state: str,
                                actor_id: Optional[int] = None) -> tuple[bool, Optional[str]]:
@@ -986,8 +1202,10 @@ class ModuleManager:
         if not self.bot.db:
             return False, "no_database"
         try:
-            config = self.effective_config(
-                module_id, await self.get_module_config(guild_id, module_id))
+            stored = await self.get_module_config(guild_id, module_id)
+            if not self.owns(stored):
+                return False, "foreign_app"
+            config = self.effective_config(module_id, stored)
             if not config:
                 return False, "not_configured"
 

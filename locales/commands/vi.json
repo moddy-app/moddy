@@ -662,6 +662,10 @@
           "description": "Định dạng đích (để trống để chọn từ danh sách)"
         }
       }
+    },
+    "about": {
+      "name": "gioi-thieu",
+      "description": "Giới thiệu về bot này"
     }
   },
   "choices": {

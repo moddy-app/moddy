@@ -662,6 +662,10 @@
           "description": "Target format (leave empty to pick from a list)"
         }
       }
+    },
+    "about": {
+      "name": "about",
+      "description": "About this bot"
     }
   },
   "choices": {

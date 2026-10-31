@@ -925,6 +925,25 @@ que le bot ne remplit pas seul** : le backend écrit la ligne au callback OAuth2
 `on_guild_join`. `guild_id` (PK), `installer_id`, `source`, `utm` (JSONB),
 `first_seen_at`, `confirmed_at`. Contrat exact → [STATS.md](STATS.md) §6.
 
+**`bump_reminders.app`** — l'application (Moddy ou un mini-bot) qui a armé
+le rappel ; chaque balayeur ne prend que les siens, et un transfert vers Moddy
+réassigne les lignes (`reassign_bump_reminders`).
+
+**`app_guilds`** — quelle application Discord (Moddy = `moddy`, ou un
+mini-bot) est présente sur quel serveur : `(app, guild_id)` PK, `present`,
+`joined_at`, `left_at`, `member_count`. Écrite par chaque application à
+l'arrivée/au départ et réconciliée au démarrage. Distincte de `guild_events`
+(qui reste l'historique de Moddy seul). La propriété d'une config de module,
+elle, vit dans `guilds.data.modules.<id>.app` (absent = Moddy) et ne change
+que par `set_module_app` (compare-and-swap). Voir
+[MINIBOTS.md](../features/MINIBOTS.md).
+
+**Écritures JSON des serveurs/utilisateurs** — `update_guild_data` /
+`update_user_data` tournent dans une transaction avec `SELECT … FOR UPDATE` :
+Moddy et le service des mini-bots écrivent les mêmes lignes `guilds`, et sans
+ce verrou deux écritures concurrentes sur des chemins différents perdaient
+l'une d'elles.
+
 **`stats_events`** — la fenêtre brute : une ligne par occurrence pour les rares
 métriques marquées `raw=True`, partitionnée par jour et supprimée à 14 jours.
 L'assurance contre les questions non anticipées.

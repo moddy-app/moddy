@@ -48,6 +48,7 @@ from db.repositories.member_applications import MemberApplicationRepository
 from db.repositories.announcement_translations import AnnouncementTranslationRepository
 from db.repositories.announcement_verifications import AnnouncementVerificationRepository
 from db.repositories.stats import StatsRepository
+from db.repositories.app_guilds import AppGuildsRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -97,12 +98,19 @@ class ModdyDatabase(
     AnnouncementTranslationRepository,
     AnnouncementVerificationRepository,
     StatsRepository,
+    AppGuildsRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: str = None, *, application_name: str = "Moddy Bot",
+                 min_size: Optional[int] = None, max_size: Optional[int] = None):
         self.pool: Optional[asyncpg.Pool] = None
         self.database_url = database_url or "postgresql://moddy:password@localhost/moddy"
+        # Shown in pg_stat_activity, so Moddy and the mini-bots process (same
+        # database) can be told apart.
+        self.application_name = application_name
+        self.pool_min_size = POOL_MIN_SIZE if min_size is None else min_size
+        self.pool_max_size = POOL_MAX_SIZE if max_size is None else max_size
         # Optional async hooks for technical logging of important writes.
         # Set by the bot once the tech logger is ready (see bot.setup_hook).
         # Signature: on_attribute_change(entity_type, entity_id, attribute,
@@ -143,11 +151,11 @@ class ModdyDatabase(
         try:
             self.pool = await asyncpg.create_pool(
                 self.database_url,
-                min_size=POOL_MIN_SIZE,
-                max_size=POOL_MAX_SIZE,
+                min_size=self.pool_min_size,
+                max_size=self.pool_max_size,
                 command_timeout=COMMAND_TIMEOUT,
                 server_settings={
-                    'application_name': 'Moddy Bot',
+                    'application_name': self.application_name,
                     'jit': 'off'
                 }
             )
@@ -172,7 +180,7 @@ class ModdyDatabase(
             ("guilds", "guild_id"),
         }:
             raise ValueError("Unsupported entity table")
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn, conn.transaction():
             # First, ensure the entity exists
             await conn.execute(f"""
                 INSERT INTO {table} ({id_column}, data, attributes, created_at, updated_at)
@@ -180,8 +188,12 @@ class ModdyDatabase(
                 ON CONFLICT ({id_column}) DO NOTHING
             """, entity_id)
 
-            # Get current data
-            row = await conn.fetchrow(f"SELECT data FROM {table} WHERE {id_column} = $1", entity_id)
+            # Get current data. FOR UPDATE: this is a read-modify-write of the
+            # whole JSON document, and two processes (Moddy and the mini-bots)
+            # write the same guild rows — without the row lock, two concurrent
+            # writes to different paths would silently drop one of them.
+            row = await conn.fetchrow(
+                f"SELECT data FROM {table} WHERE {id_column} = $1 FOR UPDATE", entity_id)
 
             # Handle both dict and string JSON responses from PostgreSQL
             if row and row['data']:
@@ -750,6 +762,19 @@ class ModdyDatabase(
                     bumped_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
                     PRIMARY KEY (guild_id, bot_key)
                 )
+            """)
+            # Which application owns the pending row (Moddy or a mini-bot):
+            # each one's sweeper only claims its own, so a reminder armed by
+            # the Bump Reminder mini-bot is never swallowed by Moddy's sweeper
+            # (claimed, marked sent, then dropped because Moddy does not run the
+            # module there). Moved with the module on a transfer.
+            await conn.execute("""
+                ALTER TABLE bump_reminders
+                ADD COLUMN IF NOT EXISTS app TEXT NOT NULL DEFAULT 'moddy'
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_bump_reminders_app_due
+                ON bump_reminders (app, due_at) WHERE sent = FALSE
             """)
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
@@ -2011,6 +2036,27 @@ class ModdyDatabase(
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_guild_events_type
                 ON guild_events (event, created_at DESC)
+            """)
+
+            # Which Discord application (Moddy, or a mini-bot) is in which
+            # server. Written by every app on join/leave and reconciled at
+            # boot; read to know who may run a module (minibots/ownership.py)
+            # and to offer a transfer to Moddy. Separate from guild_events,
+            # which stays Moddy's own retention history.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS app_guilds (
+                    app          TEXT        NOT NULL,
+                    guild_id     BIGINT      NOT NULL,
+                    present      BOOLEAN     NOT NULL DEFAULT TRUE,
+                    joined_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    left_at      TIMESTAMPTZ,
+                    member_count INTEGER,
+                    PRIMARY KEY (app, guild_id)
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_app_guilds_present
+                ON app_guilds (guild_id) WHERE present
             """)
 
             # Where an installation came from. The backend writes the row at
