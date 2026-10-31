@@ -1077,7 +1077,7 @@
           "not_configured": "Este módulo ainda não tem uma configuração salva.",
           "failed": "Não foi possível alterar o estado do módulo. Tente novamente."
         },
-        "external": "Gerenciado por um mini-bot"
+        "external": "Gerenciado por outro bot"
       },
       "breadcrumb": {
         "root": "Configuração",
@@ -5233,7 +5233,7 @@
       "moddy_team": "Moddy Team",
       "subscription": "Assinatura Moddy",
       "stripe": "Stripe",
-      "minibots": "Mini-bot"
+      "minibots": "Moddy"
     },
     "attribution": {
       "unknown_guild": "Servidor desconhecido",

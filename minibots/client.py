@@ -85,6 +85,9 @@ class MiniBotClient(commands.Bot):
         self.notifications = NotificationService(self)
         state = runtime.apps.get(spec.id) if runtime is not None else None
         self.emoji_map = state.emoji_map if state is not None else {}
+        # Set once the emoji copy finished (minibots/emojis.py): a message sent
+        # before would show Moddy's ids as text. The welcome DM waits for it.
+        self.emojis_ready = asyncio.Event()
 
         from modules.module_manager import ModuleManager
         self.module_manager = ModuleManager(self, app=spec.id)
@@ -156,7 +159,10 @@ class MiniBotClient(commands.Bot):
             await self.runtime.on_client_ready(self)
 
     async def _sync_emojis(self, sync) -> None:
-        stats = await sync(self, self.emoji_map)
+        try:
+            stats = await sync(self, self.emoji_map)
+        finally:
+            self.emojis_ready.set()
         if stats.get("uploaded") or stats.get("replaced") or stats.get("failed"):
             state = self.runtime.apps.get(self.app_id) if self.runtime else None
             if state is not None:

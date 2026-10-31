@@ -1077,7 +1077,7 @@
           "not_configured": "This module has no saved configuration yet.",
           "failed": "Could not change the module state. Please try again."
         },
-        "external": "Run by a mini-bot"
+        "external": "Run by another bot"
       },
       "breadcrumb": {
         "root": "Config",
@@ -5233,7 +5233,7 @@
       "moddy_team": "Moddy Team",
       "subscription": "Moddy Subscription",
       "stripe": "Stripe",
-      "minibots": "Mini-bot"
+      "minibots": "Moddy"
     },
     "attribution": {
       "unknown_guild": "Unknown server",

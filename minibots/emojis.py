@@ -69,9 +69,13 @@ def moddy_emojis() -> Dict[int, Tuple[str, bool]]:
     """``{moddy emoji id: (name, animated)}`` used anywhere in code or locales
     (every Python file of the repository, outside tests and docs)."""
     found: Dict[int, Tuple[str, bool]] = {}
-    files = [path for path in ROOT.rglob("*.py")
-             if not _SKIP_DIRS.intersection(path.relative_to(ROOT).parts)]
-    files.extend((ROOT / "locales").glob("*.json"))
+    # utils/emojis.py first: when two Moddy emojis share a name, the one the
+    # constants file defines is the canonical one (see plan_sync).
+    canonical = ROOT / "utils" / "emojis.py"
+    files = [canonical] + [path for path in sorted(ROOT.rglob("*.py"))
+                           if path != canonical
+                           and not _SKIP_DIRS.intersection(path.relative_to(ROOT).parts)]
+    files.extend(sorted((ROOT / "locales").glob("*.json")))
     for path in files:
         try:
             text = path.read_text(encoding="utf-8")
@@ -101,9 +105,19 @@ def source_key(app: str) -> str:
 def plan_sync(moddy: Dict[int, Tuple[str, bool]], existing: Dict[str, int],
               sources: Dict[str, int]) -> Tuple[list, list]:
     """``(to_upload, to_replace)``: missing names, and names whose Moddy emoji
-    changed since the copy (``/dev emoji_replace`` gives a new id, same name)."""
+    changed since the copy (``/dev emoji_replace`` gives a new id, same name).
+
+    One entry per **name**: an application cannot hold two emojis with the
+    same name, so when Moddy uses two ids under one name (an old and a new
+    ``warning``), only the first seen — the canonical one, from
+    ``utils/emojis.py`` — is copied; ``build_map`` points both ids at it.
+    """
     upload, replace = [], []
+    seen = set()
     for moddy_id, (name, animated) in moddy.items():
+        if name in seen:
+            continue
+        seen.add(name)
         if name not in existing:
             upload.append((moddy_id, name, animated))
         elif name in sources and sources[name] != moddy_id:
@@ -139,6 +153,8 @@ async def sync_application_emojis(client, mapping: Dict[int, Tuple[str, int]]) -
                 sources = {}
         upload, replace = plan_sync(moddy, existing, sources)
         stats["present"] = len(existing)
+        # What is already there works right away — not after the uploads.
+        mapping.update(build_map(moddy, existing))
 
         async def copy(session, moddy_id, name, animated):
             url = f"https://cdn.discordapp.com/emojis/{moddy_id}.{'gif' if animated else 'png'}"
@@ -149,6 +165,8 @@ async def sync_application_emojis(client, mapping: Dict[int, Tuple[str, int]]) -
             emoji = await client.create_application_emoji(name=name, image=image)
             existing[name] = emoji.id
             sources[name] = moddy_id
+            # Usable from this second on, by every id Moddy has under that name.
+            mapping.update({mid: (name, emoji.id) for mid, (n, _a) in moddy.items() if n == name})
 
         if upload or replace:
             log.info("Mini-bot %s: %d emoji(s) to upload, %d to replace",

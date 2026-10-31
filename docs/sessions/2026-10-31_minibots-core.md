@@ -128,3 +128,18 @@ To do on Jules's side:
 - create the application, enable Message Content, set
   `MINIBOT_BUMP_REMINDER_TOKEN`;
 - the Message Content intent needs Discord's approval past 100 servers.
+
+## Fourth pass — first production run
+- Railway: the mini-bots service failed to build (asyncpg 0.29.0 has no
+  Python 3.13 wheel). Pinned asyncpg 0.30.0 (PR moddy-app/moddy#442).
+- The duplicated service inherited Moddy's `/health` healthcheck: remove it on
+  the mini-bots service (it has no HTTP server).
+- `PrivilegedIntentsRequired`: enable Message Content on the Bump Reminder app.
+- **Emojis showed as text in the first welcome DM.** The id map was only
+  filled at the end of the first copy (minutes). Now it fills as the copy
+  goes. Copies are deduplicated by name (`warning` exists under two Moddy
+  ids). The welcome DM waits for the copy on the first start.
+- **"Sent by Mini-bot"** and **"Run by a mini-bot"** removed. The welcome DM
+  uses the `moddy` service, rebranded to the bot's name. The `/config` status
+  says "Run by another bot". A locale test forbids "mini-bot" outside staff
+  screens.

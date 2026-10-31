@@ -904,7 +904,7 @@ class TestBuiltins:
         client.notifications = SimpleNamespace(send_dm=AsyncMock(return_value=SimpleNamespace(delivered=True)))
         assert await send_welcome(client, SimpleNamespace(id=GUILD, name="S"))
         kwargs = client.notifications.send_dm.await_args.kwargs
-        assert kwargs["source"].service_id == "minibots"
+        assert kwargs["source"].service_id == "moddy"  # rebranded to the bot's name
         assert kwargs["variables"]["name"] == "Bump Reminder"
 
     async def test_config_opens_the_single_module(self, monkeypatch):
@@ -1152,3 +1152,126 @@ def test_bump_bot_i18n(locale):
     for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
                 "welcome.elsewhere", "welcome.pick"):
         assert _get(data, f"minibots.bots.bump_reminder.{key}"), key
+
+
+# --------------------------------------------------------------------------- #
+# Emojis: usable as soon as they exist, one copy per name
+# --------------------------------------------------------------------------- #
+
+class TestEmojiTiming:
+    def test_plan_sync_one_copy_per_name(self):
+        from minibots.emojis import plan_sync
+        moddy = {1: ("warning", False), 2: ("warning", False), 3: ("done", False)}
+        upload, replace = plan_sync(moddy, {}, {})
+        assert [u[1] for u in upload] == ["warning", "done"]
+        assert upload[0][0] == 1  # the first seen (utils/emojis.py) is canonical
+        # Already copied from id 1: the other id under that name never re-copies.
+        upload, replace = plan_sync(moddy, {"warning": 10, "done": 11}, {"warning": 1, "done": 3})
+        assert upload == [] and replace == []
+
+    def test_canonical_comes_from_the_constants_file(self):
+        from minibots.emojis import moddy_emojis
+        from utils.emojis import WARNING
+        ids = [i for i, (n, _a) in moddy_emojis().items() if n == "warning"]
+        assert ids[0] == int(WARNING.split(":")[2].rstrip(">"))
+
+    async def test_mapping_filled_before_and_during_uploads(self, monkeypatch):
+        from minibots import emojis
+        import aiohttp
+        seen_during = []
+
+        class Session:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *a): return False
+
+            def get(self, url):
+                class Resp:
+                    status = 200
+                    async def __aenter__(self): return self
+                    async def __aexit__(self, *a): return False
+                    async def read(self): return b"png"
+                return Resp()
+        monkeypatch.setattr(aiohttp, "ClientSession", Session)
+        monkeypatch.setattr(emojis, "moddy_emojis", lambda: {
+            111111111111111111: ("done", False), 222222222222222222: ("info", False),
+            333333333333333333: ("warning", False), 444444444444444444: ("warning", False)})
+        mapping = {}
+
+        async def create(name, image):
+            seen_during.append(dict(mapping))
+            return SimpleNamespace(id={"info": 900000000000000001, "warning": 900000000000000002}[name])
+        client = SimpleNamespace(
+            app_id="bump", redis=None, create_application_emoji=create,
+            fetch_application_emojis=AsyncMock(return_value=[
+                SimpleNamespace(name="done", id=800000000000000000)]))
+        await emojis.sync_application_emojis(client, mapping)
+        # "done" existed: usable before the first upload even started.
+        assert 111111111111111111 in seen_during[0]
+        # "info" uploaded first: usable while "warning" is still uploading.
+        assert 222222222222222222 in seen_during[1]
+        # both Moddy ids named "warning" point at the single copy.
+        assert mapping[333333333333333333] == mapping[444444444444444444] == \
+            ("warning", 900000000000000002)
+
+    def test_view_payload_swapped_in_a_client_context(self):
+        from minibots import emojis
+        from discord import ui
+        import discord.http as dhttp
+        emojis.install()
+        view = ui.LayoutView()
+        view.add_item(ui.Container(ui.TextDisplay("### <:rocket_launch:111111111111111111> Hi")))
+        token = emojis._app_map.set({111111111111111111: ("rocket_launch", 222222222222222222)})
+        try:
+            params = dhttp.handle_message_parameters(view=view)
+        finally:
+            emojis._app_map.reset(token)
+        assert "222222222222222222" in json.dumps(params.payload)
+        assert "111111111111111111" not in json.dumps(params.payload)
+
+
+class TestWelcomeWaitsAndNaming:
+    async def test_welcome_waits_for_the_emojis(self, monkeypatch):
+        import asyncio
+        import utils.guild_language as gl
+        import utils.install_welcome as iw
+        import minibots.builtin as builtin
+        monkeypatch.setattr(gl, "guild_locale", AsyncMock(return_value="en-US"))
+        monkeypatch.setattr(iw, "resolve_installer", AsyncMock(return_value=SimpleNamespace(id=1, bot=False)))
+        manager, client = make_manager(FakeDB({}), app="bump")
+        client.spec, client.module_manager, client.app_id = SPEC, manager, "bump"
+        client.emojis_ready = asyncio.Event()
+        client.notifications = SimpleNamespace(send_dm=AsyncMock(return_value=SimpleNamespace(delivered=True)))
+        task = asyncio.create_task(builtin.send_welcome(client, SimpleNamespace(id=GUILD, name="S")))
+        await asyncio.sleep(0.05)
+        client.notifications.send_dm.assert_not_awaited()  # still copying icons
+        client.emojis_ready.set()
+        assert await task
+        assert client.notifications.send_dm.await_args.kwargs["source"].service_id == "moddy"
+
+    def test_attribution_names_the_bot(self):
+        from minibots import branding
+        from utils.i18n import t
+        branding.install()
+        token = branding._brand.set("Bump Reminder")
+        try:
+            assert t("notifications.services.moddy", locale="en-US") == "Bump Reminder"
+        finally:
+            branding._brand.reset(token)
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+def test_users_never_read_the_word_minibot(locale):
+    """"Mini-bot" is an internal name: only staff screens may use it."""
+    import re
+    data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
+    leaks = []
+
+    def walk(node, path=""):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, str) and re.search(r"mini.?bot", node, re.I):
+            if not path.startswith(("staff.", "minibots.staff.")):
+                leaks.append(path)
+    walk(data)
+    assert leaks == []

@@ -17,6 +17,7 @@ Every text is i18n (``minibots.*``), with the bot's name as a variable.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import importlib
 import json
@@ -33,6 +34,9 @@ logger = logging.getLogger("moddy.minibots")
 
 #: Accent of the mini-bots' own cards (Moddy blue).
 ACCENT = 0x3661FF
+
+#: How long a welcome DM waits for the first emoji copy (first start only).
+WELCOME_EMOJI_WAIT = 600
 
 #: Persistent views every mini-bot registers (its modules add their own
 #: through ``MiniBotSpec.persistent_views``).
@@ -207,6 +211,15 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
         from utils.guild_language import guild_locale
         from utils.install_welcome import resolve_installer
 
+        # On a bot's very first start the icons are still being copied: wait
+        # for them (bounded) so the first impression is not raw ":emoji:" text.
+        ready = getattr(client, "emojis_ready", None)
+        if ready is not None and not ready.is_set():
+            try:
+                await asyncio.wait_for(ready.wait(), timeout=WELCOME_EMOJI_WAIT)
+            except asyncio.TimeoutError:
+                pass
+
         installer = await resolve_installer(client, guild)
         if installer is None or getattr(installer, "bot", False):
             return False
@@ -220,7 +233,10 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
                 content, variables, view = built
         result = await client.notifications.send_dm(
             installer, content=content, variables=variables, view=view,
-            source=NotificationSource.service("minibots", author=ContentAuthor.MODDY),
+            # "Sent by <bot name>": the Moddy service label, rebranded by
+            # minibots/branding.py to the bot's own name. Users never see
+            # the internal word "mini-bot".
+            source=NotificationSource.service("moddy", author=ContentAuthor.MODDY),
             locale=locale,
         )
         return bool(result.delivered)
