@@ -6884,7 +6884,8 @@
           "present": "Merci d'avoir ajouté **{name}** sur **{server}** !\n\nJe vois {directories} sur ton serveur. **Tu n'as rien à faire** : bumpe comme d'habitude, et dès le premier bump réussi je remercie la personne et je rappelle le salon quand le prochain est possible.\n\nPour mentionner un rôle ou changer le délai : {config}.",
           "none": "Merci d'avoir ajouté **{name}** sur **{server}** !\n\nAjoute un site de bump (DISBOARD, DiscordL, French.gg…), puis bumpe comme d'habitude : dès le premier bump réussi, je remercie la personne et je rappelle le salon quand le prochain est possible. Rien à configurer.\n\nPour mentionner un rôle ou changer le délai : {config}.",
           "elsewhere": "Merci d'avoir ajouté **{name}** sur **{server}** !\n\nSur ce serveur, les rappels de bump sont déjà gérés par **Moddy** : je reste en retrait pour ne pas doubler les rappels. Tu peux me retirer du serveur sans rien perdre.",
-          "pick": "Tu préfères choisir le salon dès maintenant ? Facultatif :"
+          "pick": "Tu préfères choisir le salon dès maintenant ? Facultatif :",
+          "pick_config": "Tu préfères choisir le salon toi-même ? Lance {config} sur le serveur."
         }
       }
     }

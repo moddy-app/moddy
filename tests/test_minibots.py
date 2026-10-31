@@ -1150,7 +1150,7 @@ class TestBumpReminderBot:
 def test_bump_bot_i18n(locale):
     data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
     for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
-                "welcome.elsewhere", "welcome.pick"):
+                "welcome.elsewhere", "welcome.pick", "welcome.pick_config"):
         assert _get(data, f"minibots.bots.bump_reminder.{key}"), key
 
 
@@ -1275,3 +1275,28 @@ def test_users_never_read_the_word_minibot(locale):
                 leaks.append(path)
     walk(data)
     assert leaks == []
+
+
+async def test_welcome_points_to_config_past_25_channels(monkeypatch):
+    import discord as _d
+    import minibots.bots.bump_reminder as mb
+    spec = mb.BUMP_BOTS[0]
+    monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=[spec]))
+    me = SimpleNamespace(id=42)
+    ok = SimpleNamespace(view_channel=True, send_messages=True)
+
+    def guild_with(n):
+        channels = [SimpleNamespace(id=700000000000000000 + i, name=f"c{i}", position=i,
+                                    permissions_for=lambda m: ok) for i in range(n)]
+        return SimpleNamespace(id=GUILD, name="S", me=me, text_channels=channels)
+
+    manager, bot = make_manager(FakeDB({}), app="bump_reminder_bot")
+    bot.spec, bot.module_manager = SPEC, manager
+
+    _c, _v, view = await mb.build_welcome(bot, guild_with(26), "fr")
+    items = view.children[0].children
+    assert not [i for i in items if isinstance(i, _d.ui.ActionRow)]
+    assert any("/config" in getattr(i, "content", "") for i in items)
+
+    _c, _v, view = await mb.build_welcome(bot, guild_with(25), "fr")
+    assert [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
