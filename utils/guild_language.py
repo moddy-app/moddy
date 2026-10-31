@@ -255,3 +255,44 @@ __all__ = [
     "resolve_locale", "get_language_setting", "set_language_setting",
     "invalidate_guild_language", "guild_locale", "guild_locale_cached",
 ]
+
+
+# --------------------------------------------------------------------------- #
+# Several processes cache this setting (Moddy, the mini-bots process). A change
+# made in one has to reach the others, or they keep the old language until
+# they restart. See docs/features/MINIBOTS.md.
+# --------------------------------------------------------------------------- #
+
+async def notify_minibots_language_change(bot, guild_id: int) -> None:
+    """Moddy side: tell the mini-bots process to drop its cached language."""
+    redis = getattr(bot, "redis", None)
+    if redis is None:
+        return
+    try:
+        from minibots import status as mstatus
+        await redis.publish(mstatus.CONTROL_CHANNEL, mstatus.control_message(
+            mstatus.CTRL_RELOAD_GUILD, app="*", guild_id=str(guild_id)))
+    except Exception as exc:  # noqa: BLE001 — a stale cache is not worth an error
+        logger.warning("Could not notify the mini-bots of guild %s's language: %s",
+                       guild_id, exc)
+
+
+async def broadcast_language_change(bot, guild_id: int) -> None:
+    """After the language was saved here, refresh the *other* processes.
+
+    From a mini-bot: the same ``settings_updated`` event the dashboard sends
+    Moddy (it drops its cache and re-posts its panels). From Moddy: a
+    ``reload_guild`` to the mini-bots process.
+    """
+    redis = getattr(bot, "redis", None)
+    if redis is None:
+        return
+    if getattr(bot, "app_id", None):
+        try:
+            import json
+            await redis.publish("moddy:bot", json.dumps(
+                {"type": "settings_updated", "guild_id": str(guild_id)}))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not notify Moddy of guild %s's language: %s", guild_id, exc)
+    else:
+        await notify_minibots_language_change(bot, guild_id)

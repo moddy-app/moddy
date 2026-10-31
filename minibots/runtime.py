@@ -295,6 +295,10 @@ class MiniBotRuntime:
                 await self._handle_release(data)
             elif kind == mstatus.CTRL_RELOAD_GUILD:
                 guild_id = int(data.get("guild_id"))
+                # One cache for the whole process (utils/guild_language.py):
+                # a language changed from Moddy or the dashboard lands here.
+                from utils.guild_language import invalidate_guild_language
+                invalidate_guild_language(guild_id)
                 for client in self.clients():
                     if app in (None, "*", client.app_id) and client.get_guild(guild_id):
                         await client.module_manager.unload_guild_modules(guild_id)

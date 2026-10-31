@@ -1332,6 +1332,7 @@ class TestStandaloneConfig:
     def test_moddy_keeps_its_home_and_back(self):
         view = self._home()
         assert "moddy:bump:main:back" in self._ids(view)
+        assert "moddy:config:language" not in self._ids(view)  # Moddy has it on its home
         assert self._texts(view)[0].startswith("-# ")  # breadcrumb
 
     def test_minibot_has_no_back_and_no_trail(self):
@@ -1344,6 +1345,7 @@ class TestStandaloneConfig:
         assert "moddy:bump:main:back" not in self._ids(view)
         assert not self._texts(view)[0].startswith("-# ")
         assert "moddy:bump:main:add" in self._ids(view)  # the rest of the screen is intact
+        assert "moddy:config:language" in self._ids(view)  # language without a home screen
 
     def test_trail_drops_the_module_name(self):
         from minibots import branding
@@ -1368,3 +1370,44 @@ class TestStandaloneConfig:
         finally:
             branding._standalone.reset(token)
         assert home.await_args.args[1] == "bump_reminder"
+
+
+class TestServerLanguageButton:
+    async def test_language_button_opens_server_settings(self, monkeypatch):
+        import modules.configs._common as common
+        import modules.configs.server_settings_config as ssc
+        monkeypatch.setattr(common, "check_guild_perms", AsyncMock(return_value=True))
+        monkeypatch.setattr(common, "ack", AsyncMock())
+        shown = AsyncMock()
+        monkeypatch.setattr(common, "show", shown)
+        monkeypatch.setattr(ssc.ServerSettingsConfigView, "create", AsyncMock(return_value="SETTINGS"))
+        monkeypatch.setattr(common.i18n, "get_user_locale", lambda i: "fr")
+        interaction = SimpleNamespace(client=None, guild_id=GUILD, user=SimpleNamespace(id=1))
+        await common.ServerLanguageButton().callback(interaction)
+        assert shown.await_args.args[1] == "SETTINGS"
+
+
+class TestLanguageAcrossProcesses:
+    async def test_minibot_change_reaches_moddy(self):
+        from utils.guild_language import broadcast_language_change
+        redis = FakeRedis(listeners=1)
+        await broadcast_language_change(SimpleNamespace(redis=redis, app_id="bump"), GUILD)
+        channel, message = redis.published[0]
+        assert channel == "moddy:bot"
+        assert message == {"type": "settings_updated", "guild_id": str(GUILD)}
+
+    async def test_moddy_change_reaches_the_minibots(self):
+        from utils.guild_language import broadcast_language_change
+        redis = FakeRedis(listeners=1)
+        await broadcast_language_change(SimpleNamespace(redis=redis), GUILD)
+        channel, message = redis.published[0]
+        assert channel == mstatus.CONTROL_CHANNEL
+        assert message["type"] == mstatus.CTRL_RELOAD_GUILD and message["app"] == "*"
+
+    async def test_reload_guild_drops_the_cached_language(self):
+        from minibots.runtime import MiniBotRuntime
+        import utils.guild_language as gl
+        gl._cache[GUILD] = "fr"
+        runtime = MiniBotRuntime((), SimpleNamespace(redis=None, tech_logger=None, version=None))
+        await runtime.handle_control({"type": "reload_guild", "app": "*", "guild_id": str(GUILD)})
+        assert GUILD not in gl._cache

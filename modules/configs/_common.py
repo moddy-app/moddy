@@ -26,7 +26,7 @@ import discord
 from discord import ui
 
 from config import COLORS
-from utils.emojis import BACK, DELETE, EMOJIS, LABS, PAUSE, PLAY, SETTINGS, UNDONE, WARNING
+from utils.emojis import BACK, DELETE, EMOJIS, LABS, PAUSE, PLAY, SETTINGS, TRANSLATE, UNDONE, WARNING
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from modules.module_manager import (
@@ -520,6 +520,39 @@ class ModuleStateSelect(
         await _show_manage(interaction, self.module_id)
 
 
+_CID_LANGUAGE = "moddy:config:language"
+
+
+class ServerLanguageButton(ui.DynamicItem[ui.Button], template=_CID_LANGUAGE):
+    """Opens the server settings (language) from a module screen.
+
+    Used where /config has no home screen to reach them from: a one-module app
+    (the Bump Reminder bot). Auth: Manage Server, re-checked on every click.
+    """
+
+    def __init__(self, *, locale: str = "en-US"):
+        super().__init__(ui.Button(
+            label=t("modules.config.settings.language.section_title", locale=locale)[:80],
+            emoji=discord.PartialEmoji.from_str(TRANSLATE),
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_LANGUAGE,
+        ))
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: "re.Match"):
+        return cls()
+
+    async def callback(self, interaction: discord.Interaction):
+        from modules.configs.server_settings_config import ServerSettingsConfigView
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        view = await ServerSettingsConfigView.create(
+            interaction.client, interaction.guild_id, interaction.user.id,
+            i18n.get_user_locale(interaction))
+        await show(interaction, view)
+
+
 class ModuleStatePersistence(BaseView):
     """Marker view: registers the Manage panel's dynamic items at startup."""
 
@@ -527,4 +560,4 @@ class ModuleStatePersistence(BaseView):
 
     @classmethod
     def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(ModuleManageButton, ModuleStateSelect)
+        bot.add_dynamic_items(ModuleManageButton, ModuleStateSelect, ServerLanguageButton)

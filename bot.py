@@ -728,6 +728,11 @@ class ModdyBot(ModdyFrameworkBot):
         invalidate_guild_language(guild_id)
         logger.info(f"[PubSub] Server settings invalidated for guild {guild_id}")
 
+        # The mini-bots process caches the language too, and does not listen
+        # to moddy:bot: pass the news on (docs/features/MINIBOTS.md).
+        from utils.guild_language import notify_minibots_language_change
+        await notify_minibots_language_change(self, guild_id)
+
         if self.module_manager:
             try:
                 await self.module_manager.apply_language_change(guild_id)
