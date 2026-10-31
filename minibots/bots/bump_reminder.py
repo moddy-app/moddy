@@ -82,6 +82,22 @@ async def directories_present(guild: discord.Guild) -> List:
     return [spec for spec in BUMP_BOTS if spec.app_id in found]
 
 
+def too_many_channels(guild: discord.Guild) -> bool:
+    """More postable text channels than a select can list (25)."""
+    from services.bump_suggestion_service import MAX_CHANNEL_OPTIONS
+    me = getattr(guild, "me", None)
+    if me is None:
+        return False
+    count = 0
+    for channel in getattr(guild, "text_channels", ()):
+        perms = channel.permissions_for(me)
+        if perms.view_channel and perms.send_messages:
+            count += 1
+            if count > MAX_CHANNEL_OPTIONS:
+                return True
+    return False
+
+
 class BumpReminderBotCog(BumpReminder):
     """Moddy's Bump Reminder cog, plus zero-setup and the integration hook."""
 
@@ -220,7 +236,14 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
 
     channels = candidate_channels(guild) if owned else []
     pickers = [s for s in present if should_suggest(stored, s.key)][:MAX_WELCOME_PICKERS]
-    if channels and pickers:
+    if pickers and too_many_channels(guild):
+        # A select holds 25 options: with more channels the right one may not
+        # be in the list. /config has a real channel picker (search included).
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(t(
+            "minibots.bots.bump_reminder.welcome.pick_config", locale=locale,
+            config=command_label("config"))))
+    elif channels and pickers:
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(
             t("minibots.bots.bump_reminder.welcome.pick", locale=locale)))
