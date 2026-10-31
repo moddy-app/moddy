@@ -1747,6 +1747,18 @@
       },
       "buttons": {
         "add": "Add"
+      },
+      "suggest": {
+        "title": "Activate bump reminders?",
+        "body": "{emoji} **{name}** was just added to **{server}**. Moddy can remind the channel as soon as `{command}` is available again (every {interval}), so no bump is ever missed.",
+        "pick": "Pick the channel where you run the command: the reminder is activated there straight away.",
+        "placeholder": "Channel where you bump",
+        "footer": "Roles to mention, delay and the rest: {config} → Bump Reminder, in the server.",
+        "no_channel": "Moddy cannot post in any text channel of this server yet. Give it access to your bump channel, then set the reminder up with {config}.",
+        "done_title": "Bump reminder activated",
+        "done_body": "Moddy now watches {channel} for {emoji} **{name}** bumps on **{server}**. Fine-tune it any time with {config}.",
+        "guild_gone": "Moddy is no longer in this server.",
+        "channel_gone": "That channel no longer exists."
       }
     },
     "automod_ai": {

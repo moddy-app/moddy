@@ -21,6 +21,7 @@ moment the command becomes available again.
 - [Pings](#pings)
 - [The sweeper](#the-sweeper)
 - [Cost](#cost)
+- [Offering the module](#offering-the-module)
 - [Persistence](#persistence)
 - [i18n](#i18n)
 - [Adding a directory](#adding-a-directory)
@@ -207,7 +208,8 @@ That window is not decoration: DiscordL's footer carries a `<t:…>` that is the
 | `bumpreminder/detect.py` | The funnel, the due-time reader, the interval parser |
 | `modules/bump_reminder.py` | `ModuleBase`: config schema, validation, routing |
 | `cogs/bump_reminder.py` | The listener and the 30-second sweeper |
-| `utils/bump_views.py` | Both cards, the opt-in button, the persistence marker |
+| `utils/bump_views.py` | Both cards, the opt-in button, the activation offer card + picker, the persistence marker |
+| `services/bump_suggestion_service.py` | Offers the module when a directory joins a server |
 | `modules/configs/bump_reminder_config.py` | The `/config` panel and its modal |
 | `db/repositories/bump.py` | `bump_reminders` — the live half |
 | `tests/data/bump_payloads.json` | The seven captured replies |
@@ -463,6 +465,42 @@ Railway bills RAM, so the shape was chosen for it:
 
 ---
 
+## Offering the module
+
+A server that already has Moddy and then **adds a directory** (any bot of
+`BUMP_BOTS`) is about to start bumping — the one moment the module is obviously
+useful. `cogs/bump_reminder.py::on_member_join` hands that join to
+`services/bump_suggestion_service.py`, which DMs an activation offer.
+
+- **Who gets it:** whoever added the directory, read from the `bot_add` audit
+  entry (needs *View Audit Log*; retried 3 × 1.5 s because Discord writes the
+  entry just after the join). Fallback: the server owner. Same rule as the
+  install welcome.
+- **Least friction:** the DM carries a channel picker
+  (`BumpSuggestChannelSelect`) listing the text channels Moddy can post in,
+  channels named *bump* first, 25 max. **Picking one activates the reminder**
+  for that directory with its defaults (no roles, `button` ping mode, the
+  directory's own cooldown) through `module_manager.save_module_config`, so the
+  usual validation applies. The card then turns into an "activated" card.
+  Roles / ping mode / delay stay in `/config`. With no usable channel, the card
+  only points at `/config`.
+- **Not offered when:** that directory already has a reminder (enabled or
+  paused), the module is paused server-wide, or the same (server, directory)
+  was offered in the last 30 days (`SUGGEST_COOLDOWN`, Redis key
+  `moddy:bump:suggested:<guild>:<bot>`, in-memory fallback without Redis).
+- **Authorisation:** the picker lives in a DM, so the server and directory are
+  in the custom_id and *Manage Server* on that server is re-checked for the
+  clicker on every pick.
+- Sent through `bot.notifications.send_dm` with
+  `NotificationSource.service_guild("bump_reminder", guild_id)`, template
+  `bump_reminder.suggest.<bot>`, in the server language.
+
+Only the "directory joins after Moddy" case is covered; a server adding Moddy
+while already holding a directory is the team's job
+([BUMP_PROSPECTS.md](BUMP_PROSPECTS.md)).
+
+---
+
 ## Persistence
 
 Every view is persistent (see [docs/guides/PERSISTENT_VIEWS.md](../guides/PERSISTENT_VIEWS.md)),
@@ -472,10 +510,14 @@ registered in `utils/persistent_views.py` under group 10b:
 |---|---|
 | `BumpReminderConfigView` | Manage Server, re-checked on every click |
 | `ManageBumpReminderView` | Manage Server, re-checked on every click |
-| `BumpReminderPersistence` | Marker view registering `BumpOptInButton` |
+| `BumpReminderPersistence` | Marker view registering `BumpOptInButton` and `BumpSuggestChannelSelect` |
 
 `BumpOptInButton` template:
 `moddy:bump:optin:(?P<bot>[a-z]{1,16}):(?P<user>\d{1,20})`
+
+`BumpSuggestChannelSelect` template (activation offer DM; Manage Server on the
+encoded server, re-checked per pick):
+`moddy:bump:suggest:(?P<guild>\d{1,20}):(?P<bot>[a-z]{1,16})`
 
 `\d{1,20}` rather than `\d{17,20}`: the bare shell the persistence tests build
 uses zeros and has to match its own template.
