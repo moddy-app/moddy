@@ -344,10 +344,17 @@ with only what `@everyone` and its own invite grant. Discord answers
 `50013 Missing Permissions` to any channel create/edit whose overwrites
 **allow or deny** a permission the bot does not hold itself, so
 `TicketService.safe_overwrites()` wraps `build_overwrites()` and **clamps every
-overwrite** (`clamp_overwrites`) to the bot's permissions in the destination
-category (`bot_permissions_for`; guild-level when there is no category). Staff
-bits the bot lacks (e.g. `manage_messages`) simply drop out; the ticket still
-opens. When a *core* permission is missing the user gets
+overwrite** (`clamp_overwrites`) to `grantable_permissions()`: what the bot
+holds **both** at guild level **and** in the destination category. Discord
+checks a channel *create* against guild-level permissions and an *edit*
+against the guild or the parent, so a bit the category alone grants the bot
+(e.g. `manage_messages` on the category only) would make the create fail with
+50013 — and Administrator, which bypasses the check, would look like the fix.
+The core-permission check itself still reads the category
+(`bot_permissions_for`; guild-level when there is no category). Staff bits the
+bot lacks (e.g. `manage_messages`) simply drop out; the ticket still opens. A
+refused create is logged with Discord's code and text
+(`[Tickets] Channel creation refused in guild …`). When a *core* permission is missing the user gets
 `modules.tickets.errors.missing_bot_permissions`, naming exactly what is
 missing, instead of a generic failure.
 

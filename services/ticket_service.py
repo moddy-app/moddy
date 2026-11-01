@@ -160,6 +160,32 @@ def bot_permissions_for(guild: discord.Guild,
     return me.guild_permissions
 
 
+def grantable_permissions(guild: discord.Guild,
+                          parent: Optional[discord.abc.GuildChannel] = None,
+                          ) -> discord.Permissions:
+    """What the bot may put in a ticket channel's overwrites.
+
+    Discord checks a *channel create* against the bot's guild-level
+    permissions, and a *channel edit* against its permissions in the guild or
+    the parent category. A category overwrite can therefore give the bot a
+    permission it is not allowed to hand out at creation time (e.g.
+    ``manage_messages`` granted on the category only): passing it on to staff
+    makes Discord refuse the whole create with 50013 — and Administrator, which
+    bypasses the check, would look like the fix. Only what the bot holds in
+    BOTH places is safe for every call, so that is what overwrites are clamped
+    to. Staff simply lose the extras the bot cannot give them everywhere.
+    """
+    me = guild.me
+    if me is None:
+        return discord.Permissions.none()
+    guild_perms = me.guild_permissions
+    if guild_perms.administrator:
+        return guild_perms
+    if parent is None:
+        return guild_perms
+    return discord.Permissions(guild_perms.value & parent.permissions_for(me).value)
+
+
 def missing_core_permissions(perms: discord.Permissions) -> list:
     """Core permissions absent from ``perms`` (empty for Administrator)."""
     if perms.administrator:
@@ -475,7 +501,8 @@ class TicketService:
             raise TicketError('modules.tickets.errors.missing_bot_permissions',
                               permissions=", ".join(f"`{m}`" for m in missing))
         return clamp_overwrites(
-            self.build_overwrites(guild, category, ticket, members), perms)
+            self.build_overwrites(guild, category, ticket, members),
+            grantable_permissions(guild, parent))
 
     # ------------------------------------------------------------------ #
     # Pings
@@ -775,7 +802,11 @@ class TicketService:
                         user=str(member), user_id=member.id)[:1024],
                 reason=f"Moddy ticket opened by {member} ({member.id})",
             )
-        except discord.Forbidden:
+        except discord.Forbidden as e:
+            # Logged with Discord's own code and text: a bare 50013 shown to the
+            # member is otherwise the only trace, and it cannot be diagnosed.
+            logger.warning(f"[Tickets] Channel creation refused in guild {guild.id} "
+                           f"(category {category.get('id')}): {e.code} {e.text}")
             raise TicketError('modules.tickets.errors.cannot_create_channel')
         except discord.HTTPException as e:
             logger.error(f"[Tickets] Channel creation failed in guild {guild.id}: {e}")

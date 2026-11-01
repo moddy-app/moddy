@@ -16,6 +16,7 @@ from services.ticket_service import (
     bot_permissions_for,
     clamp_overwrite,
     clamp_overwrites,
+    grantable_permissions,
     missing_core_permissions,
 )
 from tests.test_tickets import FakeGuild, FakeMember, FakeRole, make_category
@@ -90,6 +91,11 @@ class TestSafeOverwrites:
             "10": [PERM_VIEW, PERM_CLOSE], "11": [PERM_ADMIN]})
         self.ticket = {'owner_id': 7, 'status': 'open', 'escalated': False,
                        'participants': [], 'participant_roles': []}
+        # The bot's guild-level permissions: everything, so each test only
+        # constrains the category side unless it says otherwise.
+        everything = discord.Permissions.all()
+        everything.administrator = False
+        self.guild.me.guild_permissions = everything
 
     def test_minimum_bot_never_asks_for_more_than_it_has(self):
         have = perms(**CORE, read_message_history=True)
@@ -131,3 +137,40 @@ class TestSafeOverwrites:
         msg = TicketError('modules.tickets.errors.missing_bot_permissions',
                           permissions='`manage_roles`').message('en-US')
         assert '`manage_roles`' in msg
+
+
+class TestGrantableOnCreate:
+    """Discord checks a channel *create* against guild-level permissions."""
+
+    def setup_method(self):
+        self.service = TicketService(bot=None)
+        self.support = FakeRole(10, "Support")
+        self.owner = FakeMember(7, name="opener")
+        self.guild = FakeGuild(roles=[self.support], members=[self.owner])
+        self.category = make_category(permissions={"10": [PERM_VIEW, PERM_CLOSE]})
+        self.ticket = {'owner_id': 7, 'status': 'open', 'escalated': False,
+                       'participants': [], 'participant_roles': []}
+
+    def test_category_only_permission_is_not_handed_out(self):
+        # The role lacks manage_messages; only the category grants it. Passing
+        # it on to staff is what made Discord answer 50013 without Administrator.
+        self.guild.me.guild_permissions = perms(**CORE, read_message_history=True)
+        parent = _Parent(perms(**CORE, read_message_history=True, manage_messages=True))
+        out = self.service.safe_overwrites(
+            self.guild, self.category, self.ticket, parent=parent)
+        assert 'manage_messages' not in all_bits(out)
+        for name in all_bits(out):
+            assert getattr(self.guild.me.guild_permissions, name), name
+
+    def test_category_deny_still_wins(self):
+        self.guild.me.guild_permissions = perms(**CORE, manage_messages=True)
+        parent = _Parent(perms(**CORE))
+        assert not grantable_permissions(self.guild, parent).manage_messages
+
+    def test_administrator_keeps_everything(self):
+        self.guild.me.guild_permissions = perms(administrator=True)
+        assert grantable_permissions(self.guild, _Parent(perms())).administrator
+
+    def test_no_category_is_the_guild_level(self):
+        self.guild.me.guild_permissions = perms(**CORE, manage_messages=True)
+        assert grantable_permissions(self.guild, None).manage_messages
