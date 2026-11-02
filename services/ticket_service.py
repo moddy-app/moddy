@@ -142,6 +142,15 @@ CORE_BOT_PERMISSIONS: Tuple[str, ...] = (
     'view_channel', 'manage_channels', 'manage_roles', 'send_messages',
 )
 
+# Where Discord actually checks each of them when a ticket channel is created
+# in a category — verified on Top.gg's review server: with `manage_roles`
+# denied to @everyone on the category (and Moddy's role holding it
+# server-wide), Discord ACCEPTS the create with overwrites; with the category
+# hidden from the bot, it refuses (50013). Requiring `manage_roles` inside the
+# category was stricter than Discord, and only Administrator got past it.
+CATEGORY_CORE_PERMISSIONS: Tuple[str, ...] = ('view_channel', 'manage_channels')
+GUILD_CORE_PERMISSIONS: Tuple[str, ...] = ('manage_roles', 'send_messages')
+
 
 def bot_permissions_for(guild: discord.Guild,
                         parent: Optional[discord.abc.GuildChannel] = None,
@@ -158,6 +167,76 @@ def bot_permissions_for(guild: discord.Guild,
     if parent is not None:
         return parent.permissions_for(me)
     return me.guild_permissions
+
+
+def grantable_permissions(guild: discord.Guild,
+                          parent: Optional[discord.abc.GuildChannel] = None,
+                          ) -> discord.Permissions:
+    """What the bot may put in a ticket channel's overwrites.
+
+    Discord checks a *channel create* against the bot's guild-level
+    permissions, and a *channel edit* against its permissions in the guild or
+    the parent category. A category overwrite can therefore give the bot a
+    permission it is not allowed to hand out at creation time (e.g.
+    ``manage_messages`` granted on the category only): passing it on to staff
+    makes Discord refuse the whole create with 50013 — and Administrator, which
+    bypasses the check, would look like the fix. Only what the bot holds in
+    BOTH places is safe for every call, so that is what overwrites are clamped
+    to. Staff simply lose the extras the bot cannot give them everywhere.
+    """
+    me = guild.me
+    if me is None:
+        return discord.Permissions.none()
+    guild_perms = me.guild_permissions
+    if guild_perms.administrator:
+        return guild_perms
+    if parent is None:
+        return guild_perms
+    return discord.Permissions(guild_perms.value & parent.permissions_for(me).value)
+
+
+def destination_blockers(guild: discord.Guild,
+                         parent: Optional[discord.abc.GuildChannel]) -> list:
+    """Core permissions the bot lacks in a ticket destination (empty = fine).
+
+    Read where the ticket channel is created: a category's overwrites override
+    the bot's server-wide permissions, so a category hidden from ``@everyone``
+    (or denying ``manage_channels`` / ``manage_roles``) blocks tickets even
+    when the bot's role holds everything but Administrator. Discord itself
+    refuses the create in that case (verified: 50013), so this is shown in
+    /config as soon as the category is picked rather than on the first click.
+    """
+    if guild is None or parent is None:
+        return []
+    # Only what the category itself takes away: the guild-level half is what
+    # /config's module permission check already reports.
+    return [m for m in missing_core_for(guild, parent)
+            if m in CATEGORY_CORE_PERMISSIONS]
+
+
+def missing_core_for(guild: discord.Guild,
+                     parent: Optional[discord.abc.GuildChannel] = None) -> list:
+    """Core permissions the bot lacks to create a ticket under ``parent``.
+
+    ``view_channel`` / ``manage_channels`` are read in the category (its
+    overwrites can take them away, and Discord then refuses the create);
+    ``manage_roles`` / ``send_messages`` at guild level, which is what Discord
+    checks for the overwrites the bot sets on the new channel. Order follows
+    ``CORE_BOT_PERMISSIONS``. Empty for Administrator.
+    """
+    me = guild.me
+    if me is None:
+        return list(CORE_BOT_PERMISSIONS)
+    guild_perms = me.guild_permissions
+    if guild_perms.administrator:
+        return []
+    local = bot_permissions_for(guild, parent)
+    missing = []
+    for name in CORE_BOT_PERMISSIONS:
+        where = local if name in CATEGORY_CORE_PERMISSIONS else guild_perms
+        if not getattr(where, name):
+            missing.append(name)
+    return missing
 
 
 def missing_core_permissions(perms: discord.Permissions) -> list:
@@ -469,13 +548,21 @@ class TicketService:
         Hiding the channel from ``@everyone`` is part of the map, so a bot that
         cannot see the channel refuses instead of silently leaking the ticket.
         """
-        perms = bot_permissions_for(guild, parent)
-        missing = missing_core_permissions(perms)
+        missing = missing_core_for(guild, parent)
         if missing:
+            listed = ", ".join(f"`{m}`" for m in missing)
+            if parent is not None and all(m in CATEGORY_CORE_PERMISSIONS for m in missing):
+                # Server-wide permissions do not help here: the category's own
+                # overwrites take precedence over them (only Administrator
+                # ignores them), so the fix must be named as "on the category".
+                raise TicketError(
+                    'modules.tickets.errors.missing_bot_permissions_category',
+                    permissions=listed, category=parent.name)
             raise TicketError('modules.tickets.errors.missing_bot_permissions',
-                              permissions=", ".join(f"`{m}`" for m in missing))
+                              permissions=listed)
         return clamp_overwrites(
-            self.build_overwrites(guild, category, ticket, members), perms)
+            self.build_overwrites(guild, category, ticket, members),
+            grantable_permissions(guild, parent))
 
     # ------------------------------------------------------------------ #
     # Pings
@@ -775,8 +862,13 @@ class TicketService:
                         user=str(member), user_id=member.id)[:1024],
                 reason=f"Moddy ticket opened by {member} ({member.id})",
             )
-        except discord.Forbidden:
-            raise TicketError('modules.tickets.errors.cannot_create_channel')
+        except discord.Forbidden as e:
+            # Logged with Discord's own code and text: a bare 50013 shown to the
+            # member is otherwise the only trace, and it cannot be diagnosed.
+            logger.warning(f"[Tickets] Channel creation refused in guild {guild.id} "
+                           f"(category {category.get('id')}): {e.code} {e.text}")
+            raise TicketError('modules.tickets.errors.cannot_create_channel_category',
+                              category=parent.name)
         except discord.HTTPException as e:
             logger.error(f"[Tickets] Channel creation failed in guild {guild.id}: {e}")
             raise TicketError('modules.tickets.errors.cannot_create_channel')

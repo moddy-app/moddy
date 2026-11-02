@@ -3595,7 +3595,8 @@
         "delete_confirm": "Kategorie löschen",
         "summary_claim_on": "Übernehmen — an",
         "summary_claim_off": "Übernehmen — aus",
-        "summary_claim_locked": "Übernehmen — an, nur wer übernimmt, antwortet"
+        "summary_claim_locked": "Übernehmen — an, nur wer übernimmt, antwortet",
+        "destination_blocked": "Moddy kann in dieser Kategorie noch keine Tickets erstellen: Dort fehlt {permissions}. Öffne die Berechtigungen der Kategorie und erlaube Moddys Rolle (Kanal ansehen, Kanäle verwalten). Serverweite Rechte reichen nicht, wenn die Kategorie sie einschränkt."
       },
       "messages": {
         "modal_title": "Nachrichten des Tickets",
@@ -3818,7 +3819,7 @@
         "destination_missing": "Diese Kategorie hat kein gültiges Ziel. Sag einem Administrator Bescheid.",
         "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
-        "missing_bot_permissions": "Moddy fehlen Rechte für Tickets: {permissions}. Vergib sie in der Zielkategorie (oder serverweit).",
+        "missing_bot_permissions": "Moddy fehlen Rechte für Tickets: {permissions}. Vergib sie an Moddys Rolle in den Servereinstellungen.",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",
@@ -3843,7 +3844,9 @@
         "already_claimed_by_you": "Du kümmerst dich bereits um dieses Ticket.",
         "not_claimed": "Niemand kümmert sich um dieses Ticket.",
         "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen.",
-        "not_closed": "Dieses Ticket ist nicht geschlossen."
+        "not_closed": "Dieses Ticket ist nicht geschlossen.",
+        "missing_bot_permissions_category": "Moddy kann in der Kategorie **{category}** keine Tickets erstellen: Dort fehlt {permissions}. Öffne die Berechtigungen der Kategorie und erlaube Moddys Rolle: Kanal ansehen und Kanäle verwalten. Serverweite Rechte reichen nicht, weil die Rechte der Kategorie Vorrang haben.",
+        "cannot_create_channel_category": "Discord hat das Erstellen des Ticket-Kanals in der Kategorie **{category}** abgelehnt. Öffne die Berechtigungen der Kategorie und erlaube Moddys Rolle: Kanal ansehen und Kanäle verwalten."
       },
       "buttons": {
         "label": "Buttons unter der Nachricht",

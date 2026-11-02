@@ -3594,7 +3594,8 @@
         "delete_confirm": "Supprimer la catégorie",
         "summary_claim_on": "Prise en charge — activée",
         "summary_claim_off": "Prise en charge — désactivée",
-        "summary_claim_locked": "Prise en charge — activée, seul celui qui prend en charge répond"
+        "summary_claim_locked": "Prise en charge — activée, seul celui qui prend en charge répond",
+        "destination_blocked": "Moddy ne peut pas encore créer de tickets dans cette catégorie : il lui manque {permissions} dedans. Ouvrez les permissions de la catégorie et autorisez le rôle de Moddy (Voir le salon, Gérer les salons). Les permissions du serveur ne suffisent pas quand la catégorie les restreint."
       },
       "messages": {
         "modal_title": "Messages du ticket",
@@ -3817,7 +3818,7 @@
         "destination_missing": "Cette catégorie n'a pas de destination valide. Prévenez un administrateur.",
         "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
-        "missing_bot_permissions": "Il manque à Moddy des permissions pour gérer les tickets : {permissions}. Accordez-les-lui sur la catégorie de destination (ou sur le serveur).",
+        "missing_bot_permissions": "Il manque à Moddy des permissions pour gérer les tickets : {permissions}. Accordez-les au rôle de Moddy dans les paramètres du serveur.",
         "already_closed": "Ce ticket est déjà fermé.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",
@@ -3842,7 +3843,9 @@
         "already_claimed_by_you": "Vous vous occupez déjà de ce ticket.",
         "not_claimed": "Personne ne s'occupe de ce ticket.",
         "claimed_by_someone_else": "{user} s'occupe de ce ticket, et vous ne pouvez pas le lui retirer.",
-        "not_closed": "Ce ticket n'est pas fermé."
+        "not_closed": "Ce ticket n'est pas fermé.",
+        "missing_bot_permissions_category": "Moddy ne peut pas créer de tickets dans la catégorie **{category}** : il lui manque {permissions} dans cette catégorie. Ouvrez les permissions de la catégorie et autorisez le rôle de Moddy : Voir le salon et Gérer les salons. Les permissions du serveur ne suffisent pas, car celles de la catégorie sont prioritaires.",
+        "cannot_create_channel_category": "Discord a refusé de créer le salon du ticket dans la catégorie **{category}**. Ouvrez les permissions de la catégorie et autorisez le rôle de Moddy : Voir le salon et Gérer les salons."
       },
       "buttons": {
         "label": "Boutons sous le message",
