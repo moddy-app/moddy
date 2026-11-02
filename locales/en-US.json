@@ -3596,7 +3596,7 @@
         "summary_claim_on": "Claiming — on",
         "summary_claim_off": "Claiming — off",
         "summary_claim_locked": "Claiming — on, only the claimer answers",
-        "destination_blocked": "Moddy can't create tickets in this category yet: it is missing {permissions} there. Open the category's permissions and allow Moddy's role (View Channel, Manage Channels, Manage Permissions). Server-wide permissions are not enough when the category restricts them."
+        "destination_blocked": "Moddy can't create tickets in this category yet: it is missing {permissions} there. Open the category's permissions and allow Moddy's role (View Channel, Manage Channels). Server-wide permissions are not enough when the category restricts them."
       },
       "messages": {
         "modal_title": "Ticket messages",
@@ -3845,8 +3845,8 @@
         "not_claimed": "Nobody is handling this ticket.",
         "claimed_by_someone_else": "{user} is handling this ticket, and you cannot take it off them.",
         "not_closed": "This ticket is not closed.",
-        "missing_bot_permissions_category": "Moddy can't create tickets in the category **{category}**: it is missing {permissions} there. Open that category's permissions and allow Moddy's role: View Channel, Manage Channels and Manage Permissions. Server-wide permissions are not enough, because the category's own permissions take precedence.",
-        "cannot_create_channel_category": "Discord refused to create the ticket channel in the category **{category}**. Open that category's permissions and allow Moddy's role: View Channel, Manage Channels and Manage Permissions."
+        "missing_bot_permissions_category": "Moddy can't create tickets in the category **{category}**: it is missing {permissions} there. Open that category's permissions and allow Moddy's role: View Channel and Manage Channels. Server-wide permissions are not enough, because the category's own permissions take precedence.",
+        "cannot_create_channel_category": "Discord refused to create the ticket channel in the category **{category}**. Open that category's permissions and allow Moddy's role: View Channel and Manage Channels."
       },
       "buttons": {
         "label": "Buttons under the message",

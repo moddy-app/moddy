@@ -3596,7 +3596,7 @@
         "summary_claim_on": "Assumir — ativado",
         "summary_claim_off": "Assumir — desativado",
         "summary_claim_locked": "Assumir — ativado, só quem assumiu responde",
-        "destination_blocked": "O Moddy ainda não pode criar tickets nesta categoria: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy (Ver canal, Gerenciar canais, Gerenciar permissões). As permissões do servidor não bastam quando a categoria as restringe."
+        "destination_blocked": "O Moddy ainda não pode criar tickets nesta categoria: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy (Ver canal, Gerenciar canais). As permissões do servidor não bastam quando a categoria as restringe."
       },
       "messages": {
         "modal_title": "Mensagens do ticket",
@@ -3845,8 +3845,8 @@
         "not_claimed": "Ninguém está cuidando deste ticket.",
         "claimed_by_someone_else": "{user} está cuidando deste ticket e você não pode tirá-lo dele.",
         "not_closed": "Este ticket não está fechado.",
-        "missing_bot_permissions_category": "O Moddy não pode criar tickets na categoria **{category}**: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal, Gerenciar canais e Gerenciar permissões. As permissões do servidor não bastam, porque as da categoria têm prioridade.",
-        "cannot_create_channel_category": "O Discord recusou criar o canal do ticket na categoria **{category}**. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal, Gerenciar canais e Gerenciar permissões."
+        "missing_bot_permissions_category": "O Moddy não pode criar tickets na categoria **{category}**: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal e Gerenciar canais. As permissões do servidor não bastam, porque as da categoria têm prioridade.",
+        "cannot_create_channel_category": "O Discord recusou criar o canal do ticket na categoria **{category}**. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal e Gerenciar canais."
       },
       "buttons": {
         "label": "Botões abaixo da mensagem",

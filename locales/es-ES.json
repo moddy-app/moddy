@@ -3596,7 +3596,7 @@
         "summary_claim_on": "Hacerse cargo — activado",
         "summary_claim_off": "Hacerse cargo — desactivado",
         "summary_claim_locked": "Hacerse cargo — activado, solo responde quien se hace cargo",
-        "destination_blocked": "Moddy todavía no puede crear tickets en esta categoría: le falta {permissions} en ella. Abre los permisos de la categoría y permite al rol de Moddy (Ver canal, Gestionar canales, Gestionar permisos). Los permisos del servidor no bastan si la categoría los restringe."
+        "destination_blocked": "Moddy todavía no puede crear tickets en esta categoría: le falta {permissions} en ella. Abre los permisos de la categoría y permite al rol de Moddy (Ver canal, Gestionar canales). Los permisos del servidor no bastan si la categoría los restringe."
       },
       "messages": {
         "modal_title": "Mensajes del ticket",
@@ -3845,8 +3845,8 @@
         "not_claimed": "Nadie se está ocupando de este ticket.",
         "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo.",
         "not_closed": "Este ticket no está cerrado.",
-        "missing_bot_permissions_category": "Moddy no puede crear tickets en la categoría **{category}**: le falta {permissions} en ella. Abre los permisos de la categoría y permite al rol de Moddy: Ver canal, Gestionar canales y Gestionar permisos. Los permisos del servidor no bastan, porque los de la categoría tienen prioridad.",
-        "cannot_create_channel_category": "Discord se ha negado a crear el canal del ticket en la categoría **{category}**. Abre los permisos de la categoría y permite al rol de Moddy: Ver canal, Gestionar canales y Gestionar permisos."
+        "missing_bot_permissions_category": "Moddy no puede crear tickets en la categoría **{category}**: le falta {permissions} en ella. Abre los permisos de la categoría y permite al rol de Moddy: Ver canal y Gestionar canales. Los permisos del servidor no bastan, porque los de la categoría tienen prioridad.",
+        "cannot_create_channel_category": "Discord se ha negado a crear el canal del ticket en la categoría **{category}**. Abre los permisos de la categoría y permite al rol de Moddy: Ver canal y Gestionar canales."
       },
       "buttons": {
         "label": "Botones bajo el mensaje",

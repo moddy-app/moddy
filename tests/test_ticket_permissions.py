@@ -132,8 +132,9 @@ class TestSafeOverwrites:
         # permissions cannot fix what the category's overwrites take away.
         assert exc.value.key == 'modules.tickets.errors.missing_bot_permissions_category'
         assert 'category' in exc.value.params
-        assert 'manage_roles' in exc.value.params['permissions']
         assert 'manage_channels' in exc.value.params['permissions']
+        # manage_roles is read at guild level (held here), never in the category.
+        assert 'manage_roles' not in exc.value.params['permissions']
 
     def test_no_category_uses_guild_permissions(self):
         self.guild.me.guild_permissions = perms(**CORE)
@@ -219,3 +220,44 @@ def test_category_messages_never_point_server_wide(locale):
     text = t('modules.tickets.category.destination_blocked', locale=locale,
              permissions='`view_channel`')
     assert '`view_channel`' in text
+
+
+class TestTopggReviewCategory:
+    """The Top.gg review server's ticket category, as read from Discord.
+
+    @everyone is denied manage_channels + manage_roles on the category, Moddy's
+    "Allow Manage Channels" role gets manage_channels back there, nothing gives
+    manage_roles back. Server-wide, Moddy holds both. Discord accepted the
+    create with overwrites (verified live); Moddy used to refuse it.
+    """
+
+    def setup_method(self):
+        self.service = TicketService(bot=None)
+        self.owner = FakeMember(7, name="opener")
+        self.guild = FakeGuild(roles=[], members=[self.owner])
+        self.guild.me.guild_permissions = perms(**CORE, read_message_history=True)
+        self.parent = _Parent(perms(view_channel=True, send_messages=True,
+                                    manage_channels=True, read_message_history=True))
+        self.ticket = {'owner_id': 7, 'status': 'open', 'escalated': False,
+                       'participants': [], 'participant_roles': []}
+
+    def test_ticket_opens_without_manage_roles_in_the_category(self):
+        out = self.service.safe_overwrites(
+            self.guild, make_category(), self.ticket, parent=self.parent)
+        assert out[self.guild.default_role].view_channel is False
+        assert out[self.guild.me].view_channel is True
+
+    def test_config_does_not_warn(self):
+        assert destination_blockers(self.guild, self.parent) == []
+
+    def test_still_needs_manage_roles_server_wide(self):
+        self.guild.me.guild_permissions = perms(view_channel=True, send_messages=True,
+                                                manage_channels=True)
+        # Not the category's fault: the server-level message, no /config
+        # category warning (the module permission check reports it there).
+        assert destination_blockers(self.guild, self.parent) == []
+        with pytest.raises(TicketError) as exc:
+            self.service.safe_overwrites(
+                self.guild, make_category(), self.ticket, parent=self.parent)
+        assert exc.value.key == 'modules.tickets.errors.missing_bot_permissions'
+        assert 'manage_roles' in exc.value.params['permissions']
