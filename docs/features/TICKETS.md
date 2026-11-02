@@ -354,7 +354,24 @@ The core-permission check itself still reads the category
 (`bot_permissions_for`; guild-level when there is no category). Staff bits the
 bot lacks (e.g. `manage_messages`) simply drop out; the ticket still opens. A
 refused create is logged with Discord's code and text
-(`[Tickets] Channel creation refused in guild …`). When a *core* permission is missing the user gets
+(`[Tickets] Channel creation refused in guild …`).
+
+**The destination category's own permissions win over the server's.** Without
+Administrator, a category hidden from `@everyone` (or denying
+`manage_channels` / `manage_roles`) strips them from Moddy *in that category*
+even when its role holds everything server-wide — and Discord then refuses the
+create (verified on a real server: `403 50013`, bot with Manage Channels +
+Manage Roles server-wide, category hidden from `@everyone`). The fix is to
+allow Moddy's role **on the category** (View Channel, Manage Channels, Manage
+Permissions); never Administrator. So:
+
+- `/config` → a ticket category shows a warning under its destination as soon
+  as the picked category blocks Moddy (`destination_blockers()`), instead of
+  waiting for a member's first click.
+- The errors name the category and say "on the category"
+  (`missing_bot_permissions_category`, `cannot_create_channel_category`); the
+  old "(or server-wide)" hint is gone — following it could not work, and a
+  Top.gg reviewer concluded Administrator was required. When a *core* permission is missing the user gets
 `modules.tickets.errors.missing_bot_permissions`, naming exactly what is
 missing, instead of a generic failure.
 

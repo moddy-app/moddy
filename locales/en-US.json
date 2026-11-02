@@ -3595,7 +3595,8 @@
         "delete_confirm": "Delete the category",
         "summary_claim_on": "Claiming — on",
         "summary_claim_off": "Claiming — off",
-        "summary_claim_locked": "Claiming — on, only the claimer answers"
+        "summary_claim_locked": "Claiming — on, only the claimer answers",
+        "destination_blocked": "Moddy can't create tickets in this category yet: it is missing {permissions} there. Open the category's permissions and allow Moddy's role (View Channel, Manage Channels, Manage Permissions). Server-wide permissions are not enough when the category restricts them."
       },
       "messages": {
         "modal_title": "Ticket messages",
@@ -3818,7 +3819,7 @@
         "destination_missing": "This category has no valid destination. Warn an administrator.",
         "too_many_open": "You already have `{max}` open ticket(s) in this category. Close one before opening another.",
         "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
-        "missing_bot_permissions": "Moddy is missing permissions to run tickets: {permissions}. Grant them on the destination category (or server-wide).",
+        "missing_bot_permissions": "Moddy is missing permissions to run tickets: {permissions}. Grant them to Moddy's role in the server settings.",
         "already_closed": "This ticket is already closed.",
         "close_already_requested": "A closure request is already pending on this ticket.",
         "no_close_request": "No closure request is pending on this ticket.",
@@ -3843,7 +3844,9 @@
         "already_claimed_by_you": "You are already handling this ticket.",
         "not_claimed": "Nobody is handling this ticket.",
         "claimed_by_someone_else": "{user} is handling this ticket, and you cannot take it off them.",
-        "not_closed": "This ticket is not closed."
+        "not_closed": "This ticket is not closed.",
+        "missing_bot_permissions_category": "Moddy can't create tickets in the category **{category}**: it is missing {permissions} there. Open that category's permissions and allow Moddy's role: View Channel, Manage Channels and Manage Permissions. Server-wide permissions are not enough, because the category's own permissions take precedence.",
+        "cannot_create_channel_category": "Discord refused to create the ticket channel in the category **{category}**. Open that category's permissions and allow Moddy's role: View Channel, Manage Channels and Manage Permissions."
       },
       "buttons": {
         "label": "Buttons under the message",

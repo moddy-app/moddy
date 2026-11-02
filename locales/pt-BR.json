@@ -3595,7 +3595,8 @@
         "delete_confirm": "Excluir a categoria",
         "summary_claim_on": "Assumir — ativado",
         "summary_claim_off": "Assumir — desativado",
-        "summary_claim_locked": "Assumir — ativado, só quem assumiu responde"
+        "summary_claim_locked": "Assumir — ativado, só quem assumiu responde",
+        "destination_blocked": "O Moddy ainda não pode criar tickets nesta categoria: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy (Ver canal, Gerenciar canais, Gerenciar permissões). As permissões do servidor não bastam quando a categoria as restringe."
       },
       "messages": {
         "modal_title": "Mensagens do ticket",
@@ -3818,7 +3819,7 @@
         "destination_missing": "Esta categoria não tem um destino válido. Avise um administrador.",
         "too_many_open": "Você já tem `{max}` ticket(s) aberto(s) nesta categoria. Feche um antes de abrir outro.",
         "cannot_create_channel": "O Moddy não conseguiu criar o canal do ticket. Verifique as permissões dele na categoria de destino.",
-        "missing_bot_permissions": "O Moddy não tem as permissões necessárias para gerenciar tickets: {permissions}. Conceda-as na categoria de destino (ou em todo o servidor).",
+        "missing_bot_permissions": "O Moddy não tem as permissões necessárias para gerenciar tickets: {permissions}. Conceda-as ao cargo do Moddy nas configurações do servidor.",
         "already_closed": "Este ticket já está fechado.",
         "close_already_requested": "Já há um pedido de fechamento pendente neste ticket.",
         "no_close_request": "Não há nenhum pedido de fechamento pendente neste ticket.",
@@ -3843,7 +3844,9 @@
         "already_claimed_by_you": "Você já está cuidando deste ticket.",
         "not_claimed": "Ninguém está cuidando deste ticket.",
         "claimed_by_someone_else": "{user} está cuidando deste ticket e você não pode tirá-lo dele.",
-        "not_closed": "Este ticket não está fechado."
+        "not_closed": "Este ticket não está fechado.",
+        "missing_bot_permissions_category": "O Moddy não pode criar tickets na categoria **{category}**: falta {permissions} nela. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal, Gerenciar canais e Gerenciar permissões. As permissões do servidor não bastam, porque as da categoria têm prioridade.",
+        "cannot_create_channel_category": "O Discord recusou criar o canal do ticket na categoria **{category}**. Abra as permissões da categoria e permita ao cargo do Moddy: Ver canal, Gerenciar canais e Gerenciar permissões."
       },
       "buttons": {
         "label": "Botões abaixo da mensagem",

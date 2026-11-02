@@ -42,6 +42,7 @@ from modules.configs.tickets_config import (
     report_save_error,
     save_config,
 )
+from services.ticket_service import destination_blockers
 from modules.tickets import (
     BUTTON_STYLES,
     DEFAULT_ACCENT_COLOR,
@@ -758,6 +759,15 @@ class TicketCategoryConfigView(BaseView):
             current=current if isinstance(current, discord.CategoryChannel) else None,
         ))
         container.add_item(dest_row)
+        # Warn now, not on a member's first click: the category's own
+        # permissions can strip what Moddy's role holds server-wide.
+        if isinstance(current, discord.CategoryChannel):
+            blockers = destination_blockers(current.guild, current)
+            if blockers:
+                container.add_item(ui.TextDisplay(
+                    f"{WARNING} " + t('modules.tickets.category.destination_blocked',
+                                      locale=self.locale,
+                                      permissions=", ".join(f"`{m}`" for m in blockers))))
 
         # 2. Access.
         container.add_item(ui.TextDisplay(

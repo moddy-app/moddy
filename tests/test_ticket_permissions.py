@@ -16,6 +16,7 @@ from services.ticket_service import (
     bot_permissions_for,
     clamp_overwrite,
     clamp_overwrites,
+    destination_blockers,
     grantable_permissions,
     missing_core_permissions,
 )
@@ -73,6 +74,8 @@ class TestMissing:
 
 
 class _Parent:
+    name = "Support"
+
     def __init__(self, p):
         self._p = p
 
@@ -125,7 +128,10 @@ class TestSafeOverwrites:
             self.service.safe_overwrites(
                 self.guild, self.category, self.ticket,
                 parent=_Parent(perms(view_channel=True, send_messages=True)))
-        assert exc.value.key == 'modules.tickets.errors.missing_bot_permissions'
+        # With a destination category the message names it: server-wide
+        # permissions cannot fix what the category's overwrites take away.
+        assert exc.value.key == 'modules.tickets.errors.missing_bot_permissions_category'
+        assert 'category' in exc.value.params
         assert 'manage_roles' in exc.value.params['permissions']
         assert 'manage_channels' in exc.value.params['permissions']
 
@@ -174,3 +180,42 @@ class TestGrantableOnCreate:
     def test_no_category_is_the_guild_level(self):
         self.guild.me.guild_permissions = perms(**CORE, manage_messages=True)
         assert grantable_permissions(self.guild, None).manage_messages
+
+
+class TestDestinationCategory:
+    """A category hiding itself from @everyone blocks tickets (Discord: 50013)."""
+
+    def setup_method(self):
+        self.guild = FakeGuild(roles=[], members=[])
+        everything = discord.Permissions.all()
+        everything.administrator = False
+        self.guild.me.guild_permissions = everything
+
+    def test_hidden_category_is_reported(self):
+        # Moddy's role holds everything but Administrator; the category strips
+        # view_channel. This is the Top.gg review case.
+        in_cat = discord.Permissions.all()
+        in_cat.administrator = False
+        in_cat.view_channel = False
+        assert destination_blockers(self.guild, _Parent(in_cat)) == ['view_channel']
+
+    def test_open_category_is_fine(self):
+        assert destination_blockers(self.guild, _Parent(perms(**CORE))) == []
+
+    def test_no_category_is_fine(self):
+        assert destination_blockers(self.guild, None) == []
+
+
+@pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+def test_category_messages_never_point_server_wide(locale):
+    """The old "(or server-wide)" hint sent a reviewer the wrong way."""
+    from utils.i18n import t
+    text = t('modules.tickets.errors.missing_bot_permissions_category', locale=locale,
+             permissions='`manage_roles`', category='Support')
+    assert '`manage_roles`' in text and 'Support' in text
+    text = t('modules.tickets.errors.cannot_create_channel_category', locale=locale,
+             category='Support')
+    assert 'Support' in text
+    text = t('modules.tickets.category.destination_blocked', locale=locale,
+             permissions='`view_channel`')
+    assert '`view_channel`' in text
