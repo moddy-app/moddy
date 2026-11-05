@@ -61,3 +61,20 @@
 `MiniBotSpec.accent` (default `#3661FF`); the Bump Reminder mini-bot is
 `#E8604C`. Applied to `/about`, its welcome DM, and the thank-you / reminder /
 test cards when the mini-bot is the one posting (`card_accent(client)`).
+
+## Follow-up: lost mini-bot commits restored
+
+Five commits pushed to `claude/vibrant-bell-mb0upz` on 2026-10-31 **after**
+PR #441 was merged never reached `main` (PR #442 only took the asyncpg pin and
+the CLAUDE.md tree fix). That is why the Bump Reminder mini-bot's `/config`
+had its Back button and breadcrumb again. Cherry-picked (`-x`) onto this
+branch, in order:
+
+- `f958b6c` Mini-bots: emojis usable during the first copy, no "mini-bot" for users
+- `303efe5` Bump Reminder welcome: point to /config past 25 channels
+- `26892b9` Mini-bots: /config of a one-module bot is the module screen (no Back, no trail)
+- `b8d8e51` Mini-bots: Language button on a one-module /config, language synced across processes
+- `8c70862` Move the mini-bots note in SERVER_LANGUAGE.md
+
+Conflicts were only import lines (`bump_reminder_config.py`, `builtin.py`) and
+tests appended at the end of `tests/test_minibots.py`; both sides kept.
