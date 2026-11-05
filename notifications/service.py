@@ -39,6 +39,7 @@ from notifications.models import (
 )
 from notifications.render import (
     build_attribution_line, build_content_view, resolve_source_context,
+    inject_guild_badge,
 )
 
 logger = logging.getLogger("moddy.notifications")
@@ -355,6 +356,18 @@ class NotificationService:
             record, locale=locale or record.get("locale") or "en-US")
         return build_attribution_line(ctx, locale=locale or "en-US")
 
+    async def badge_own_attribution(self, view, guild_id: int, *,
+                                    locale: str = "en-US") -> None:
+        """Give a card's own "sent by" line the server's check mark (verified
+        or official server). Best-effort: never raises, never blocks a DM."""
+        try:
+            ctx = await resolve_source_context(
+                self.bot, NotificationSource.service_guild("badge", int(guild_id)),
+                locale=locale)
+            inject_guild_badge(view, int(guild_id), ctx.get("badge") or "")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Guild badge skipped for %s: %s", guild_id, exc)
+
     @staticmethod
     def append_attribution(view: discord.ui.LayoutView, line: Optional[str]) -> None:
         """Close a rebuilt card with the line :meth:`attribution_line` returned."""
@@ -375,7 +388,11 @@ class NotificationService:
         if not attribution or not source.has_attribution:
             # Official notices say nothing about their origin: they ARE Moddy.
             # `attribution=False` is for the callers whose card already prints
-            # its own "sent by" line (sanction DMs, expiry DMs).
+            # its own "sent by" line (sanction DMs, expiry DMs): that line still
+            # gets the server's check mark, automatically.
+            if source.has_attribution and source.guild_id:
+                await self.badge_own_attribution(payload, source.guild_id,
+                                                 locale=locale or "en-US")
             return payload
 
         # The line is plain text built from the source itself, so a failed

@@ -562,6 +562,12 @@ class AppealService:
             proof_message_id=proof.get("message_id"), proof_ts=proof.get("ts"),
             appeal_status=status, appeal_route=appeal["route"], decided=decided_full,
         )
+        # The rebuilt card prints its own "sent by" line: keep the server's
+        # check mark on it, as the first delivery did.
+        notifications = getattr(self.bot, "notifications", None)
+        if notifications is not None:
+            await notifications.badge_own_attribution(
+                view, int(appeal["guild_id"]), locale=dm_locale)
         # Editing keeps the original attachment (deterministic filename), so we
         # don't need to re-upload the proof file on a status refresh.
         await self._edit_stored(ch_id, msg_id, view)
