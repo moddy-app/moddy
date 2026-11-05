@@ -218,6 +218,12 @@ class LogService:
         """``(who, reason)`` for an action, from the audit-log cache."""
         if guild is None:
             return None, None
+        # Without View Audit Log no entry ever reaches the gateway: do not make
+        # every event wait for one that cannot come. The log is simply written
+        # without its "who".
+        me = getattr(guild, "me", None)
+        if me is not None and not me.guild_permissions.view_audit_log:
+            return None, None
         entry = await self.audit.wait_for(
             guild.id, target_matcher(action, target_id, extra), timeout=wait)
         if entry is None:

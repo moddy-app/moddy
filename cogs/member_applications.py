@@ -137,12 +137,16 @@ class MemberApplications(commands.Cog):
         interval = POLL_INTERVAL_FALLBACK if self.gateway_seen else POLL_INTERVAL_PRIMARY
         now = time.monotonic()
         due = []
-        for guild_id, modules in list(manager.active_modules.items()):
-            module = modules.get(MODULE_ID)
-            if module is None or not module.enabled:
-                continue
-            if now - self._last_sync.get(guild_id, 0.0) >= interval:
-                due.append(guild_id)
+        try:
+            for guild_id, modules in list(manager.active_modules.items()):
+                module = modules.get(MODULE_ID)
+                if module is None or not module.enabled:
+                    continue
+                if now - self._last_sync.get(guild_id, 0.0) >= interval:
+                    due.append(guild_id)
+        except Exception as e:  # noqa: BLE001 - an exception here would stop the loop for good
+            logger.error(f"Error listing guilds to sync: {e}", exc_info=True)
+            return
 
         service = get_service(self.bot)
         for guild_id in due[:POLL_BATCH]:

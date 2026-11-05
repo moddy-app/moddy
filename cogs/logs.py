@@ -69,7 +69,10 @@ class ServerLogs(commands.Cog):
     @commands.Cog.listener()
     async def on_audit_log_entry_create(self, entry: discord.AuditLogEntry):
         # Cache first: another listener may already be waiting on this entry.
-        self.service.audit.add(entry)
+        try:
+            self.service.audit.add(entry)
+        except Exception as e:  # noqa: BLE001 - the cache must never break the listeners
+            logger.warning(f"[Logs] Could not cache audit entry: {e}")
 
         guild = entry.guild
         if guild is None:

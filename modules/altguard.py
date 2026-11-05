@@ -39,7 +39,7 @@ from db.repositories.altguard import (
     VERDICT_PASSED, VERDICT_TO_STATUS,
 )
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import channel_map, channel_validation_error, is_obfuscated
 from utils.emojis import FINGERPRINT
 from utils.guild_language import DEFAULT_LOCALE, guild_locale
 
@@ -431,6 +431,15 @@ class AltGuardModule(ModuleBase):
             else:
                 overwrite = discord.PermissionOverwrite(view_channel=False)
 
+            if is_obfuscated(channel):
+                # The bot cannot see this channel (and so cannot lock it): say
+                # so by mention, never by the placeholder name.
+                recap["failed"] += 1
+                logger.warning(f"[AltGuard] Channel <#{channel.id}> is hidden from the "
+                               f"bot in guild {self.guild_id}: it cannot be locked")
+                continue
+            overwrite = self._clamp_overwrite(channel, overwrite)
+
             current = channel.overwrites_for(role)
             if current == overwrite:
                 recap["skipped"] += 1
@@ -445,19 +454,45 @@ class AltGuardModule(ModuleBase):
             except discord.Forbidden:
                 recap["failed"] += 1
                 logger.warning(
-                    f"[AltGuard] Missing permissions to lock #{channel.name} "
+                    f"[AltGuard] Missing permissions to lock <#{channel.id}> "
                     f"in guild {self.guild_id}"
                 )
             except discord.HTTPException as e:
                 recap["failed"] += 1
                 logger.error(
-                    f"[AltGuard] Could not lock #{channel.name} in guild {self.guild_id}: {e}"
+                    f"[AltGuard] Could not lock <#{channel.id}> in guild {self.guild_id}: {e}"
                 )
 
         logger.info(
             f"[AltGuard] Channel permissions synced for guild {self.guild_id}: {recap}"
         )
         return recap
+
+    def _clamp_overwrite(self, channel: discord.abc.GuildChannel,
+                         overwrite: discord.PermissionOverwrite
+                         ) -> discord.PermissionOverwrite:
+        """Drop the flags of ``overwrite`` the bot does not hold.
+
+        Discord (Edit Channel Permissions): "Only permissions your bot has in the
+        guild or parent channel (if applicable) can be allowed/denied". One
+        flag the bot lacks (``create_private_threads`` is not part of every
+        server's @everyone) would make Discord refuse the whole overwrite, and
+        the channel would stay open to unverified members. ``view_channel`` is
+        kept: it is the part that matters.
+        """
+        guild = self.guild
+        me = getattr(guild, "me", None) if guild else None
+        if me is None or me.guild_permissions.administrator:
+            return overwrite
+        held = discord.Permissions(
+            me.guild_permissions.value | channel.permissions_for(me).value)
+        clamped = discord.PermissionOverwrite()
+        for name, value in overwrite:
+            if value is None:
+                continue
+            if name == "view_channel" or getattr(held, name, False):
+                setattr(clamped, name, value)
+        return clamped
 
     async def sync_channel(self, channel: discord.abc.GuildChannel) -> None:
         """Apply the gate's visibility rules to a single, newly created channel.
@@ -475,6 +510,10 @@ class AltGuardModule(ModuleBase):
         if self.channel_id and channel.id == self.channel_id:
             return
 
+        if is_obfuscated(channel):
+            logger.warning(f"[AltGuard] New channel <#{channel.id}> is hidden from the "
+                           f"bot in guild {self.guild_id}: it cannot be locked")
+            return
         try:
             await channel.set_permissions(
                 role, overwrite=discord.PermissionOverwrite(view_channel=False),
@@ -577,18 +616,71 @@ class AltGuardModule(ModuleBase):
             if verified_role and verified_role in member.roles:
                 to_remove.append(verified_role)
 
-        try:
-            if to_add:
-                await member.add_roles(*to_add, reason=reason)
-            if to_remove:
-                await member.remove_roles(*to_remove, reason=reason)
-        except discord.Forbidden:
-            logger.warning(
-                f"[AltGuard] Missing permissions to move {member.id} through the gate "
-                f"in guild {self.guild_id}"
-            )
-        except Exception as e:
-            logger.error(f"[AltGuard] Role update failed for {member.id} in guild {self.guild_id}: {e}")
+        # Each change is its own call: one refused role must not stop the other.
+        # Opening the gate for a member who passed comes first -- a verified
+        # role the bot cannot hand out (hierarchy) must never keep them locked
+        # behind the unverified role.
+        if verified:
+            await self._change_roles(member, remove=to_remove, reason=reason)
+            await self._change_roles(member, add=to_add, reason=reason)
+        else:
+            await self._change_roles(member, add=to_add, reason=reason)
+            await self._change_roles(member, remove=to_remove, reason=reason)
+
+    async def _change_roles(self, member: discord.Member, *, add=(), remove=(),
+                            reason: str) -> bool:
+        """Add / remove gate roles; ``False`` (with a precise log) when refused.
+
+        Never raises. Roles the bot cannot assign are filtered out up front
+        (managed, @everyone, at or above the bot's top role -- Discord answers
+        403 for them) and named in the log so an admin knows which role to move.
+        """
+        guild = self.guild
+        me = getattr(guild, "me", None) if guild else None
+        ok = True
+
+        async def _call(roles, method):
+            nonlocal ok
+            usable = []
+            for role in roles:
+                if me is not None and not me.guild_permissions.administrator and (
+                        role.managed or role.is_default() or role >= me.top_role):
+                    ok = False
+                    logger.warning(
+                        f"[AltGuard] Role {role.id} cannot be assigned by the bot in "
+                        f"guild {self.guild_id} (managed or not below Moddy's role): "
+                        f"move Moddy's role above it")
+                    continue
+                usable.append(role)
+            if not usable:
+                return
+            if me is not None and not me.guild_permissions.manage_roles \
+                    and not me.guild_permissions.administrator:
+                ok = False
+                logger.warning(f"[AltGuard] Manage Roles is missing in guild "
+                               f"{self.guild_id}: the gate cannot move {member.id}")
+                return
+            try:
+                await getattr(member, method)(*usable, reason=reason)
+            except discord.Forbidden as e:
+                ok = False
+                logger.warning(
+                    f"[AltGuard] Discord refused {method} for {member.id} in guild "
+                    f"{self.guild_id}: {e.code} {e.text}")
+            except discord.NotFound:
+                ok = False
+                logger.info(f"[AltGuard] {member.id} left guild {self.guild_id} "
+                            f"before the gate could be applied")
+            except Exception as e:  # noqa: BLE001
+                ok = False
+                logger.error(f"[AltGuard] Role update failed for {member.id} in "
+                             f"guild {self.guild_id}: {e}")
+
+        if add:
+            await _call(list(add), "add_roles")
+        if remove:
+            await _call(list(remove), "remove_roles")
+        return ok
 
     # ------------------------------------------------------------------ #
     # Events
@@ -636,7 +728,11 @@ class AltGuardModule(ModuleBase):
             pass
 
     async def _record_inviter(self, tracker, member: discord.Member, store: bool) -> None:
-        inviter_id = await tracker.resolve_inviter(member)
+        try:
+            inviter_id = await tracker.resolve_inviter(member)
+        except Exception as e:  # noqa: BLE001 - attribution is optional
+            logger.debug(f"[AltGuard] Could not resolve the inviter of {member.id}: {e}")
+            return
         if not store or not self.bot.db:
             return
         try:
@@ -671,10 +767,17 @@ class AltGuardModule(ModuleBase):
             )
 
         if enforced and self.bot.db:
-            await self.bot.db.set_altguard_member_status(
-                self.guild_id, user_id, VERDICT_TO_STATUS[decision],
-                source=SOURCE_SERVICE, verification_id=verdict['verification_id'],
-            )
+            try:
+                await self.bot.db.set_altguard_member_status(
+                    self.guild_id, user_id, VERDICT_TO_STATUS[decision],
+                    source=SOURCE_SERVICE, verification_id=verdict['verification_id'],
+                )
+            except Exception as e:  # noqa: BLE001
+                # The roles are what lets the member in or keeps them out: a
+                # database hiccup must not lose the verdict (it is already
+                # recorded as seen, so it will not be replayed).
+                logger.error(f"[AltGuard] Could not store the status of {user_id} in "
+                             f"guild {self.guild_id}: {e}")
 
         if enforced:
             # Cache miss is the norm here, not the exception: the verdict lands

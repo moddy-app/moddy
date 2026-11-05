@@ -274,7 +274,15 @@ class AltGuard(commands.Cog):
             return
 
         for guild in list(self.bot.guilds):
-            await self.resync_guild(guild)
+            # One guild failing (gateway hiccup, malformed config, service
+            # error) must not stop the others -- nor kill this loop for good.
+            try:
+                await self.resync_guild(guild)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[AltGuard] Resync crashed for guild {guild.id}: {e}",
+                             exc_info=True)
 
     async def resync_guild(self, guild: discord.Guild) -> bool:
         """Send one guild's full member list to the service.

@@ -195,7 +195,17 @@ class TicketClosureDetector:
         loop = asyncio.get_running_loop()
         state.timer = loop.call_later(
             DEBOUNCE_SECONDS,
-            lambda: asyncio.ensure_future(self._score_and_offer(message)))
+            lambda: asyncio.ensure_future(self._guarded_offer(message)))
+
+    async def _guarded_offer(self, message: discord.Message) -> None:
+        """Fire-and-forget wrapper: a suggestion is optional, never a crash."""
+        try:
+            await self._score_and_offer(message)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"[Tickets] Closure suggestion failed in "
+                           f"{getattr(message.channel, 'id', '?')}: {e}")
 
     async def _engine_ready(self) -> Optional[_ClosureReferences]:
         """The engine, references embedded. One API call per process."""

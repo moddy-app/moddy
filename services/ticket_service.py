@@ -239,6 +239,70 @@ def missing_core_for(guild: discord.Guild,
     return missing
 
 
+def category_label(parent: Optional[discord.abc.GuildChannel]) -> str:
+    """How an error names a category: its name, or a mention when it is hidden.
+
+    A category the bot cannot see is obfuscated by Discord (name
+    ``___hidden___``): the mention is resolved by the reader's own client.
+    """
+    if parent is None:
+        return ""
+    from utils.bot_permissions import is_obfuscated
+    if is_obfuscated(parent):
+        return f"<#{parent.id}>"
+    return parent.name
+
+
+def missing_sync_permissions(guild: discord.Guild,
+                             channel: discord.abc.GuildChannel) -> list:
+    """What the bot lacks to rewrite the overwrites of an EXISTING ticket channel.
+
+    Discord (Edit Channel Permissions): ``MANAGE_ROLES``, held in the guild or
+    through an overwrite in the channel. The ticket channel carries the bot's own
+    overwrite, so what counts is the bot's permissions IN the channel, not in
+    the category it lives in (a category denying ``manage_channels`` to
+    @everyone does not matter once the channel has been created). Empty for
+    Administrator.
+    """
+    me = guild.me
+    if me is None:
+        return ['view_channel', 'manage_roles']
+    guild_perms = me.guild_permissions
+    if guild_perms.administrator:
+        return []
+    local = channel.permissions_for(me)
+    missing = []
+    if not local.view_channel:
+        missing.append('view_channel')
+    if not (guild_perms.manage_roles or local.manage_roles):
+        missing.append('manage_roles')
+    return missing
+
+
+def editable_permissions(guild: discord.Guild,
+                         channel: discord.abc.GuildChannel,
+                         *, strict: bool = False) -> discord.Permissions:
+    """What the bot may put in the overwrites of an existing ticket channel.
+
+    Discord: "Only permissions your bot has in the guild or parent channel (if
+    applicable) can be allowed/denied" -- the UNION of both. ``strict`` gives the
+    intersection, the retry fallback when Discord disagrees with the union.
+    """
+    me = guild.me
+    if me is None:
+        return discord.Permissions.none()
+    guild_perms = me.guild_permissions
+    if guild_perms.administrator:
+        return guild_perms
+    parent = getattr(channel, 'category', None)
+    parent_perms = parent.permissions_for(me) if parent is not None \
+        else discord.Permissions.none()
+    if strict:
+        return discord.Permissions(guild_perms.value & parent_perms.value) \
+            if parent is not None else guild_perms
+    return discord.Permissions(guild_perms.value | parent_perms.value)
+
+
 def missing_core_permissions(perms: discord.Permissions) -> list:
     """Core permissions absent from ``perms`` (empty for Administrator)."""
     if perms.administrator:
@@ -557,7 +621,7 @@ class TicketService:
                 # ignores them), so the fix must be named as "on the category".
                 raise TicketError(
                     'modules.tickets.errors.missing_bot_permissions_category',
-                    permissions=listed, category=parent.name)
+                    permissions=listed, category=category_label(parent))
             raise TicketError('modules.tickets.errors.missing_bot_permissions',
                               permissions=listed)
         return clamp_overwrites(
@@ -792,23 +856,50 @@ class TicketService:
     async def sync_permissions(self, channel: discord.TextChannel,
                                category: Dict[str, Any],
                                ticket: Dict[str, Any]) -> bool:
-        """Push the rebuilt overwrite map onto the channel."""
-        members = await self.resolve_ticket_members(channel.guild, ticket)
-        try:
-            await channel.edit(
-                overwrites=self.safe_overwrites(channel.guild, category, ticket,
-                                                members, channel.category),
-                reason="Moddy tickets: permission sync",
-            )
-            return True
-        except TicketError as e:
+        """Push the rebuilt overwrite map onto the channel.
+
+        Checked IN the ticket channel (the bot's own overwrite lives there), not
+        in its category. Discord compares the overwrites to the permissions the
+        bot holds "in the guild or parent channel": the union is tried first and
+        the safer intersection if Discord still answers 403 (two-factor servers
+        and odd setups). Never raises: callers treat ``False`` as "the channel
+        keeps its previous permissions".
+        """
+        guild = channel.guild
+        missing = missing_sync_permissions(guild, channel)
+        if missing:
             logger.warning(f"[Tickets] Cannot sync overwrites on {channel.id}: "
-                           f"{e.key} {e.params}")
-        except discord.Forbidden:
-            logger.warning(f"[Tickets] Missing permissions to sync overwrites on "
-                           f"channel {channel.id}")
-        except discord.HTTPException as e:
-            logger.error(f"[Tickets] Could not sync overwrites on {channel.id}: {e}")
+                           f"bot lacks {', '.join(missing)}")
+            return False
+        try:
+            members = await self.resolve_ticket_members(guild, ticket)
+            wanted = self.build_overwrites(guild, category, ticket, members)
+        except Exception as e:  # noqa: BLE001 - a lookup must not break a ticket action
+            logger.error(f"[Tickets] Could not build overwrites for {channel.id}: {e}",
+                         exc_info=True)
+            return False
+
+        attempts = [editable_permissions(guild, channel),
+                    editable_permissions(guild, channel, strict=True)]
+        if attempts[0].value == attempts[1].value:
+            attempts = attempts[:1]
+        for index, allowed in enumerate(attempts):
+            try:
+                await channel.edit(
+                    overwrites=clamp_overwrites(wanted, allowed),
+                    reason="Moddy tickets: permission sync",
+                )
+                return True
+            except discord.Forbidden as e:
+                if index + 1 < len(attempts) and e.code != 50001:
+                    continue
+                logger.warning(f"[Tickets] Missing permissions to sync overwrites on "
+                               f"channel {channel.id}: {e.code} {e.text}")
+            except discord.NotFound:
+                logger.info(f"[Tickets] Channel {channel.id} is gone, nothing to sync")
+            except discord.HTTPException as e:
+                logger.error(f"[Tickets] Could not sync overwrites on {channel.id}: {e}")
+            break
         return False
 
     # ------------------------------------------------------------------ #
@@ -868,7 +959,7 @@ class TicketService:
             logger.warning(f"[Tickets] Channel creation refused in guild {guild.id} "
                            f"(category {category.get('id')}): {e.code} {e.text}")
             raise TicketError('modules.tickets.errors.cannot_create_channel_category',
-                              category=parent.name)
+                              category=category_label(parent))
         except discord.HTTPException as e:
             logger.error(f"[Tickets] Channel creation failed in guild {guild.id}: {e}")
             raise TicketError('modules.tickets.errors.cannot_create_channel')
@@ -881,7 +972,11 @@ class TicketService:
             category_id=category['id'], owner_id=member.id, number=number,
         )
         if not ticket:
-            await channel.delete(reason="Moddy tickets: could not register the ticket")
+            try:
+                await channel.delete(reason="Moddy tickets: could not register the ticket")
+            except discord.HTTPException as e:
+                logger.warning(f"[Tickets] Could not remove the unregistered channel "
+                               f"{channel.id}: {e}")
             raise TicketError('modules.tickets.errors.unavailable')
 
         self.remember_open_ticket(channel.id)
@@ -1200,13 +1295,23 @@ class TicketService:
                 if archiver is not None:
                     transcript = await archiver.capture(channel, ticket, category, actor.id)
 
-        await self._notify_owner_closed(
-            channel, ticket, category, actor, reason,
-            body=rendered if not keep_channel else None,
-            transcript=transcript,
-            rating_available=bool(settings.get(SETTING_RATING)))
-        await self.post_ticket_log(channel.guild, ticket, category, actor,
-                                   reason, transcript=transcript, locale=locale)
+        # Neither the DM nor the log post may keep the channel from closing:
+        # the ticket is already marked closed, so a crash here would strand it.
+        try:
+            await self._notify_owner_closed(
+                channel, ticket, category, actor, reason,
+                body=rendered if not keep_channel else None,
+                transcript=transcript,
+                rating_available=bool(settings.get(SETTING_RATING)))
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Tickets] Closure DM failed for {channel.id}: {e}",
+                         exc_info=True)
+        try:
+            await self.post_ticket_log(channel.guild, ticket, category, actor,
+                                       reason, transcript=transcript, locale=locale)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Tickets] Closure log failed for {channel.id}: {e}",
+                         exc_info=True)
         logger.info(f"[Tickets] #{ticket['number']} closed by {actor.id}")
         stats = getattr(self.bot, "stats", None)
         if stats is not None:
@@ -1224,13 +1329,21 @@ class TicketService:
                 except Exception as e:  # noqa: BLE001 - never block the deletion
                     logger.warning(f"[Tickets] before_delete hook failed for "
                                    f"{channel.id}: {e}")
-            await self.bot.db.delete_ticket(channel.id)
+            deleted = True
             try:
                 await channel.delete(
                     reason=f"Moddy ticket #{ticket['number']} closed by {actor} ({actor.id})")
+            except discord.NotFound:
+                pass  # already gone
             except (discord.Forbidden, discord.HTTPException) as e:
+                deleted = False
                 logger.warning(f"[Tickets] Could not delete closed ticket channel "
                                f"{channel.id}: {e}")
+            if deleted:
+                await self.bot.db.delete_ticket(channel.id)
+            # Otherwise the row stays (status 'closed'): the channel is still
+            # there, and removing the row would orphan it. `forget_channel`
+            # drops it when somebody deletes the channel by hand.
         return ticket
 
     async def _notify_owner_closed(self, channel, ticket, category, actor, reason,
@@ -1673,11 +1786,33 @@ class TicketService:
         if not isinstance(parent, discord.CategoryChannel):
             raise TicketError('modules.tickets.errors.destination_missing')
 
+        # Discord (Modify Channel, moving to another parent): MANAGE_CHANNELS on
+        # the channel AND on the destination. The destination half is read by
+        # `safe_overwrites` below; the channel half is the bot's own overwrite.
+        me = channel.guild.me
+        if me is not None and not me.guild_permissions.administrator \
+                and not channel.permissions_for(me).manage_channels:
+            raise TicketError('modules.tickets.errors.cannot_move_channel',
+                              category=category_label(parent))
+
+        previous = (ticket.get('panel_id'), ticket.get('category_id'))
         await self.bot.db.set_ticket_category(channel.id, target_panel['id'], target['id'])
         ticket = await self.get_ticket(channel.id) or ticket
 
-        members = await self.resolve_ticket_members(channel.guild, ticket)
+        async def _rollback() -> None:
+            # The row must keep telling where the channel really is.
+            if previous[0] and previous[1]:
+                try:
+                    await self.bot.db.set_ticket_category(channel.id, *previous)
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"[Tickets] Could not roll back the category of "
+                                 f"{channel.id}: {e}")
+
         try:
+            members = await self.resolve_ticket_members(channel.guild, ticket)
+            overwrites = self.safe_overwrites(channel.guild, target, ticket, members, parent)
+            # Overwrites sent with a move are checked like a create: against
+            # what the bot holds in the guild.
             await channel.edit(
                 category=parent,
                 # The destination decides whether the ticket carries a status
@@ -1685,12 +1820,19 @@ class TicketService:
                 # showing the previous category's convention.
                 name=apply_status_prefix(channel.name,
                                          ticket_status_dot(target, ticket)),
-                overwrites=self.safe_overwrites(channel.guild, target, ticket, members, parent),
+                overwrites=overwrites,
                 reason=f"Moddy ticket moved by {actor} ({actor.id})",
             )
-        except discord.Forbidden:
-            raise TicketError('modules.tickets.errors.cannot_edit_channel')
+        except TicketError:
+            await _rollback()
+            raise
+        except discord.Forbidden as e:
+            await _rollback()
+            logger.warning(f"[Tickets] Move of {channel.id} refused: {e.code} {e.text}")
+            raise TicketError('modules.tickets.errors.cannot_move_channel',
+                              category=category_label(parent))
         except discord.HTTPException as e:
+            await _rollback()
             logger.error(f"[Tickets] Could not move channel {channel.id}: {e}")
             raise TicketError('modules.tickets.errors.cannot_edit_channel')
 

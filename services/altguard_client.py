@@ -22,6 +22,7 @@ of whoever created the invite the member joined with (see
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -124,6 +125,14 @@ class AltGuardClient:
                 return await response.json()
         except aiohttp.ClientError as e:
             raise AltGuardError("network_error", str(e)) from e
+        except asyncio.TimeoutError as e:
+            # aiohttp's total timeout is a plain asyncio.TimeoutError, not a
+            # ClientError: without this the "service down" path of the consent
+            # flow would surface as an unhandled exception.
+            raise AltGuardError("network_error", "request timed out") from e
+        except ValueError as e:
+            # A 2xx whose body is not JSON (proxy error page): same contract.
+            raise AltGuardError("unexpected_status", f"invalid response: {e}") from e
 
     # ------------------------------------------------------------------ #
     # HTTP: verification token

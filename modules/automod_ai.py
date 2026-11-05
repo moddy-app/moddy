@@ -1349,6 +1349,17 @@ class AutomodModule(ModuleBase):
             return act.FAIL_PERMISSION
         return None
 
+    @staticmethod
+    def _forbidden_code(error: "discord.Forbidden", default: str) -> str:
+        """Failure code for a 403 on a sanction.
+
+        60003 is Discord's "two-factor required" answer: the bot holds the
+        permission, but the server owner has not enabled 2FA on a server that
+        demands it for moderation. That is a permission gap to fix, not a role
+        hierarchy problem, and the card must say so.
+        """
+        return act.FAIL_PERMISSION if getattr(error, "code", None) == 60003 else default
+
     # -- Decision application ----------------------------------------------
 
     def _message_snapshot(self, message: discord.Message, decision: Decision) -> Dict[str, Any]:
@@ -1546,8 +1557,8 @@ class AutomodModule(ModuleBase):
                     await guild.ban(member if member is not None else discord.Object(id=uid),
                                     reason=audit, delete_message_seconds=purge)
                     applied.append("ban")
-                except discord.Forbidden:
-                    failed["ban"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["ban"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["ban"] = act.FAIL_DISCORD
         elif removal == "kick":
@@ -1560,12 +1571,18 @@ class AutomodModule(ModuleBase):
                     self._mark_moddy_initiated(member.id, "kick")
                     await guild.kick(member, reason=audit)
                     applied.append("kick")
-                except discord.Forbidden:
-                    failed["kick"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["kick"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["kick"] = act.FAIL_DISCORD
         elif "mute" in actions:
             code = self._blocker(guild, member, "moderate_members")
+            if code is None and getattr(
+                    getattr(member, "guild_permissions", None), "administrator", False):
+                # Discord answers 403 to a timeout on anyone holding Administrator
+                # (docs: Modify Guild Member): do not even try, and report it as
+                # the "cannot act on this member" case it is.
+                code = act.FAIL_HIERARCHY
             if code is not None:
                 failed["mute"] = code
             else:
@@ -1583,8 +1600,8 @@ class AutomodModule(ModuleBase):
                         applied.append("mute")
                     else:
                         failed["mute"] = act.FAIL_UNVERIFIED
-                except discord.Forbidden:
-                    failed["mute"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["mute"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["mute"] = act.FAIL_DISCORD
         return applied, failed
@@ -2641,7 +2658,10 @@ class AutomodModule(ModuleBase):
         if renew:
             me = guild.me
             if (me is not None and member != guild.owner and me.top_role > member.top_role
-                    and me.guild_permissions.moderate_members):
+                    and me.guild_permissions.moderate_members
+                    # Discord refuses a timeout on anyone holding Administrator.
+                    and not getattr(getattr(member, "guild_permissions", None),
+                                    "administrator", False)):
                 locale = self.guild_locale(guild)
                 duration = timedelta(hours=ac.PROFILE_HOLD_DURATION_HOURS)
                 try:

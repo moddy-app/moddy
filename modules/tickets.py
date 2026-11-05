@@ -753,6 +753,17 @@ class TicketsModule(ModuleBase):
     REQUIRED_BOT_PERMISSIONS = ["manage_channels", "manage_roles"]
     BASELINE_OPTIONAL = ["read_message_history"]
 
+    @classmethod
+    def channel_requirements(cls, config):
+        """The panel message is written IN each panel's channel (view + send);
+        everything the ticket channels need is checked on their categories."""
+        from utils.bot_permissions import channel_map
+        pairs = []
+        for panel in (config or {}).get('panels') or []:
+            if isinstance(panel, dict) and panel.get('channel_id'):
+                pairs.append((panel['channel_id'], ["view_channel", "send_messages"]))
+        return channel_map(*pairs)
+
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
         self.panels: List[Dict[str, Any]] = []
