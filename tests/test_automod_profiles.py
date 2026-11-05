@@ -544,6 +544,27 @@ async def test_profile_fixed_lifts_the_hold(monkeypatch):
     assert any(e[2].get("payload", {}).get("kind") == "profil_corrige"
                for e in env.bot.db.events)
     assert guild.channel.sent, "a short 'profile fixed' line is posted"
+    lifted = [kw for _, kw in env.bot.notifications.sent
+              if getattr(kw.get("content"), "template_id", "").startswith(
+                  "automod.profile_lifted")]
+    assert lifted, "the member is told their timeout is lifted"
+    assert lifted[0]["source"].guild_id == guild.id
+    assert lifted[0]["variables"]["server"] == guild.name
+
+
+async def test_no_lift_dm_when_the_timeout_could_not_be_removed(monkeypatch):
+    env = Env(monkeypatch, vision=FakeVision(adult="UNLIKELY"))
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    member = FakeMember(guild, avatar=FakeAsset("a_clean2", _png((0, 80, 10))))
+    member.timed_out_until = None  # nothing of ours to lift
+    await env.bot.db.upsert_profile_hold(
+        1, 5, "avatar", categorie="profil_avatar_nsfw", asset_key="a_bad",
+        case_id=uuid.uuid4(), sanction_id=uuid.uuid4(), timeout_until=None)
+    await mod.screen_member(member, scope={"avatar"})
+    assert not [kw for _, kw in env.bot.notifications.sent
+                if getattr(kw.get("content"), "template_id", "").startswith(
+                    "automod.profile_lifted")]
 
 
 async def test_removed_avatar_also_lifts_the_hold(monkeypatch):

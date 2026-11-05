@@ -2133,7 +2133,9 @@
         "note_rename_failed": "Moddy konnte den Nicknamen nicht zurücksetzen (fehlende Berechtigung oder Rollenhierarchie): nur Verwarnung.",
         "note_not_displayed": "Dieser Name wird auf diesem Server nicht angezeigt: nur Verwarnung.",
         "fixed_title": "Profil korrigiert",
-        "fixed_body": "{user} ({user_id}) hat das Profil korrigiert ({kind}): der Timeout ist aufgehoben."
+        "fixed_body": "{user} ({user_id}) hat das Profil korrigiert ({kind}): der Timeout ist aufgehoben.",
+        "lifted_dm_title": "Dein Timeout wurde aufgehoben",
+        "lifted_dm_body": "Du hast dein {kind} geändert: du kannst auf **{server}** wieder schreiben."
       },
       "panel": {
         "home": {

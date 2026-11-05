@@ -2133,7 +2133,9 @@
         "note_rename_failed": "Moddy could not reset the nickname (missing permission or role hierarchy): warning only.",
         "note_not_displayed": "This name is not the one displayed on this server: warning only.",
         "fixed_title": "Profile fixed",
-        "fixed_body": "{user} ({user_id}) changed their {kind}: the timeout is lifted."
+        "fixed_body": "{user} ({user_id}) changed their {kind}: the timeout is lifted.",
+        "lifted_dm_title": "Your timeout has been lifted",
+        "lifted_dm_body": "You changed your {kind}: you can talk on **{server}** again."
       },
       "panel": {
         "home": {

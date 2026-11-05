@@ -2710,6 +2710,7 @@ class AutomodModule(ModuleBase):
         db = getattr(self.bot, "db", None)
         guild = member.guild if member is not None else self.bot.get_guild(hold["guild_id"])
         kind = hold["kind"]
+        lifted = False
         if member is not None:
             until = getattr(member, "timed_out_until", None)
             ours = hold.get("timeout_until")
@@ -2718,6 +2719,7 @@ class AutomodModule(ModuleBase):
                     locale = self.guild_locale(guild)
                     await member.timeout(None, reason=t(
                         "modules.automod_ai.profile.lift_reason", locale=locale)[:512])
+                    lifted = True
                 except (discord.Forbidden, discord.HTTPException):
                     pass
         if db is not None:
@@ -2749,6 +2751,39 @@ class AutomodModule(ModuleBase):
                                       hold["asset_key"])
         if announce and guild is not None:
             await self._notify_profile_fixed(guild, int(hold["user_id"]), kind)
+        if lifted and guild is not None:
+            await self._dm_profile_lifted(member, guild, kind)
+
+    async def _dm_profile_lifted(self, member: discord.Member, guild: discord.Guild,
+                                 kind: str) -> None:
+        """Tell the member their timeout is over (they were told when it began).
+
+        Through the notification system, attributed to the server. Best-effort:
+        closed DMs or a notification outage never undo the lift.
+        """
+        notifications = getattr(self.bot, "notifications", None)
+        if notifications is None:
+            return
+        from notifications.models import NotificationContent, NotificationSource
+        from utils.emojis import MIC_OFF
+        locale = self.guild_locale(guild)
+        kind_label = t(f"modules.automod_ai.profile.kind.{kind}", locale=locale)
+        try:
+            await notifications.send_dm(
+                member,
+                content=NotificationContent(
+                    title=t("modules.automod_ai.profile.lifted_dm_title", locale=locale),
+                    body=t("modules.automod_ai.profile.lifted_dm_body", locale=locale,
+                           kind="{kind}", server="{server}"),
+                    icon=MIC_OFF,
+                    template_id=f"automod.profile_lifted.{kind}",
+                ),
+                source=NotificationSource.service_guild("automod_ai", guild.id),
+                variables={"kind": kind_label, "server": guild.name},
+                locale=locale,
+            )
+        except Exception as e:  # noqa: BLE001 - the member is already free
+            logger.debug("automod: profile lift DM failed for %s: %s", member.id, e)
 
     async def _notify_profile_fixed(self, guild: discord.Guild, user_id: int, kind: str):
         """A short "profile fixed" line in the mandatory alert channel."""

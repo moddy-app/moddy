@@ -2132,7 +2132,9 @@
         "note_rename_failed": "Moddy n'a pas pu réinitialiser le pseudo (permission manquante ou hiérarchie des rôles) : avertissement uniquement.",
         "note_not_displayed": "Ce pseudo n'est pas celui affiché sur ce serveur : avertissement uniquement.",
         "fixed_title": "Profil corrigé",
-        "fixed_body": "{user} ({user_id}) a corrigé son profil ({kind}) : le timeout est levé."
+        "fixed_body": "{user} ({user_id}) a corrigé son profil ({kind}) : le timeout est levé.",
+        "lifted_dm_title": "Ton timeout est levé",
+        "lifted_dm_body": "Tu as changé ton {kind} : tu peux de nouveau parler sur **{server}**."
       },
       "panel": {
         "home": {

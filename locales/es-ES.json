@@ -2133,7 +2133,9 @@
         "note_rename_failed": "Moddy no pudo restablecer el apodo (falta un permiso o por la jerarquía de roles): solo advertencia.",
         "note_not_displayed": "Este nombre no es el que se muestra en este servidor: solo advertencia.",
         "fixed_title": "Perfil corregido",
-        "fixed_body": "{user} ({user_id}) cambió su {kind}: se levantó el aislamiento."
+        "fixed_body": "{user} ({user_id}) cambió su {kind}: se levantó el aislamiento.",
+        "lifted_dm_title": "Tu aislamiento se ha levantado",
+        "lifted_dm_body": "Cambiaste tu {kind}: ya puedes volver a hablar en **{server}**."
       },
       "panel": {
         "home": {

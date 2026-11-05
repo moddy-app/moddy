@@ -2133,7 +2133,9 @@
         "note_rename_failed": "O Moddy não conseguiu redefinir o apelido (permissão ausente ou hierarquia de cargos): somente advertência.",
         "note_not_displayed": "Este nome não é o exibido neste servidor: somente advertência.",
         "fixed_title": "Perfil corrigido",
-        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido."
+        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido.",
+        "lifted_dm_title": "Seu castigo foi removido",
+        "lifted_dm_body": "Você alterou seu {kind}: já pode falar em **{server}** novamente."
       },
       "panel": {
         "home": {
