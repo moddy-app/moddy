@@ -326,14 +326,12 @@ class WelcomeDmConfigView(BaseView):
     async def on_add(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await ack(interaction)
+        # A modal must be the FIRST response to an interaction: no defer and no
+        # database round-trip before it (a slow read would let the interaction
+        # guard auto-defer, which makes send_modal raise InteractionResponded).
+        # The MAX_WELCOME_DMS limit is enforced on submit (_on_added).
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        messages = await _load_messages(bot, interaction.guild_id)
-        if len(messages) >= MAX_WELCOME_DMS:
-            await say(interaction,
-                t('modules.welcome_dm.errors.too_many', locale=locale, max=MAX_WELCOME_DMS))
-            return
         modal = WelcomeDmMessageModal(locale, None, None, self._on_added)
         modal.bot = bot
         await interaction.response.send_modal(modal)
