@@ -1152,3 +1152,25 @@ def test_bump_bot_i18n(locale):
     for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
                 "welcome.elsewhere", "welcome.pick"):
         assert _get(data, f"minibots.bots.bump_reminder.{key}"), key
+
+
+def test_bump_reminder_minibot_accent():
+    """The Bump Reminder mini-bot's cards use its own colour, Moddy keeps blue."""
+    from types import SimpleNamespace
+    from minibots.builtin import ACCENT, client_accent
+    from minibots.spec import SPECS
+    from utils.bump_views import ACCENT as MODDY_ACCENT, build_reminder_card, card_accent
+    from bumpreminder import BUMP_BOTS
+
+    spec = next(s for s in SPECS if s.id == "bump_reminder_bot")
+    assert spec.accent == 0xE8604C
+    client = SimpleNamespace(spec=spec)
+    assert client_accent(client) == 0xE8604C
+    assert card_accent(client) == 0xE8604C
+    assert client_accent(SimpleNamespace()) == ACCENT
+    assert card_accent(SimpleNamespace()) == MODDY_ACCENT
+
+    view = build_reminder_card(BUMP_BOTS[0], locale="en-US", role_ids=[], bumper_id=None,
+                               mention_bumper=False, bumped_at=None, guild_name="S",
+                               accent=card_accent(client))
+    assert view.children[-1].accent_colour.value == 0xE8604C

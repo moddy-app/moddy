@@ -38,6 +38,7 @@ from utils.bump_views import (
     NO_MENTIONS,
     build_reminder_card,
     build_thanks_card,
+    card_accent,
     reminder_mentions,
     unnotifiable_roles,
 )
@@ -146,7 +147,7 @@ class BumpReminder(commands.Cog):
         view = build_thanks_card(
             hit.bot, hit.bumper_id, hit.due_at,
             locale=locale, ping_mode=entry['ping_mode'], guild_name=guild.name,
-            note=note,
+            note=note, accent=card_accent(self.bot),
         )
 
         # The thank-you is a courtesy; the reminder is the promise. So a failed
@@ -305,6 +306,7 @@ class BumpReminder(commands.Cog):
             bumped_at=bumped_at,
             guild_name=guild.name,
             late_by=late_by,
+            accent=card_accent(self.bot),
         )
 
         result = await self.bot.notifications.send_channel(

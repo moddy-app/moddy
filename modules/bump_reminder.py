@@ -357,7 +357,7 @@ async def send_test(bot, guild: discord.Guild, member: discord.Member,
     from modules.configs._test_send import TestResult, add_test_marker
     from notifications.models import NotificationSource
     from utils.bot_permissions import can_act_in
-    from utils.bump_views import NO_MENTIONS, build_reminder_card
+    from utils.bump_views import NO_MENTIONS, build_reminder_card, card_accent
 
     saved = await bot.module_manager.get_module_config(guild.id, BumpReminderModule.MODULE_ID)
     entry = next((r for r in normalize_config(saved)['reminders'] if r['id'] == ref), None)
@@ -379,6 +379,7 @@ async def send_test(bot, guild: discord.Guild, member: discord.Member,
         mention_bumper=entry.get('ping_mode') == "auto",
         bumped_at=datetime.now(timezone.utc),
         guild_name=guild.name,
+        accent=card_accent(bot),
     )
     add_test_marker(view, member, locale)
     result = await bot.notifications.send_channel(

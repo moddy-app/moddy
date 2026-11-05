@@ -55,3 +55,9 @@
   fails on the base branch too, unrelated to this change.
 - Starboard / inter-server are not covered: their message is a copy of a real
   member message, so there is nothing meaningful to send as a test.
+
+## Follow-up: Bump Reminder mini-bot accent
+
+`MiniBotSpec.accent` (default `#3661FF`); the Bump Reminder mini-bot is
+`#E8604C`. Applied to `/about`, its welcome DM, and the thank-you / reminder /
+test cards when the mini-bot is the one posting (`card_accent(client)`).

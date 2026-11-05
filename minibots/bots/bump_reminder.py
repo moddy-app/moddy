@@ -185,7 +185,7 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
     from config import MODDY_INVITE_URL, SUPPORT_URL, command_label
     from cogs.error_handler import BaseView
     from discord import ui
-    from minibots.builtin import ACCENT
+    from minibots.builtin import client_accent
     from notifications.models import NotificationContent
     from services.bump_suggestion_service import candidate_channels, should_suggest
     from utils.bump_views import BumpSuggestChannelSelect
@@ -206,7 +206,7 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
         body=t(f"minibots.bots.bump_reminder.welcome.{body_key}", locale=locale,
                name="{name}", server="{server}", directories="{directories}",
                config="{config}"),
-        icon=ROCKET_LAUNCH, accent_color=ACCENT,
+        icon=ROCKET_LAUNCH, accent_color=client_accent(client),
         links=[{"label": t("minibots.links.get_moddy", locale=locale), "url": MODDY_INVITE_URL},
                {"label": t("modules.config.main.links.support", locale=locale), "url": SUPPORT_URL}],
         template_id=f"minibots.bump_reminder.welcome.{body_key}",
@@ -214,7 +214,7 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
     rendered = content.render(variables)
 
     view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container = ui.Container(accent_colour=discord.Colour(client_accent(client)))
     container.add_item(ui.TextDisplay(f"### {ROCKET_LAUNCH} {rendered.title}"))
     container.add_item(ui.TextDisplay(rendered.body))
 

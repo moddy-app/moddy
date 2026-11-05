@@ -31,8 +31,15 @@ from minibots.ownership import config_app
 
 logger = logging.getLogger("moddy.minibots")
 
-#: Accent of the mini-bots' own cards (Moddy blue).
+#: Default accent of the mini-bots' own cards (Moddy blue). Each bot can set
+#: its own with ``MiniBotSpec.accent`` — read it through :func:`client_accent`.
 ACCENT = 0x3661FF
+
+
+def client_accent(client, default: int = ACCENT) -> int:
+    """Accent colour of ``client``: its spec's when it is a mini-bot, else ``default``."""
+    accent = getattr(getattr(client, "spec", None), "accent", None)
+    return accent if isinstance(accent, int) else default
 
 #: Persistent views every mini-bot registers (its modules add their own
 #: through ``MiniBotSpec.persistent_views``).
@@ -147,7 +154,7 @@ def build_about_view(client, locale: str):
 
     name = client.spec.name
     view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container = ui.Container(accent_colour=discord.Colour(client_accent(client)))
     container.add_item(ui.TextDisplay(f"### {INFO} {t('minibots.about.title', locale=locale, name=name)}"))
     container.add_item(ui.TextDisplay(t("minibots.about.body", locale=locale, name=name,
                                         modules=module_names(client, locale))))
@@ -194,7 +201,7 @@ def welcome_content(client, locale: str):
                modules="{modules}", config=config.command_label("config"),
                about=config.command_label("about")),
         icon=MODDY_SQUARE_MIN,
-        accent_color=ACCENT,
+        accent_color=client_accent(client),
         links=[{"label": t("minibots.links.get_moddy", locale=locale), "url": config.MODDY_INVITE_URL},
                {"label": t("modules.config.main.links.support", locale=locale), "url": config.SUPPORT_URL}],
         template_id="minibots.welcome",

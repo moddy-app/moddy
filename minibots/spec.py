@@ -76,12 +76,17 @@ class MiniBotSpec:
     #: ``async def build(client, guild, locale) -> (content, variables, view)``
     #: or None for the generic one (minibots/builtin.py).
     welcome_builder: Optional[str] = None
+    #: Accent colour of this bot's own cards (/about, welcome DM, and the
+    #: cards its modules post, e.g. the bump thank-you / reminder).
+    accent: int = 0x3661FF
 
     def __post_init__(self):
         if not _APP_ID_RE.match(self.id) or self.id == MODDY_APP:
             raise ValueError(f"invalid mini-bot id: {self.id!r}")
         if not self.modules:
             raise ValueError(f"mini-bot {self.id!r} runs no module")
+        if not 0 <= self.accent <= 0xFFFFFF:
+            raise ValueError(f"mini-bot {self.id!r} has an invalid accent colour")
         unknown = set(self.intents) - ALLOWED_INTENTS
         if unknown:
             raise ValueError(f"mini-bot {self.id!r} asks for unsupported intents: {sorted(unknown)}")
@@ -124,6 +129,7 @@ SPECS: Tuple[MiniBotSpec, ...] = (
         ),
         activity="Bump as usual, I'll remind you",
         welcome_builder="minibots.bots.bump_reminder:build_welcome",
+        accent=0xE8604C,
     ),
 )
 

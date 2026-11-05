@@ -408,3 +408,16 @@ Setup checklist:
    since 2016.
 4. Start: the emojis are copied, the commands published, and the bot shows in
    `/dev minibots`.
+
+## Accent colour
+
+Each mini-bot has its own accent colour, `MiniBotSpec.accent` (default Moddy
+blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**. It colours:
+
+- the bot's own cards: `/about` and the welcome DM (`client_accent(client)` in
+  `minibots/builtin.py`);
+- the cards its module posts: the bump thank-you, the reminder and its test
+  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts).
+
+`/config` panels keep their state colours (active / paused / simulation), and
+the Moddy-side activation offer stays Moddy blue.
