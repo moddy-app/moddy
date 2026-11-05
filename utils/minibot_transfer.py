@@ -1,5 +1,6 @@
 """
-"Transfer to Moddy" — the user-facing half of the mini-bots handoff.
+"Transfer to Moddy" / "Transfer to <mini-bot>" — the user-facing half of the
+handoff, in both directions.
 
 Where a server admin meets it:
 
@@ -12,8 +13,11 @@ Where a server admin meets it:
 
 Every path ends on the same persistent button,
 ``moddy:minibots:transfer:<guild_id>:<app>``: it moves every module ``app``
-still runs in that server to Moddy (``bot.module_transfer``). Nothing moves
-without that click — the handoff is manual by design.
+still runs in that server to **the application that receives the click**
+(``bot.module_transfer`` — a button only ever reaches the bot that posted it).
+From Moddy it reads "Transfer to Moddy"; from a mini-bot's /config, where Moddy
+already runs its module, "Transfer to <bot>". Nothing moves without that click
+— the handoff is manual by design.
 
 Auth, re-derived on every click: *Manage Server* in the target server. From a
 DM the server comes from the custom_id and the member is looked up there.
@@ -82,11 +86,18 @@ class TransferToModdyButton(
     ui.DynamicItem[ui.Button],
     template=rf"{_CID_TRANSFER}:(?P<guild>\d{{15,21}}):(?P<app>{APP_ID_PATTERN})",
 ):
-    """Move everything ``app`` runs in ``guild`` to Moddy."""
+    """Move everything ``app`` runs in ``guild`` to the bot receiving the click.
 
-    def __init__(self, guild_id: int, app: str, *, locale: str = "en-US"):
+    ``to_name`` only changes the label (the clicking bot is the destination).
+    """
+
+    def __init__(self, guild_id: int, app: str, *, locale: str = "en-US",
+                 to_name: Optional[str] = None):
+        label = (t("minibots.transfer.button_to", locale=locale, app=to_name)
+                 if to_name and to_name != "Moddy"
+                 else t("minibots.transfer.button", locale=locale))
         super().__init__(ui.Button(
-            label=t("minibots.transfer.button", locale=locale)[:80],
+            label=label[:80],
             style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(SYNC),
             custom_id=f"{_CID_TRANSFER}:{guild_id}:{app}",
@@ -120,7 +131,8 @@ class TransferToModdyButton(
             self.guild_id, self.app, actor_id=interaction.user.id,
             via="config" if in_config else "dm")
 
-        card = summary_card(bot, locale, self.app, results)
+        card = summary_card(bot, locale, self.app, results,
+                            to_app=getattr(service.manager, "app", "moddy"))
         if in_config:
             from modules.configs._common import open_main_config
             await open_main_config(interaction)
@@ -190,24 +202,26 @@ def result_card(locale: str, title: str, body: str, *, ok: bool) -> BaseView:
     return view
 
 
-def summary_card(bot, locale: str, app: str, results) -> BaseView:
+def summary_card(bot, locale: str, app: str, results, *, to_app: str = "moddy") -> BaseView:
     """Outcome of a transfer, one line per module."""
     name = app_display_name(app)
+    to = app_display_name(to_app)
     if not results:
         return result_card(locale, t("minibots.transfer.done.title", locale=locale),
-                           t("minibots.transfer.done.nothing", locale=locale, app=name), ok=True)
+                           t("minibots.transfer.done.nothing", locale=locale, app=name, to=to),
+                           ok=True)
     lines = []
     for result in results:
         label = module_label(bot, result.module_id, locale)
         if result.ok:
             lines.append(f"{DONE} `{label}`")
         else:
-            reason = t(f"minibots.transfer.reasons.{result.error}", locale=locale) \
+            reason = t(f"minibots.transfer.reasons.{result.error}", locale=locale, app=name) \
                 if result.error else ""
             lines.append(f"{ERROR} `{label}` — {reason}")
     all_ok = all(r.ok for r in results)
     title_key = "minibots.transfer.done.title" if all_ok else "minibots.transfer.done.partial_title"
-    body = t("minibots.transfer.done.body", locale=locale, app=name) + "\n" + "\n".join(lines)
+    body = t("minibots.transfer.done.body", locale=locale, app=name, to=to) + "\n" + "\n".join(lines)
     return result_card(locale, t(title_key, locale=locale), body, ok=all_ok)
 
 
@@ -293,25 +307,39 @@ def build_external_module_view(bot, guild_id: int, locale: str, module_id: str,
                                app: str, *, viewer_app: str = "moddy") -> BaseView:
     """Shown instead of a module's /config screen when another app runs it.
 
-    Seen from Moddy: "Managed by X" + Transfer to Moddy. Seen from a mini-bot
-    (``viewer_app`` is not Moddy): "Managed by Moddy/X here", no button — a
-    mini-bot never takes a module back on its own.
+    One layout both ways — who runs it, what a transfer keeps, one button —
+    and the button moves the module to the bot showing the screen: "Transfer
+    to Moddy" from Moddy, "Transfer to <bot>" from a mini-bot (where Moddy, or
+    another app, already runs its module).
+
+    On a one-module mini-bot this screen *is* /config: no breadcrumb, no Back
+    (there is no home to go back to).
     """
-    from modules.configs._common import breadcrumb
-    name = app_display_name(app)
+    from modules.configs._common import breadcrumb, standalone_module
+    from minibots.builtin import client_accent
+
+    owner = app_display_name(app)
+    here = app_display_name(viewer_app)
     label = module_label(bot, module_id, locale)
+    standalone = bool(standalone_module())
+
     view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
-    container.add_item(breadcrumb(locale, label))
+    container = ui.Container(accent_colour=discord.Colour(client_accent(bot, ACCENT)))
+    if not standalone:
+        container.add_item(breadcrumb(locale, label))
     container.add_item(ui.TextDisplay(
-        f"### {INFO} {t('minibots.transfer.external.title', locale=locale, app=name)}"))
-    if viewer_app == "moddy":
-        container.add_item(ui.TextDisplay(
-            t("minibots.transfer.external.body", locale=locale, app=name, module=label)))
-        container.add_item(ui.ActionRow(TransferToModdyButton(guild_id, app, locale=locale)))
-    else:
-        container.add_item(ui.TextDisplay(
-            t("minibots.transfer.external.elsewhere", locale=locale, app=name, module=label)))
+        f"### {SYNC} {t('minibots.transfer.external.title', locale=locale, app=owner)}"))
+    # "uses Bump Reminder for Bump Reminder": a one-module bot is named after
+    # its module, so say "this module" instead.
+    body_key = "body_same" if label in (owner, here) else "body"
+    container.add_item(ui.TextDisplay(
+        t(f"minibots.transfer.external.{body_key}", locale=locale,
+          app=owner, module=label, bot=here)))
+    container.add_item(ui.TextDisplay(
+        f"-# {t('minibots.transfer.external.hint', locale=locale, app=owner)}"))
+    container.add_item(ui.ActionRow(
+        TransferToModdyButton(guild_id, app, locale=locale, to_name=here)))
     view.add_item(container)
-    view.add_item(ui.ActionRow(ConfigBackButton(locale=locale)))
+    if not standalone:
+        view.add_item(ui.ActionRow(ConfigBackButton(locale=locale)))
     return view

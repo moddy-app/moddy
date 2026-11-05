@@ -919,12 +919,17 @@ class TestBuiltins:
                             "get_user_locale", lambda i: "en-US")
         assert await build_config_home(client, interaction) == "HOME"
 
-        # Owned by Moddy here: the mini-bot shows where it is managed, no button.
+        # Owned by Moddy here: the mini-bot offers to take it over.
+        from utils.minibot_transfer import TransferToModdyButton
         client.module_manager.bot.db.modules["panel"] = {"channel": 1}
         view = await build_config_home(client, interaction)
         texts = [getattr(i, "content", "") for i in view.children[0].children]
         assert any("Moddy" in x for x in texts)
-        assert not any(isinstance(i, __import__("discord").ui.ActionRow) for i in view.children[0].children)
+        rows = [i for i in view.children[0].children
+                if isinstance(i, __import__("discord").ui.ActionRow)]
+        assert len(rows) == 1
+        button = rows[0].children[0]
+        assert isinstance(button, TransferToModdyButton) and button.app == "moddy"
 
     def test_command_hash_is_stable(self):
         from minibots.builtin import command_hash
@@ -940,7 +945,7 @@ def test_builtin_i18n(locale):
                 "minibots.about.body", "minibots.about.moddy", "minibots.about.stats",
                 "minibots.welcome.title", "minibots.welcome.body",
                 "minibots.staff.moddy_only.title", "minibots.staff.moddy_only.description",
-                "minibots.transfer.external.elsewhere", "notifications.services.minibots",
+                "minibots.transfer.external.hint", "notifications.services.minibots",
                 "staff.team.mutual.minibots_unreachable", "staff.team.mutual.minibot_truncated",
                 "staff.team.server.via_minibot", "staff.team.invite.via_minibot",
                 "staff.dev.serverlist.minibots", "staff.dev.serverlist.minibots_hint",
@@ -1433,3 +1438,121 @@ class TestLanguageAcrossProcesses:
         runtime = MiniBotRuntime((), SimpleNamespace(redis=None, tech_logger=None, version=None))
         await runtime.handle_control({"type": "reload_guild", "app": "*", "guild_id": str(GUILD)})
         assert GUILD not in gl._cache
+
+
+# --------------------------------------------------------------------------- #
+# Transfer the other way: a mini-bot takes a module over from Moddy
+# --------------------------------------------------------------------------- #
+
+class TestTransferFromModdy:
+    def _service(self, db, redis):
+        from services.module_transfer import ModuleTransferService
+        manager, bot = make_manager(db, app="bump")
+        bot.redis = redis
+        bot.tech_logger = SimpleNamespace(log_module_transfer=AsyncMock())
+        bot.stats = None
+        bot.module_transfer = ModuleTransferService(bot)
+        return bot.module_transfer, bot
+
+    async def test_asks_moddy_on_its_own_channel(self):
+        db = FakeDB({"panel": {"channel": 1}})  # no app key: Moddy's
+        redis = FakeRedis(listeners=1, ack={"ok": True, "released": True})
+        service, bot = self._service(db, redis)
+        result = await service.transfer(GUILD, "panel", actor_id=5)
+        assert result.ok and result.from_app == MODDY_APP and result.release == "acked"
+        channel, sent = redis.published[0]
+        assert channel == mstatus.MODDY_CONTROL_CHANNEL
+        assert sent["app"] == MODDY_APP and sent["to_app"] == "bump"
+        assert db.modules["panel"][APP_KEY] == "bump"
+        assert bot.tech_logger.log_module_transfer.await_args.kwargs["to_app"] == "bump"
+
+    async def test_moddy_silent_aborts(self):
+        """Moddy keeps the module loaded without its ack: never run it twice."""
+        db = FakeDB({"panel": {"channel": 1}})
+        service, _ = self._service(db, FakeRedis(listeners=0))
+        result = await service.transfer(GUILD, "panel")
+        assert not result.ok and result.error == "owner_unreachable"
+        assert APP_KEY not in db.modules["panel"]  # still Moddy's
+
+    async def test_moddy_answers_a_release(self):
+        """bot.ModdyBot._handle_minibot_release: release, then ack."""
+        from bot import ModdyBot
+        pushed = {}
+
+        class R:
+            async def rpush(self, key, value):
+                pushed[key] = json.loads(value)
+
+            async def expire(self, key, ttl):
+                pass
+        manager = SimpleNamespace(release_module=AsyncMock(return_value={"ok": True}))
+        fake = SimpleNamespace(get_guild=lambda gid: object(), module_manager=manager, redis=R())
+        await ModdyBot._handle_minibot_release(fake, {
+            "type": mstatus.CTRL_RELEASE, "app": MODDY_APP, "guild_id": str(GUILD),
+            "module_id": "panel", "to_app": "bump", "request_id": "r1"})
+        manager.release_module.assert_awaited_once_with(GUILD, "panel", "bump")
+        assert pushed[mstatus.ack_key("r1")] == {"ok": True}
+
+        # Addressed to a mini-bot, not to Moddy: ignored.
+        manager.release_module.reset_mock()
+        await ModdyBot._handle_minibot_release(fake, {
+            "type": mstatus.CTRL_RELEASE, "app": "bump", "guild_id": str(GUILD),
+            "module_id": "panel", "request_id": "r2"})
+        manager.release_module.assert_not_awaited()
+
+    def test_screen_on_a_one_module_bot(self):
+        """No breadcrumb, no Back, one "Transfer to <bot>" button."""
+        import discord as _d
+        from minibots import branding
+        from utils.minibot_transfer import (
+            ConfigBackButton, TransferToModdyButton, build_external_module_view)
+        token = branding._standalone.set("bump_reminder")
+        try:
+            bot = SimpleNamespace(module_manager=SimpleNamespace(registered_modules={}),
+                                  spec=SimpleNamespace(accent=0xE8604C))
+            view = build_external_module_view(bot, GUILD, "en-US", "bump_reminder",
+                                              MODDY_APP, viewer_app="bump_reminder_bot")
+        finally:
+            branding._standalone.reset(token)
+        assert len(view.children) == 1  # no Back row outside the container
+        container = view.children[0]
+        assert container.accent_colour.value == 0xE8604C
+        texts = [i.content for i in container.children if isinstance(i, _d.ui.TextDisplay)]
+        assert texts[0].startswith("### ")  # no "-# Config" trail above the title
+        buttons = [c for row in container.children if isinstance(row, _d.ui.ActionRow)
+                   for c in row.children]
+        assert len(buttons) == 1 and isinstance(buttons[0], TransferToModdyButton)
+        assert buttons[0].item.label == "Transfer to Bump Reminder"
+        assert not any(isinstance(b, ConfigBackButton) for b in buttons)
+
+    def test_moddy_screen_keeps_its_trail_and_back(self):
+        import discord as _d
+        from utils.minibot_transfer import TransferToModdyButton, build_external_module_view
+        bot = SimpleNamespace(module_manager=SimpleNamespace(registered_modules={}))
+        view = build_external_module_view(bot, GUILD, "en-US", "bump_reminder",
+                                          "bump_reminder_bot", viewer_app=MODDY_APP)
+        assert len(view.children) == 2  # container + Back row
+        button = next(c for row in view.children[0].children
+                      if isinstance(row, _d.ui.ActionRow) for c in row.children)
+        assert isinstance(button, TransferToModdyButton)
+        assert button.item.label == "Transfer to Moddy"
+
+    async def test_refused_save_on_a_minibot_names_moddy(self):
+        """The refusal keeps "Moddy" (minibots.* texts are never rebranded)."""
+        import utils.guild_language as gl
+        from minibots import branding
+        db = FakeDB({"panel": {"channel": 1}})
+        manager, _ = make_manager(db, app="bump_reminder_bot")
+        orig = gl.guild_locale
+
+        async def locale(*a, **k):
+            return "en-US"
+        gl.guild_locale = locale
+        token = branding._brand.set("Bump Reminder")
+        try:
+            ok, error = await manager.save_module_config(GUILD, "panel", {"channel": 2})
+        finally:
+            branding._brand.reset(token)
+            gl.guild_locale = orig
+        assert not ok
+        assert "**Moddy**" in error and "Bump Reminder" in error

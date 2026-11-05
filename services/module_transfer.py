@@ -1,5 +1,8 @@
 """
-Moving a module from a mini-bot to Moddy — the funnel's last step.
+Moving a module between Moddy and a mini-bot, in either direction.
+
+The service runs on the **receiving** application (``self.bot``): Moddy takes a
+module over from a mini-bot, or a mini-bot takes it over from Moddy.
 
 Moddy and the mini-bots share one config per module per server
 (``guilds.data.modules.<id>``); its ``app`` key says who runs it. A transfer is
@@ -11,10 +14,12 @@ by Moddy.
 The sequence, per module:
 
 1. lock ``minibots:transfer:<guild>:<module>`` (a double click is a no-op);
-2. ask the mini-bots runtime to **release** it (``minibots:control``): the
-   owning client runs ``on_transfer_out`` — takes its panel down — stops the
-   module and acks on ``minibots:ack:<request_id>``. When the runtime does not
-   answer in time, Moddy runs that clean-up itself, best-effort;
+2. ask the current owner to **release** it — the mini-bots runtime on
+   ``minibots:control``, Moddy on ``minibots:moddy``: it runs
+   ``on_transfer_out`` (takes its panel down), stops the module and acks on
+   ``minibots:ack:<request_id>``. A mini-bot that does not answer in time is
+   cleaned up from here, best-effort. Moddy not answering **aborts** the
+   transfer: it would keep running the module next to its new owner;
 3. rewrite **only** the ``app`` key, as an atomic compare-and-swap (the
    settings themselves never move: they are already where Moddy reads them);
 4. **adopt** it locally: load, enable, ``on_transfer_in`` (re-post the panel,
@@ -66,7 +71,7 @@ class ModuleTransferService:
 
     async def transferable(self, guild_id: int,
                            from_app: Optional[str] = None) -> Dict[str, str]:
-        """``{module_id: app}`` this guild could move to Moddy (optionally one app)."""
+        """``{module_id: app}`` this guild could move here (optionally from one app)."""
         manager = self.manager
         if manager is None:
             return {}
@@ -78,7 +83,7 @@ class ModuleTransferService:
     async def transfer_app(self, guild_id: int, from_app: str, *,
                            actor_id: Optional[int] = None,
                            via: str = "config") -> List[TransferResult]:
-        """Move every module ``from_app`` still runs in this guild to Moddy."""
+        """Move every module ``from_app`` still runs in this guild here."""
         results = []
         for module_id in sorted(await self.transferable(guild_id, from_app)):
             results.append(await self.transfer(guild_id, module_id,
@@ -88,7 +93,7 @@ class ModuleTransferService:
     async def transfer(self, guild_id: int, module_id: str, *,
                        actor_id: Optional[int] = None,
                        via: str = "config") -> TransferResult:
-        """Move one module to Moddy. Never raises."""
+        """Move one module to this application. Never raises."""
         manager = self.manager
         if manager is None or not getattr(self.bot, "db", None):
             return TransferResult(module_id, False, error="unavailable")
@@ -124,6 +129,11 @@ class ModuleTransferService:
         release, release_recap = await self._request_release(
             guild_id, module_id, from_app, to_app)
         if release == "timeout":
+            if from_app == MODDY_APP:
+                # Moddy is a separate process with the module loaded: without
+                # its ack it would keep running next to the new owner.
+                return TransferResult(module_id, False, from_app=from_app,
+                                      error="owner_unreachable")
             release_recap = await self._fallback_release(guild_id, module_id, config, to_app)
             release = "fallback"
 
@@ -156,7 +166,9 @@ class ModuleTransferService:
             return "timeout", {}
         request_id = mstatus.new_request_id()
         try:
-            listeners = await redis.publish(mstatus.CONTROL_CHANNEL, mstatus.control_message(
+            channel = (mstatus.MODDY_CONTROL_CHANNEL if from_app == MODDY_APP
+                       else mstatus.CONTROL_CHANNEL)
+            listeners = await redis.publish(channel, mstatus.control_message(
                 mstatus.CTRL_RELEASE, request_id=request_id, guild_id=str(guild_id),
                 module_id=module_id, app=from_app, to_app=to_app,
             ))
@@ -229,7 +241,7 @@ class ModuleTransferService:
         try:
             await tech.log_module_transfer(
                 guild_id=guild_id, module_id=result.module_id,
-                from_app=result.from_app or "?", to_app=MODDY_APP,
+                from_app=result.from_app or "?", to_app=self.manager.app,
                 actor_id=actor_id, ok=result.ok, release=result.release,
                 error=result.error, via=via,
             )

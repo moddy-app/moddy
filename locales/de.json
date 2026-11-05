@@ -6783,19 +6783,20 @@
       "done": {
         "title": "Übertragung abgeschlossen",
         "partial_title": "Teilweise übertragen",
-        "body": "Moddy hat übernommen, was **{app}** verwaltet hat, mit denselben Einstellungen:",
-        "nothing": "**{app}** verwaltet auf diesem Server nichts mehr: Alles ist bereits bei Moddy."
+        "body": "**{to}** hat übernommen, was **{app}** verwaltet hat, mit denselben Einstellungen:",
+        "nothing": "**{app}** verwaltet auf diesem Server nichts mehr: Alles ist bereits bei **{to}**."
       },
       "reasons": {
         "unavailable": "Dienst nicht verfügbar, versuche es gleich noch einmal",
         "unknown_module": "unbekanntes Modul",
         "in_progress": "eine Übertragung läuft bereits",
         "not_configured": "keine Konfiguration zum Übertragen",
-        "already_owned": "wird bereits von Moddy verwaltet",
+        "already_owned": "bereits übertragen",
         "changed": "die Konfiguration hat sich zwischenzeitlich geändert, versuche es erneut",
         "internal_error": "interner Fehler, das Team wurde benachrichtigt",
         "invalid_config": "ungültige Konfiguration, öffne /config, um sie zu korrigieren",
-        "not_owned": "die Konfiguration gehört noch nicht Moddy"
+        "not_owned": "die Änderung ist noch nicht angekommen, versuche es erneut",
+        "owner_unreachable": "{app} antwortet gerade nicht, versuche es gleich noch einmal"
       },
       "offer": {
         "title": "Die Einrichtung von {app} übernehmen",
@@ -6807,10 +6808,13 @@
         "body": "{modules}: Übertrage sie auf Moddy, um alle Optionen zu nutzen."
       },
       "external": {
-        "title": "Von {app} verwaltet",
-        "body": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen können in Moddy erst nach der Übertragung bearbeitet werden.\n\nDie Übertragung behält die Konfiguration unverändert bei, postet die Panels unter Moddy neu und nimmt {app} zurück.",
-        "elsewhere": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen werden über {app} bearbeitet."
-      }
+        "title": "Bereits mit {app} eingerichtet",
+        "body": "Dieser Server nutzt **{app}** für **{module}**.\n\nÜbertrage es zu **{bot}**, um es hier zu verwalten: Alle Einstellungen bleiben unverändert, und {app} kümmert sich nicht mehr darum.",
+        "hint": "Nichts ändert sich, bevor du klickst. Du kannst jederzeit zu {app} zurückwechseln.",
+        "body_same": "Dieser Server nutzt **{app}** für dieses Modul.\n\nÜbertrage es zu **{bot}**, um es hier zu verwalten: Alle Einstellungen bleiben unverändert, und {app} kümmert sich nicht mehr darum."
+      },
+      "button_to": "Zu {app} übertragen",
+      "save_refused": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Öffne {config}, um es zu **{bot}** zu übertragen und hier zu bearbeiten."
     },
     "links": {
       "get_moddy": "Moddy holen",

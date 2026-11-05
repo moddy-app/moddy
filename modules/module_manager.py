@@ -958,8 +958,16 @@ class ModuleManager:
                 from utils.i18n import t
                 from minibots.spec import app_display_name
                 locale = await guild_locale(self.bot, guild_id)
-                return False, t('modules.config.external.save_refused', locale=locale,
-                                app=app_display_name(config_app(previous)))
+                owner = app_display_name(config_app(previous))
+                if self.app == MODDY_APP:
+                    return False, t('modules.config.external.save_refused', locale=locale,
+                                    app=owner)
+                # A mini-bot: the `minibots.*` key keeps "Moddy" as a name.
+                from config import command_label
+                return False, t('minibots.transfer.save_refused', locale=locale, app=owner,
+                                bot=app_display_name(self.app),
+                                module=module_class.MODULE_NAME,
+                                config=command_label('config'))
             if STATE_KEY not in config_data and STATE_KEY in previous:
                 config_data[STATE_KEY] = previous[STATE_KEY]
             state_value = config_data.pop(STATE_KEY, None)
