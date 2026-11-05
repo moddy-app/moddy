@@ -6869,19 +6869,20 @@
       "done": {
         "title": "Transfer complete",
         "partial_title": "Partial transfer",
-        "body": "Moddy took over what **{app}** was running, with the same settings:",
-        "nothing": "**{app}** no longer runs anything on this server: everything is already on Moddy."
+        "body": "**{to}** took over what **{app}** was running, with the same settings:",
+        "nothing": "**{app}** no longer runs anything on this server: everything is already on **{to}**."
       },
       "reasons": {
         "unavailable": "service unavailable, try again in a moment",
         "unknown_module": "unknown module",
         "in_progress": "a transfer is already in progress",
         "not_configured": "no configuration to transfer",
-        "already_owned": "already run by Moddy",
+        "already_owned": "already transferred",
         "changed": "the configuration changed in the meantime, try again",
         "internal_error": "internal error, the team has been notified",
         "invalid_config": "invalid configuration, open /config to fix it",
-        "not_owned": "the configuration does not belong to Moddy yet"
+        "not_owned": "the change has not landed yet, try again",
+        "owner_unreachable": "{app} is not answering right now, try again in a moment"
       },
       "offer": {
         "title": "Take over {app}'s setup",
@@ -6893,10 +6894,13 @@
         "body": "{modules}: transfer them to Moddy to get every option."
       },
       "external": {
-        "title": "Run by {app}",
-        "body": "On this server, **{module}** is run by **{app}**. Its settings cannot be edited from Moddy until they are transferred.\n\nThe transfer keeps the configuration as is, re-posts the panels under Moddy and steps {app} back.",
-        "elsewhere": "On this server, **{module}** is run by **{app}**. Its settings are edited from {app}."
-      }
+        "title": "Already set up with {app}",
+        "body": "This server uses **{app}** for **{module}**.\n\nTransfer it to **{bot}** to manage it here: every setting is kept as is, and {app} stops handling it.",
+        "hint": "Nothing changes until you click. You can move back to {app} at any time.",
+        "body_same": "This server uses **{app}** for this module.\n\nTransfer it to **{bot}** to manage it here: every setting is kept as is, and {app} stops handling it."
+      },
+      "button_to": "Transfer to {app}",
+      "save_refused": "On this server, **{module}** is run by **{app}**. Open {config} to transfer it to **{bot}** and edit it here."
     },
     "links": {
       "get_moddy": "Get Moddy",

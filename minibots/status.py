@@ -12,7 +12,9 @@ docs/integration/REDIS_COMMUNICATION.md).
   surfaces), so the backend can name an app without reading this repo.
 - ``minibots:control`` (Pub/Sub) — requests to the runtime. Every one is
   idempotent and non-destructive, so they are not signed.
-- ``minibots:ack:<request_id>`` (list) — the runtime's answer to a ``release``.
+- ``minibots:moddy`` (Pub/Sub) — the same requests, to **Moddy**'s process:
+  only ``release``, when a mini-bot takes a module over from Moddy.
+- ``minibots:ack:<request_id>`` (list) — the answer to a ``release``.
 - ``minibots:transfer:<guild>:<module>`` — lock held during a transfer.
 """
 
@@ -27,6 +29,8 @@ from typing import Any, Dict, Optional
 STATUS_KEY = "minibots:status"
 APPS_KEY = "minibots:apps"
 CONTROL_CHANNEL = "minibots:control"
+#: Requests to Moddy's own process (a mini-bot taking a module over from Moddy).
+MODDY_CONTROL_CHANNEL = "minibots:moddy"
 PROCESS_FIELD = "_process"
 
 HEARTBEAT_SECONDS = 30

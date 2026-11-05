@@ -411,10 +411,30 @@ async def build_manage_view(bot, guild_id: int, locale: str, module_id: str, *,
                             confirm_delete=confirm_delete)
 
 
+def external_view(bot, guild_id: int, locale: str, module_id: str,
+                  config: Optional[Mapping[str, Any]]):
+    """The "run by another app" screen (with its Transfer button) when another
+    application owns ``config``, else None. For any screen that can outlive an
+    ownership change (a panel left open while the module moved)."""
+    owns = getattr(getattr(bot, "module_manager", None), "owns", None)
+    if owns is None or owns(config):
+        return None
+    manager = bot.module_manager
+    from minibots.ownership import config_app
+    from utils.minibot_transfer import build_external_module_view
+    return build_external_module_view(bot, guild_id, locale, module_id,
+                                      config_app(config), viewer_app=manager.app)
+
+
 async def _show_module_home(interaction: discord.Interaction, module_id: str) -> None:
     from cogs.config import build_module_config_view
     bot = interaction.client
     config = await bot.module_manager.get_module_config(interaction.guild_id, module_id)
+    foreign = external_view(bot, interaction.guild_id, i18n.get_user_locale(interaction),
+                            module_id, config)
+    if foreign is not None:
+        await show(interaction, foreign)
+        return
     view = await build_module_config_view(
         bot, interaction.guild_id, interaction.user.id,
         i18n.get_user_locale(interaction), module_id, config)

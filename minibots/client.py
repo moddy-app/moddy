@@ -77,6 +77,9 @@ class MiniBotClient(commands.Bot):
         # What the shared modules / screens / staff commands read on ``bot``.
         self.db = resources.db
         self.redis = resources.redis
+        # Taking a module over from Moddy ("Transfer to <bot>" in /config).
+        from services.module_transfer import ModuleTransferService
+        self.module_transfer = ModuleTransferService(self)
         self.stats = None
         self.module_slash_commands: dict = {}
         tech = getattr(resources, "tech_logger", None)

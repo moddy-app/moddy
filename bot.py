@@ -471,11 +471,11 @@ class ModdyBot(ModdyFrameworkBot):
                 pubsub = self.redis.pubsub()
                 await pubsub.subscribe(
                     "moddy:bot", "moddy:subscription:updates", "moddy:blacklist:updates",
-                    "altguard:verdict",
+                    "altguard:verdict", "minibots:moddy",
                 )
                 logger.info(
                     "Pub/Sub subscribed to moddy:bot, moddy:subscription:updates, "
-                    "moddy:blacklist:updates and altguard:verdict"
+                    "moddy:blacklist:updates, altguard:verdict and minibots:moddy"
                 )
                 delay = 1.0
                 async for message in pubsub.listen():
@@ -490,6 +490,10 @@ class ModdyBot(ModdyFrameworkBot):
                             await self._handle_blacklist_event(data)
                         elif channel == "altguard:verdict":
                             await self._handle_altguard_verdict(data)
+                        elif channel == "minibots:moddy":
+                            # Discord calls inside: never block the listener.
+                            self.spawn(self._handle_minibot_release(data),
+                                       name="minibots:release")
                         else:
                             await self._handle_bot_event(data)
                     except Exception as e:
@@ -791,6 +795,37 @@ class ModdyBot(ModdyFrameworkBot):
         if not targeted:
             global_sanctions.invalidate(self)
             logger.info("[GlobalSanctionPubSub] Full global sanction cache invalidated")
+
+    async def _handle_minibot_release(self, data: dict) -> None:
+        """A mini-bot is taking a module over from Moddy: let go, then ack.
+
+        Same contract as the mini-bots runtime's release
+        (``minibots/status.py``): stop the module here, take its Discord side
+        down, push the recap on ``minibots:ack:<request_id>``. No ack means
+        the mini-bot aborts the transfer, so nothing runs twice.
+        """
+        import json
+        from minibots import status as mstatus
+        from minibots.ownership import MODDY_APP
+        if data.get("type") != mstatus.CTRL_RELEASE or data.get("app") != MODDY_APP:
+            return
+        try:
+            guild_id = int(data["guild_id"])
+            module_id = str(data["module_id"])
+            request_id = str(data["request_id"])
+        except (KeyError, TypeError, ValueError):
+            return
+        if self.get_guild(guild_id) is None or not self.module_manager:
+            return
+        try:
+            recap = await self.module_manager.release_module(
+                guild_id, module_id, str(data.get("to_app") or ""))
+            key = mstatus.ack_key(request_id)
+            await self.redis.rpush(key, json.dumps(recap, default=str))
+            await self.redis.expire(key, mstatus.ACK_TTL)
+        except Exception as e:
+            logger.error(f"[FAIL] Release of {module_id} in guild {guild_id} "
+                         f"to a mini-bot failed: {e}", exc_info=True)
 
     async def _handle_altguard_verdict(self, data: dict):
         """Handle a message from the ``altguard:verdict`` channel.

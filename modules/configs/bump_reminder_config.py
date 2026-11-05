@@ -48,7 +48,7 @@ from modules.bump_reminder import (
 from config import COLORS
 from modules.configs._test_send import TestSendButton, test_button_row
 from modules.configs._common import (
-    quote, ack, channel_label, check_guild_perms, config_state, crumb, crumb_segment,
+    quote, ack, channel_label, external_view, check_guild_perms, config_state, crumb, crumb_segment,
     load_before_modal, ServerLanguageButton, module_manage_button, open_main_config, say, show,
     standalone_module, state_accent,
 )
@@ -104,6 +104,12 @@ async def _render_main(interaction: discord.Interaction) -> None:
     await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    # Moved to another app while this panel was open: show the handoff.
+    stored = await bot.module_manager.get_module_config(interaction.guild_id, _MODULE_ID)
+    foreign = external_view(bot, interaction.guild_id, locale, _MODULE_ID, stored)
+    if foreign is not None:
+        await show(interaction, foreign)
+        return
     view = await BumpReminderConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale)
     await show(interaction, view)

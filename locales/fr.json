@@ -6868,19 +6868,20 @@
       "done": {
         "title": "Transfert terminé",
         "partial_title": "Transfert partiel",
-        "body": "Moddy a repris ce que **{app}** gérait, avec les mêmes réglages :",
-        "nothing": "**{app}** ne gère plus rien sur ce serveur : tout est déjà sur Moddy."
+        "body": "**{to}** a repris ce que **{app}** gérait, avec les mêmes réglages :",
+        "nothing": "**{app}** ne gère plus rien sur ce serveur : tout est déjà sur **{to}**."
       },
       "reasons": {
         "unavailable": "service indisponible, réessaie dans un instant",
         "unknown_module": "module inconnu",
         "in_progress": "un transfert est déjà en cours",
         "not_configured": "aucune configuration à transférer",
-        "already_owned": "déjà géré par Moddy",
+        "already_owned": "déjà transféré",
         "changed": "la configuration a changé entre-temps, réessaie",
         "internal_error": "erreur interne, l'équipe a été prévenue",
         "invalid_config": "configuration invalide, ouvre /config pour la corriger",
-        "not_owned": "la configuration n'appartient pas encore à Moddy"
+        "not_owned": "le changement n'est pas encore pris en compte, réessaie",
+        "owner_unreachable": "{app} ne répond pas pour le moment, réessaie dans un instant"
       },
       "offer": {
         "title": "Reprendre la configuration de {app}",
@@ -6892,10 +6893,13 @@
         "body": "{modules} : transfère-les vers Moddy pour profiter de toutes les options."
       },
       "external": {
-        "title": "Géré par {app}",
-        "body": "Sur ce serveur, **{module}** est géré par **{app}**. Ses réglages ne sont pas modifiables depuis Moddy tant qu'ils ne sont pas transférés.\n\nLe transfert garde la configuration telle quelle, republie les panneaux sous Moddy et met {app} en retrait.",
-        "elsewhere": "Sur ce serveur, **{module}** est géré par **{app}**. Ses réglages se modifient depuis {app}."
-      }
+        "title": "Déjà configuré avec {app}",
+        "body": "Ce serveur utilise **{app}** pour **{module}**.\n\nTransfère-le vers **{bot}** pour le gérer ici : tous les réglages sont gardés tels quels, et {app} arrête de s'en occuper.",
+        "hint": "Rien ne change tant que tu n'as pas cliqué. Tu pourras revenir sur {app} quand tu veux.",
+        "body_same": "Ce serveur utilise **{app}** pour ce module.\n\nTransfère-le vers **{bot}** pour le gérer ici : tous les réglages sont gardés tels quels, et {app} arrête de s'en occuper."
+      },
+      "button_to": "Transférer vers {app}",
+      "save_refused": "Sur ce serveur, **{module}** est géré par **{app}**. Ouvre {config} pour le transférer vers **{bot}** et le modifier ici."
     },
     "links": {
       "get_moddy": "Obtenir Moddy",
