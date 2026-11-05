@@ -40,6 +40,13 @@ logger = logging.getLogger('moddy.bump_views')
 
 ACCENT = COLORS["primary"]
 
+
+def card_accent(client) -> int:
+    """Accent of the cards ``client`` posts: Moddy blue, or the mini-bot's own
+    colour when the Bump Reminder mini-bot is the one posting."""
+    accent = getattr(getattr(client, "spec", None), "accent", None)
+    return accent if isinstance(accent, int) else ACCENT
+
 # Nothing on the thank-you card notifies anyone: the bumper is reading the
 # channel they just typed in, and the roles are for the reminder an hour later.
 NO_MENTIONS = discord.AllowedMentions.none()
@@ -143,6 +150,7 @@ class BumpOptInButton(
             spec, self.user_id, state["due_at"],
             locale=public_locale, ping_mode="button", armed=armed,
             guild_name=interaction.guild.name if interaction.guild else "",
+            accent=card_accent(bot),
         )
         await interaction.edit_original_response(view=view, allowed_mentions=NO_MENTIONS)
         await interaction.followup.send(
@@ -182,11 +190,12 @@ class BumpReminderPersistence(BaseView):
 # --------------------------------------------------------------------------- #
 def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
                       *, locale: str, ping_mode: str, guild_name: str,
-                      armed: bool = False, note: Optional[str] = None) -> ui.LayoutView:
+                      armed: bool = False, note: Optional[str] = None,
+                      accent: int = ACCENT) -> ui.LayoutView:
     """The card posted right after a successful bump. ``note`` adds one
     discreet ``-#`` line at the bottom."""
     view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container = ui.Container(accent_colour=discord.Colour(accent))
 
     if bumper_id:
         heading = t("modules.bump_reminder.card.thanks_title",
@@ -218,7 +227,8 @@ def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
 def build_reminder_card(spec: BumpBot, *, locale: str,
                         role_ids: Sequence[int], bumper_id: Optional[int],
                         mention_bumper: bool, bumped_at: Optional[datetime],
-                        guild_name: str, late_by: int = 0) -> ui.LayoutView:
+                        guild_name: str, late_by: int = 0,
+                        accent: int = ACCENT) -> ui.LayoutView:
     """The card posted when the command becomes available again.
 
     The mentions ride in a text display added to the **view**, above the
@@ -235,7 +245,7 @@ def build_reminder_card(spec: BumpBot, *, locale: str,
     if mentions:
         view.add_item(ui.TextDisplay(" ".join(mentions)))
 
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container = ui.Container(accent_colour=discord.Colour(accent))
     container.add_item(ui.TextDisplay(
         f"### {ROCKET_LAUNCH} {t('modules.bump_reminder.card.reminder_title', locale=locale)}"
     ))

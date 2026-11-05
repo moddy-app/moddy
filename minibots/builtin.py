@@ -17,6 +17,7 @@ Every text is i18n (``minibots.*``), with the bot's name as a variable.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import importlib
 import json
@@ -31,8 +32,19 @@ from minibots.ownership import config_app
 
 logger = logging.getLogger("moddy.minibots")
 
-#: Accent of the mini-bots' own cards (Moddy blue).
+#: Default accent of the mini-bots' own cards (Moddy blue). Each bot can set
+#: its own with ``MiniBotSpec.accent`` — read it through :func:`client_accent`.
 ACCENT = 0x3661FF
+
+
+def client_accent(client, default: int = ACCENT) -> int:
+    """Accent colour of ``client``: its spec's when it is a mini-bot, else ``default``."""
+    accent = getattr(getattr(client, "spec", None), "accent", None)
+    return accent if isinstance(accent, int) else default
+
+
+#: How long a welcome DM waits for the first emoji copy (first start only).
+WELCOME_EMOJI_WAIT = 600
 
 #: Persistent views every mini-bot registers (its modules add their own
 #: through ``MiniBotSpec.persistent_views``).
@@ -40,6 +52,7 @@ COMMON_PERSISTENT_VIEWS = (
     "cogs.config:ConfigMainView",
     "modules.configs.server_settings_config:ServerSettingsConfigView",
     "modules.configs._common:ModuleStatePersistence",
+    "modules.configs._test_send:TestSendPersistence",
     "utils.minibot_transfer:MinibotTransferPersistence",
     "utils.notification_views:NotificationsPersistence",
 )
@@ -146,7 +159,7 @@ def build_about_view(client, locale: str):
 
     name = client.spec.name
     view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container = ui.Container(accent_colour=discord.Colour(client_accent(client)))
     container.add_item(ui.TextDisplay(f"### {INFO} {t('minibots.about.title', locale=locale, name=name)}"))
     container.add_item(ui.TextDisplay(t("minibots.about.body", locale=locale, name=name,
                                         modules=module_names(client, locale))))
@@ -193,7 +206,7 @@ def welcome_content(client, locale: str):
                modules="{modules}", config=config.command_label("config"),
                about=config.command_label("about")),
         icon=MODDY_SQUARE_MIN,
-        accent_color=ACCENT,
+        accent_color=client_accent(client),
         links=[{"label": t("minibots.links.get_moddy", locale=locale), "url": config.MODDY_INVITE_URL},
                {"label": t("modules.config.main.links.support", locale=locale), "url": config.SUPPORT_URL}],
         template_id="minibots.welcome",
@@ -206,6 +219,15 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
         from notifications.models import ContentAuthor, NotificationSource
         from utils.guild_language import guild_locale
         from utils.install_welcome import resolve_installer
+
+        # On a bot's very first start the icons are still being copied: wait
+        # for them (bounded) so the first impression is not raw ":emoji:" text.
+        ready = getattr(client, "emojis_ready", None)
+        if ready is not None and not ready.is_set():
+            try:
+                await asyncio.wait_for(ready.wait(), timeout=WELCOME_EMOJI_WAIT)
+            except asyncio.TimeoutError:
+                pass
 
         installer = await resolve_installer(client, guild)
         if installer is None or getattr(installer, "bot", False):
@@ -220,7 +242,10 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
                 content, variables, view = built
         result = await client.notifications.send_dm(
             installer, content=content, variables=variables, view=view,
-            source=NotificationSource.service("minibots", author=ContentAuthor.MODDY),
+            # "Sent by <bot name>": the Moddy service label, rebranded by
+            # minibots/branding.py to the bot's own name. Users never see
+            # the internal word "mini-bot".
+            source=NotificationSource.service("moddy", author=ContentAuthor.MODDY),
             locale=locale,
         )
         return bool(result.delivered)

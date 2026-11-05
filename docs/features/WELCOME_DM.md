@@ -248,3 +248,11 @@ welcome card (outside the container):
 
 Other servers' welcome DMs are unchanged. Adding a server means adding its id to
 the set — it is not a per-server setting.
+
+
+## Send a test
+
+The entry's manage screen and the "created" confirmation carry a **Send a
+test** button (`modules/configs/_test_send.py`, sender `send_test` in the
+module file). It DMs the entry to the clicker through `bot.notifications.send_dm` (recorded and attributed to the server like a real one); closed DMs are reported. A `-#` line under the card says it is a test and who
+sent it; 10 s cooldown per entry; Manage Server re-checked on every click.

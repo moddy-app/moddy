@@ -108,6 +108,7 @@ moddy/
 │   ├── translate_button.py    #   Translate button under foreign-language messages (opt-in)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── server_settings_config.py      # Server-wide settings (language)
+│       ├── _test_send.py                  # Shared "Send a test" button (message modules) + TestResult/marker
 │       ├── adaptive_slowmode_config.py
 │       ├── altguard_config.py             # AltGuard gate (channel, roles, logs)
 │       ├── member_applications_config.py  # Member Applications (channel, roles, preset reasons Modal V2)

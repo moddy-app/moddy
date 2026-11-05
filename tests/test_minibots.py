@@ -904,7 +904,7 @@ class TestBuiltins:
         client.notifications = SimpleNamespace(send_dm=AsyncMock(return_value=SimpleNamespace(delivered=True)))
         assert await send_welcome(client, SimpleNamespace(id=GUILD, name="S"))
         kwargs = client.notifications.send_dm.await_args.kwargs
-        assert kwargs["source"].service_id == "minibots"
+        assert kwargs["source"].service_id == "moddy"  # rebranded to the bot's name
         assert kwargs["variables"]["name"] == "Bump Reminder"
 
     async def test_config_opens_the_single_module(self, monkeypatch):
@@ -1150,5 +1150,286 @@ class TestBumpReminderBot:
 def test_bump_bot_i18n(locale):
     data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
     for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
-                "welcome.elsewhere", "welcome.pick"):
+                "welcome.elsewhere", "welcome.pick", "welcome.pick_config"):
         assert _get(data, f"minibots.bots.bump_reminder.{key}"), key
+
+
+def test_bump_reminder_minibot_accent():
+    """The Bump Reminder mini-bot's cards use its own colour, Moddy keeps blue."""
+    from types import SimpleNamespace
+    from minibots.builtin import ACCENT, client_accent
+    from minibots.spec import SPECS
+    from utils.bump_views import ACCENT as MODDY_ACCENT, build_reminder_card, card_accent
+    from bumpreminder import BUMP_BOTS
+
+    spec = next(s for s in SPECS if s.id == "bump_reminder_bot")
+    assert spec.accent == 0xE8604C
+    client = SimpleNamespace(spec=spec)
+    assert client_accent(client) == 0xE8604C
+    assert card_accent(client) == 0xE8604C
+    assert client_accent(SimpleNamespace()) == ACCENT
+    assert card_accent(SimpleNamespace()) == MODDY_ACCENT
+
+    view = build_reminder_card(BUMP_BOTS[0], locale="en-US", role_ids=[], bumper_id=None,
+                               mention_bumper=False, bumped_at=None, guild_name="S",
+                               accent=card_accent(client))
+    assert view.children[-1].accent_colour.value == 0xE8604C
+
+
+# --------------------------------------------------------------------------- #
+# Emojis: usable as soon as they exist, one copy per name
+# --------------------------------------------------------------------------- #
+
+class TestEmojiTiming:
+    def test_plan_sync_one_copy_per_name(self):
+        from minibots.emojis import plan_sync
+        moddy = {1: ("warning", False), 2: ("warning", False), 3: ("done", False)}
+        upload, replace = plan_sync(moddy, {}, {})
+        assert [u[1] for u in upload] == ["warning", "done"]
+        assert upload[0][0] == 1  # the first seen (utils/emojis.py) is canonical
+        # Already copied from id 1: the other id under that name never re-copies.
+        upload, replace = plan_sync(moddy, {"warning": 10, "done": 11}, {"warning": 1, "done": 3})
+        assert upload == [] and replace == []
+
+    def test_canonical_comes_from_the_constants_file(self):
+        from minibots.emojis import moddy_emojis
+        from utils.emojis import WARNING
+        ids = [i for i, (n, _a) in moddy_emojis().items() if n == "warning"]
+        assert ids[0] == int(WARNING.split(":")[2].rstrip(">"))
+
+    async def test_mapping_filled_before_and_during_uploads(self, monkeypatch):
+        from minibots import emojis
+        import aiohttp
+        seen_during = []
+
+        class Session:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *a): return False
+
+            def get(self, url):
+                class Resp:
+                    status = 200
+                    async def __aenter__(self): return self
+                    async def __aexit__(self, *a): return False
+                    async def read(self): return b"png"
+                return Resp()
+        monkeypatch.setattr(aiohttp, "ClientSession", Session)
+        monkeypatch.setattr(emojis, "moddy_emojis", lambda: {
+            111111111111111111: ("done", False), 222222222222222222: ("info", False),
+            333333333333333333: ("warning", False), 444444444444444444: ("warning", False)})
+        mapping = {}
+
+        async def create(name, image):
+            seen_during.append(dict(mapping))
+            return SimpleNamespace(id={"info": 900000000000000001, "warning": 900000000000000002}[name])
+        client = SimpleNamespace(
+            app_id="bump", redis=None, create_application_emoji=create,
+            fetch_application_emojis=AsyncMock(return_value=[
+                SimpleNamespace(name="done", id=800000000000000000)]))
+        await emojis.sync_application_emojis(client, mapping)
+        # "done" existed: usable before the first upload even started.
+        assert 111111111111111111 in seen_during[0]
+        # "info" uploaded first: usable while "warning" is still uploading.
+        assert 222222222222222222 in seen_during[1]
+        # both Moddy ids named "warning" point at the single copy.
+        assert mapping[333333333333333333] == mapping[444444444444444444] == \
+            ("warning", 900000000000000002)
+
+    def test_view_payload_swapped_in_a_client_context(self):
+        from minibots import emojis
+        from discord import ui
+        import discord.http as dhttp
+        emojis.install()
+        view = ui.LayoutView()
+        view.add_item(ui.Container(ui.TextDisplay("### <:rocket_launch:111111111111111111> Hi")))
+        token = emojis._app_map.set({111111111111111111: ("rocket_launch", 222222222222222222)})
+        try:
+            params = dhttp.handle_message_parameters(view=view)
+        finally:
+            emojis._app_map.reset(token)
+        assert "222222222222222222" in json.dumps(params.payload)
+        assert "111111111111111111" not in json.dumps(params.payload)
+
+
+class TestWelcomeWaitsAndNaming:
+    async def test_welcome_waits_for_the_emojis(self, monkeypatch):
+        import asyncio
+        import utils.guild_language as gl
+        import utils.install_welcome as iw
+        import minibots.builtin as builtin
+        monkeypatch.setattr(gl, "guild_locale", AsyncMock(return_value="en-US"))
+        monkeypatch.setattr(iw, "resolve_installer", AsyncMock(return_value=SimpleNamespace(id=1, bot=False)))
+        manager, client = make_manager(FakeDB({}), app="bump")
+        client.spec, client.module_manager, client.app_id = SPEC, manager, "bump"
+        client.emojis_ready = asyncio.Event()
+        client.notifications = SimpleNamespace(send_dm=AsyncMock(return_value=SimpleNamespace(delivered=True)))
+        task = asyncio.create_task(builtin.send_welcome(client, SimpleNamespace(id=GUILD, name="S")))
+        await asyncio.sleep(0.05)
+        client.notifications.send_dm.assert_not_awaited()  # still copying icons
+        client.emojis_ready.set()
+        assert await task
+        assert client.notifications.send_dm.await_args.kwargs["source"].service_id == "moddy"
+
+    def test_attribution_names_the_bot(self):
+        from minibots import branding
+        from utils.i18n import t
+        branding.install()
+        token = branding._brand.set("Bump Reminder")
+        try:
+            assert t("notifications.services.moddy", locale="en-US") == "Bump Reminder"
+        finally:
+            branding._brand.reset(token)
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+def test_users_never_read_the_word_minibot(locale):
+    """"Mini-bot" is an internal name: only staff screens may use it."""
+    import re
+    data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
+    leaks = []
+
+    def walk(node, path=""):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, str) and re.search(r"mini.?bot", node, re.I):
+            if not path.startswith(("staff.", "minibots.staff.")):
+                leaks.append(path)
+    walk(data)
+    assert leaks == []
+
+
+async def test_welcome_points_to_config_past_25_channels(monkeypatch):
+    import discord as _d
+    import minibots.bots.bump_reminder as mb
+    spec = mb.BUMP_BOTS[0]
+    monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=[spec]))
+    me = SimpleNamespace(id=42)
+    ok = SimpleNamespace(view_channel=True, send_messages=True)
+
+    def guild_with(n):
+        channels = [SimpleNamespace(id=700000000000000000 + i, name=f"c{i}", position=i,
+                                    permissions_for=lambda m: ok) for i in range(n)]
+        return SimpleNamespace(id=GUILD, name="S", me=me, text_channels=channels)
+
+    manager, bot = make_manager(FakeDB({}), app="bump_reminder_bot")
+    bot.spec, bot.module_manager = SPEC, manager
+
+    _c, _v, view = await mb.build_welcome(bot, guild_with(26), "fr")
+    items = view.children[0].children
+    assert not [i for i in items if isinstance(i, _d.ui.ActionRow)]
+    assert any("/config" in getattr(i, "content", "") for i in items)
+
+    _c, _v, view = await mb.build_welcome(bot, guild_with(25), "fr")
+    assert [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+
+
+# --------------------------------------------------------------------------- #
+# /config of a one-module app: the module screen IS /config
+# --------------------------------------------------------------------------- #
+
+class TestStandaloneConfig:
+    def _home(self):
+        from modules.configs.bump_reminder_config import BumpReminderConfigView
+        return BumpReminderConfigView(None, GUILD, 1, "en-US", reminders=[], states={})
+
+    @staticmethod
+    def _ids(view):
+        found = []
+
+        def walk(item):
+            cid = getattr(item, "custom_id", None)
+            if cid:
+                found.append(cid)
+            for child in getattr(item, "children", []) or []:
+                walk(child)
+        for child in view.children:
+            walk(child)
+        return found
+
+    @staticmethod
+    def _texts(view):
+        return [getattr(i, "content", "") for i in view.children[0].children]
+
+    def test_moddy_keeps_its_home_and_back(self):
+        view = self._home()
+        assert "moddy:bump:main:back" in self._ids(view)
+        assert "moddy:config:language" not in self._ids(view)  # Moddy has it on its home
+        assert self._texts(view)[0].startswith("-# ")  # breadcrumb
+
+    def test_minibot_has_no_back_and_no_trail(self):
+        from minibots import branding
+        token = branding._standalone.set("bump_reminder")
+        try:
+            view = self._home()
+        finally:
+            branding._standalone.reset(token)
+        assert "moddy:bump:main:back" not in self._ids(view)
+        assert not self._texts(view)[0].startswith("-# ")
+        assert "moddy:bump:main:add" in self._ids(view)  # the rest of the screen is intact
+        assert "moddy:config:language" in self._ids(view)  # language without a home screen
+
+    def test_trail_drops_the_module_name(self):
+        from minibots import branding
+        from modules.configs._common import breadcrumb
+        assert "Bump" in breadcrumb("en-US", "Bump Reminder", "Manage").content
+        token = branding._standalone.set("bump_reminder")
+        try:
+            content = breadcrumb("en-US", "Bump Reminder", "Manage").content
+        finally:
+            branding._standalone.reset(token)
+        assert "Bump" not in content and "Manage" in content
+
+    async def test_back_to_main_lands_on_the_module(self, monkeypatch):
+        from minibots import branding
+        import modules.configs._common as common
+        home = AsyncMock()
+        monkeypatch.setattr(common, "_show_module_home", home)
+        monkeypatch.setattr(common, "ack", AsyncMock())
+        token = branding._standalone.set("bump_reminder")
+        try:
+            await common.open_main_config(SimpleNamespace())
+        finally:
+            branding._standalone.reset(token)
+        assert home.await_args.args[1] == "bump_reminder"
+
+
+class TestServerLanguageButton:
+    async def test_language_button_opens_server_settings(self, monkeypatch):
+        import modules.configs._common as common
+        import modules.configs.server_settings_config as ssc
+        monkeypatch.setattr(common, "check_guild_perms", AsyncMock(return_value=True))
+        monkeypatch.setattr(common, "ack", AsyncMock())
+        shown = AsyncMock()
+        monkeypatch.setattr(common, "show", shown)
+        monkeypatch.setattr(ssc.ServerSettingsConfigView, "create", AsyncMock(return_value="SETTINGS"))
+        monkeypatch.setattr(common.i18n, "get_user_locale", lambda i: "fr")
+        interaction = SimpleNamespace(client=None, guild_id=GUILD, user=SimpleNamespace(id=1))
+        await common.ServerLanguageButton().callback(interaction)
+        assert shown.await_args.args[1] == "SETTINGS"
+
+
+class TestLanguageAcrossProcesses:
+    async def test_minibot_change_reaches_moddy(self):
+        from utils.guild_language import broadcast_language_change
+        redis = FakeRedis(listeners=1)
+        await broadcast_language_change(SimpleNamespace(redis=redis, app_id="bump"), GUILD)
+        channel, message = redis.published[0]
+        assert channel == "moddy:bot"
+        assert message == {"type": "settings_updated", "guild_id": str(GUILD)}
+
+    async def test_moddy_change_reaches_the_minibots(self):
+        from utils.guild_language import broadcast_language_change
+        redis = FakeRedis(listeners=1)
+        await broadcast_language_change(SimpleNamespace(redis=redis), GUILD)
+        channel, message = redis.published[0]
+        assert channel == mstatus.CONTROL_CHANNEL
+        assert message["type"] == mstatus.CTRL_RELOAD_GUILD and message["app"] == "*"
+
+    async def test_reload_guild_drops_the_cached_language(self):
+        from minibots.runtime import MiniBotRuntime
+        import utils.guild_language as gl
+        gl._cache[GUILD] = "fr"
+        runtime = MiniBotRuntime((), SimpleNamespace(redis=None, tech_logger=None, version=None))
+        await runtime.handle_control({"type": "reload_guild", "app": "*", "guild_id": str(GUILD)})
+        assert GUILD not in gl._cache

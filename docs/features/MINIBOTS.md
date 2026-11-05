@@ -156,11 +156,35 @@ built, not before.
   with the mini-bot's `app`. The main screen shows "Get Moddy" instead of the
   dashboard links. A module Moddy (or another app) runs in that server shows
   "Managed by X here", with no button.
+  - **One-module bot (Bump Reminder)**: `/config` *is* the module screen. There
+    is no home screen, no "Back" to one, and no module name in the trail
+    (`Config › Manage`). Any leftover "back to main" lands on the module.
+  - How: the single module is a ContextVar set per client
+    (`branding.standalone_module()`), read by `modules/configs/_common.py`
+    (`breadcrumb`, `open_main_config`). A module home hides its own Back
+    button with `standalone_module()`; this is done for Bump Reminder, and a
+    future one-module bot does the same on its module's home.
+  - **Language**: with no home screen, the module screen carries a **Language**
+    button (`ServerLanguageButton`, persistent `moddy:config:language`). It
+    opens the server settings, whose Back returns to the module.
+  - The server language is one setting shared with Moddy, but each process
+    caches it. A change made on one side refreshes the other:
+    - from a mini-bot, a `settings_updated` on `moddy:bot`: Moddy drops its
+      cache and re-posts its panels;
+    - from Moddy (or a dashboard push), a `reload_guild` on `minibots:control`:
+      the mini-bots drop theirs.
+    - See `utils/guild_language.py::broadcast_language_change`.
 - **`/about`**: what the bot does, "made by the Moddy team", server count, and
   links (add this bot, get Moddy, support, docs).
 - **Welcome DM** to whoever added the bot (installer from the audit log,
-  otherwise the owner), sent through `client.notifications` (service
-  `minibots`, rule #11).
+  otherwise the owner), sent through `client.notifications` (rule #11).
+  - Its source is the `moddy` service, so the attribution line reads
+    "Sent by **Bump Reminder** ✓" once rebranded.
+  - On a bot's very first start it waits for the emoji copy (up to 10 min),
+    so the first message the admin reads is not raw `:emoji:` text.
+- **Users never read the word "mini-bot"**: it is an internal name, kept to
+  the staff screens. `test_users_never_read_the_word_minibot` guards the
+  locales.
 - **Errors**: the `ErrorTracker` cog, so the same error cards and codes as Moddy.
 - **Persistent views**: the common /config ones + `MiniBotSpec.persistent_views`.
 - **Command sync**: global, and only when the commands or their localizations
@@ -178,6 +202,11 @@ application cannot display them. Nothing has to be re-imported by hand:
   - An emoji replaced in Moddy (new id, same name, e.g. `/dev emoji_replace`)
     is re-copied: the source id of every copy is kept in `minibots:emojis:<app>`.
   - When nothing changed, this is a single API call.
+  - The id map fills **as the copy progresses**: what already exists is
+    usable immediately, each uploaded emoji the second it is created.
+  - One copy per **name**. When Moddy uses two ids under one name (an old and
+    a new `warning`), the one defined in `utils/emojis.py` is copied, and both
+    ids point at it.
   - Result logged on the lifecycle webhook (`emojis_synced`).
 - **At send time** the payload builders are wrapped after
   `utils/icon_theme.py`, so the light-theme swap happens first and the
@@ -191,7 +220,9 @@ application cannot display them. Nothing has to be re-imported by hand:
 - **Limits**:
   - an application holds 2000 emojis;
   - the first start of a new mini-bot uploads every icon, which takes a few
-    minutes; until then, a few icons can show as text.
+    minutes. Until an icon is copied, a message using it shows it as text.
+    The welcome DM waits for the copy; other messages in that window
+    (unlikely so early) do not.
 
 ## 5. Redis contract (`minibots:*`)
 
@@ -373,7 +404,7 @@ detection, cards, `/config` panel and table as Moddy. What it adds is aimed at
 
 | Moment | What happens |
 |---|---|
-| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual". It also offers an optional channel picker per directory (the same `BumpSuggestChannelSelect` as Moddy's offer: one pick = activated). If Moddy already runs the module there, it says so and stays out of the way. |
+| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual". It also offers an optional channel picker per directory (the same `BumpSuggestChannelSelect` as Moddy's offer: one pick = activated). If Moddy already runs the module there, it says so and stays out of the way. | Past 25 text channels it can post in, no picker: a select holds 25 options and the right channel might be missing, so the DM points to `/config` instead (a real channel picker).
 | First successful bump | No reminder for that directory yet → it **sets itself up in that channel**: directory cooldown, no role, `button` ping mode. It arms the reminder and says so in one `-#` line on the thank-you card. This happens once per (server, directory): marker `guilds.data.minibots.<app>.bump_autosetup.<directory>`, so a reminder the admin deletes stays deleted. A paused module, a failed bump (refusal), or a module Moddy runs → nothing. |
 | A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → the same one-pick DM as Moddy's offer (`services/bump_suggestion_service.py`). It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
 | Every bump after | Exactly Moddy's behaviour: thank-you, "remind me" button, reminder at the end of the cooldown. |
@@ -408,3 +439,16 @@ Setup checklist:
    since 2016.
 4. Start: the emojis are copied, the commands published, and the bot shows in
    `/dev minibots`.
+
+## Accent colour
+
+Each mini-bot has its own accent colour, `MiniBotSpec.accent` (default Moddy
+blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**. It colours:
+
+- the bot's own cards: `/about` and the welcome DM (`client_accent(client)` in
+  `minibots/builtin.py`);
+- the cards its module posts: the bump thank-you, the reminder and its test
+  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts).
+
+`/config` panels keep their state colours (active / paused / simulation), and
+the Moddy-side activation offer stays Moddy blue.

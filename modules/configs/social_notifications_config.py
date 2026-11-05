@@ -32,9 +32,11 @@ from discord import ui
 from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
+    quote,
     ack, show, say, crumb, crumb_segment, open_main_config, state_accent, config_state,
     module_manage_button,
 )
+from modules.configs._test_send import TestSendButton, confirmation_view
 from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
     MAX_MESSAGE_LENGTH,
@@ -368,12 +370,8 @@ class SocialNotificationsConfigView(BaseView):
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.subscriptions:
-            container.add_item(ui.TextDisplay(
-                f"**{t('modules.social_notifications.config.list.title', locale=self.locale)}**\n"
-                f"-# {t('modules.social_notifications.config.list.count', locale=self.locale, count=len(self.subscriptions))}"
-            ))
             for sub in self.subscriptions[:_MAX_LIST_DISPLAY]:
-                container.add_item(ui.TextDisplay(self._render_entry(sub)))
+                container.add_item(ui.TextDisplay(quote(self._render_entry(sub))))
             if len(self.subscriptions) > _MAX_LIST_DISPLAY:
                 container.add_item(ui.TextDisplay(
                     f"-# {t('modules.social_notifications.config.list.more', locale=self.locale, count=len(self.subscriptions) - _MAX_LIST_DISPLAY)}"
@@ -782,8 +780,15 @@ class AddSubscriptionView(BaseView):
         if ok:
             await _render_main(interaction)
             name = reply.get('display_name') or self.identifier
+            # The row id is what the "Send a test" button carries.
+            created = await interaction.client.db.get_social_subscription(
+                interaction.guild_id, self.platform, reply.get('target_id'))
             await interaction.followup.send(
-                t('modules.social_notifications.add.success', locale=self.locale, name=name),
+                view=confirmation_view(
+                    'social_notifications', (created or {}).get('id'), self.locale,
+                    t('modules.social_notifications.add.success', locale=self.locale, name=name),
+                    accent=self.embed_color,
+                ),
                 ephemeral=True,
             )
         else:
@@ -906,6 +911,9 @@ class ManageSubscriptionView(BaseView):
         )
         msg_btn.callback = self.on_edit_message
         msg_row.add_item(msg_btn)
+        if self.sub.get('id'):
+            msg_row.add_item(TestSendButton(
+                'social_notifications', str(self.sub['id']), locale=self.locale))
         container.add_item(msg_row)
 
         self.add_item(container)

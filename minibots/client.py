@@ -86,6 +86,9 @@ class MiniBotClient(commands.Bot):
         self.notifications = NotificationService(self)
         state = runtime.apps.get(spec.id) if runtime is not None else None
         self.emoji_map = state.emoji_map if state is not None else {}
+        # Set once the emoji copy finished (minibots/emojis.py): a message sent
+        # before would show Moddy's ids as text. The welcome DM waits for it.
+        self.emojis_ready = asyncio.Event()
 
         from modules.module_manager import ModuleManager
         self.module_manager = ModuleManager(self, app=spec.id)
@@ -99,13 +102,15 @@ class MiniBotClient(commands.Bot):
     def emoji_context(self):
         """Send with this app's emoji ids and name from code running outside
         its task (control requests, periodic jobs)."""
-        from minibots.branding import _brand
+        from minibots.branding import _brand, _standalone
         from minibots.emojis import _app_map
         token = _app_map.set(self.emoji_map)
         brand = _brand.set(self.spec.name)
+        single = _standalone.set(self.spec.modules[0] if len(self.spec.modules) == 1 else None)
         try:
             yield
         finally:
+            _standalone.reset(single)
             _brand.reset(brand)
             _app_map.reset(token)
 
@@ -157,7 +162,10 @@ class MiniBotClient(commands.Bot):
             await self.runtime.on_client_ready(self)
 
     async def _sync_emojis(self, sync) -> None:
-        stats = await sync(self, self.emoji_map)
+        try:
+            stats = await sync(self, self.emoji_map)
+        finally:
+            self.emojis_ready.set()
         if stats.get("uploaded") or stats.get("replaced") or stats.get("failed"):
             state = self.runtime.apps.get(self.app_id) if self.runtime else None
             if state is not None:

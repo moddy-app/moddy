@@ -470,6 +470,35 @@ class TicketModule(ModuleBase):
         pass
 ```
 
+### Bouton « Envoyer un test » (modules qui envoient un message)
+
+Un module dont le but principal est d'envoyer un message (welcome channel,
+welcome DM, bump reminder, notifications sociales) **doit** proposer un bouton
+*Envoyer un test* :
+
+- sur le message de confirmation après la création d'une entrée
+  (`confirmation_view(module_id, entry_id, locale, text)` ou
+  `test_button_row(...)` ajouté à une vue existante) ;
+- sur l'écran de gestion d'une entrée existante
+  (`TestSendButton(module_id, entry_id, locale=...)`).
+
+Tout est dans `modules/configs/_test_send.py` : un seul `DynamicItem`
+persistant (`moddy:cfg:test:<module>:<entry_id>`, enregistré par
+`TestSendPersistence`, chez Moddy et chez les mini-bots). Pour brancher un
+nouveau module :
+
+1. écrire `async def send_test(bot, guild, member, ref, locale) -> TestResult`
+   dans le fichier du module, en réutilisant **le même rendu** que l'envoi réel
+   et `add_test_marker(view, member, locale)` (ligne « message de test envoyé
+   par … ») ;
+2. l'ajouter à `_SENDERS` dans `_test_send.py` ;
+3. l'id de l'entrée doit tenir dans `[A-Za-z0-9_-]{1,40}`.
+
+Garde-fous communs : Manage Server re-vérifié à chaque clic, 10 s de cooldown
+par entrée, l'entrée est relue en base à chaque clic, et un test ne notifie
+**jamais** un rôle ni `@everyone` (les mentions de rôle sont affichées mais
+retirées des `allowed_mentions`) ; seul le testeur peut être mentionné.
+
 ### Étape 2 : Créer l'UI de configuration
 
 Créez un fichier dans `/modules/configs/` (exemple : `ticket_config.py`)

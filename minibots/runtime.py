@@ -151,13 +151,14 @@ class MiniBotRuntime:
 
     async def _supervise(self, state: _AppState) -> None:
         import discord
-        from minibots.branding import set_brand
+        from minibots.branding import set_brand, set_standalone
         from minibots.emojis import set_active_map
         # This task's context — and every task the client spawns from it
         # (gateway, events, views) — sends with this app's emoji ids and
         # speaks under this app's name (minibots/branding.py).
         set_active_map(state.emoji_map)
         set_brand(state.spec.name)
+        set_standalone(state.spec.modules[0] if len(state.spec.modules) == 1 else None)
         backoff = BACKOFF_START
         while not self._stopping:
             try:
@@ -344,6 +345,10 @@ class MiniBotRuntime:
                 await self._handle_release(data)
             elif kind == mstatus.CTRL_RELOAD_GUILD:
                 guild_id = int(data.get("guild_id"))
+                # One cache for the whole process (utils/guild_language.py):
+                # a language changed from Moddy or the dashboard lands here.
+                from utils.guild_language import invalidate_guild_language
+                invalidate_guild_language(guild_id)
                 for client in self.clients():
                     if app in (None, "*", client.app_id) and client.get_guild(guild_id):
                         await client.module_manager.unload_guild_modules(guild_id)

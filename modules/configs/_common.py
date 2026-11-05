@@ -26,7 +26,7 @@ import discord
 from discord import ui
 
 from config import COLORS
-from utils.emojis import BACK, DELETE, EMOJIS, LABS, PAUSE, PLAY, SETTINGS, UNDONE, WARNING
+from utils.emojis import BACK, DELETE, EMOJIS, LABS, PAUSE, PLAY, SETTINGS, TRANSLATE, UNDONE, WARNING
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from modules.module_manager import (
@@ -172,6 +172,20 @@ async def ack(interaction: discord.Interaction) -> None:
         pass
 
 
+async def ack_thinking(interaction: discord.Interaction) -> None:
+    """Acknowledge with a NEW ephemeral "thinking" answer instead of an edit.
+
+    For a button that reports something without touching the panel it sits on
+    (the "Send a test" button): the answer arrives later via ``followup``.
+    """
+    if interaction.response.is_done():
+        return
+    try:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+    except (discord.InteractionResponded, discord.NotFound):
+        pass
+
+
 async def show(interaction: discord.Interaction, view: discord.ui.LayoutView) -> None:
     """Replace the panel message with ``view``.
 
@@ -191,6 +205,16 @@ async def say(interaction: discord.Interaction, *args, **kwargs) -> None:
         await interaction.followup.send(*args, **kwargs)
     else:
         await interaction.response.send_message(*args, **kwargs)
+
+
+def quote(text: str) -> str:
+    """Render one entry of a /config list as a block quote.
+
+    Every line gets the ``> `` bar so a multi-line entry (title, then ``-#``
+    details) reads as one block and the reader sees where it stops and the
+    next one starts — no separator needed between entries.
+    """
+    return "\n".join(f"> {line}" for line in text.split("\n"))
 
 
 def channel_label(bot, channel_id: Any) -> str:
@@ -254,11 +278,24 @@ async def load_before_modal(interaction: discord.Interaction,
         return False, None
 
 
+def standalone_module():
+    """The single module of the app answering (a one-feature mini-bot), or
+    None in Moddy. Its /config has no home screen: the module screen is it."""
+    from minibots.branding import standalone_module as _current
+    return _current()
+
+
 async def open_main_config(interaction: discord.Interaction) -> None:
-    """Back to the /config main screen (with module states and the limited banner)."""
+    """Back to the /config main screen (with module states and the limited banner).
+
+    In a one-module app there is no main screen: this lands on the module."""
     from cogs.config import ConfigMainView
     from utils import global_sanctions
     await ack(interaction)
+    module_id = standalone_module()
+    if module_id:
+        await _show_module_home(interaction, module_id)
+        return
     bot = interaction.client
     limited = await global_sanctions.is_limited(
         bot, user_id=interaction.user.id, guild_id=interaction.guild_id)
@@ -312,7 +349,9 @@ def breadcrumb(locale: str, module_name: Optional[str] = None, *segments: str) -
     as they are -- no backticks, it is navigation, not data.
     """
     parts = [t("modules.config.breadcrumb.root", locale=locale)]
-    if module_name:
+    # A one-module app (mini-bot): its /config *is* the module, so the module
+    # name in the trail is noise — "Config › Manage", not "Config › X › Manage".
+    if module_name and not standalone_module():
         parts.append(module_name)
     parts.extend(s for s in segments if s)
     return ui.TextDisplay("-# " + " › ".join(parts))
@@ -549,6 +588,39 @@ class ModuleStateSelect(
         await _show_manage(interaction, self.module_id)
 
 
+_CID_LANGUAGE = "moddy:config:language"
+
+
+class ServerLanguageButton(ui.DynamicItem[ui.Button], template=_CID_LANGUAGE):
+    """Opens the server settings (language) from a module screen.
+
+    Used where /config has no home screen to reach them from: a one-module app
+    (the Bump Reminder bot). Auth: Manage Server, re-checked on every click.
+    """
+
+    def __init__(self, *, locale: str = "en-US"):
+        super().__init__(ui.Button(
+            label=t("modules.config.settings.language.section_title", locale=locale)[:80],
+            emoji=discord.PartialEmoji.from_str(TRANSLATE),
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_LANGUAGE,
+        ))
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: "re.Match"):
+        return cls()
+
+    async def callback(self, interaction: discord.Interaction):
+        from modules.configs.server_settings_config import ServerSettingsConfigView
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        view = await ServerSettingsConfigView.create(
+            interaction.client, interaction.guild_id, interaction.user.id,
+            i18n.get_user_locale(interaction))
+        await show(interaction, view)
+
+
 class ModuleStatePersistence(BaseView):
     """Marker view: registers the Manage panel's dynamic items at startup."""
 
@@ -556,4 +628,4 @@ class ModuleStatePersistence(BaseView):
 
     @classmethod
     def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(ModuleManageButton, ModuleStateSelect)
+        bot.add_dynamic_items(ModuleManageButton, ModuleStateSelect, ServerLanguageButton)

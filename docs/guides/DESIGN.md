@@ -216,6 +216,38 @@ container.add_item(ui.TextDisplay(
 
 ---
 
+## 📋 Lists of entries (several reminders, messages, subscriptions…)
+
+A `/config` screen that lists several entries of the same kind (bump
+reminders, welcome messages, welcome DMs, followed accounts, ticket panels,
+ticket categories) renders **each entry as a block quote** with
+`quote()` from `modules/configs/_common.py`: every line of the entry gets the
+`> ` bar, so the reader sees where one entry stops and the next starts.
+
+- **No separator between entries, and none around the list** beyond the one
+  under the screen's header: the quote bars already do that job.
+- **No filler lines.** Do not add a list title that repeats the screen title,
+  an "N item(s)" count, or a quota line ("1 reminder(s) per directory.") that
+  the disabled *Add* button / the "quota reached" notice already tell. A
+  `count/max` line is fine when the cap is fixed and not visible elsewhere
+  (welcome messages, welcome DMs).
+
+```python
+from modules.configs._common import quote
+
+for entry in self.reminders:
+    container.add_item(ui.TextDisplay(quote(self._render_entry(entry))))
+```
+
+## 🧪 "Send a test" on message modules
+
+Every module whose main job is to post a message (welcome channel, welcome DM,
+bump reminder, social notifications) offers a **Send a test** button on the
+confirmation shown after creating an entry and on the entry's manage screen.
+It is one shared persistent `DynamicItem` — see
+`modules/configs/_test_send.py` and docs/guides/MODULE_SYSTEM.md → "Bouton
+« Envoyer un test »".
+
 ## 🚧 Separator Usage
 
 ### **Use separators ONLY when truly necessary**

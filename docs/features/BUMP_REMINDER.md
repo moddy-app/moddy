@@ -571,3 +571,11 @@ Directory names are brands and are never translated.
    which also matched French.gg.
 
 Nothing else knows the list. No i18n key, no config migration, no schema change.
+
+
+## Send a test
+
+The entry's manage screen and the "created" confirmation carry a **Send a
+test** button (`modules/configs/_test_send.py`, sender `send_test` in the
+module file). It posts the reminder card in the entry's channel as if the clicker had just bumped, through `bot.notifications.send_channel`. The configured roles are shown but **not notified** (`NO_MENTIONS`). Works the same on the Bump Reminder mini-bot. A `-#` line under the card says it is a test and who
+sent it; 10 s cooldown per entry; Manage Server re-checked on every click.

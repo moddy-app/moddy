@@ -134,6 +134,14 @@ and read as `auto`.
 
 Nothing else: no module carries its own list any more.
 
+## Mini-bots
+
+The mini-bots process (docs/features/MINIBOTS.md) reads and caches the same
+setting. A change saved on either side is broadcast to the other (Moddy →
+`minibots:control` `reload_guild`, mini-bot → `moddy:bot` `settings_updated`),
+and a dashboard push received by Moddy is forwarded to the mini-bots — see
+`utils/guild_language.py::broadcast_language_change`.
+
 ## Personal language override (`/preferences`)
 
 A user can force their own language (or keep "Auto" = Discord client language).

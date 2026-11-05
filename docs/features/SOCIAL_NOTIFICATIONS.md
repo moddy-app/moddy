@@ -292,3 +292,11 @@ is the per-platform availability list shown in the customization modal.
 The notification container renders **only** the user's message (no extra
 bot-authored text). The author avatar (`show_avatar`) and the large media
 preview (`show_media`) are optional and platform-gated.
+
+
+## Send a test
+
+The entry's manage screen and the "created" confirmation carry a **Send a
+test** button (`modules/configs/_test_send.py`, sender `send_test` in the
+module file). It posts the notification with a sample post (`sample_event()`: the account's name/avatar, a translated sample title, a link to the profile). The button carries the `social_subscriptions.id` row id. Mentioned roles are shown but not notified. A `-#` line under the card says it is a test and who
+sent it; 10 s cooldown per entry; Manage Server re-checked on every click.
