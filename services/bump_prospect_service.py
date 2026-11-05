@@ -162,7 +162,13 @@ class BumpProspectService:
         while True:
             if not self._queue:
                 if self._run is not None:
-                    await self._finish_run()
+                    try:
+                        await self._finish_run()
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:  # noqa: BLE001 - the summary must not kill the worker
+                        logger.exception("Bump prospect run summary failed")
+                        self._run = None
                 self._wakeup.clear()
                 await self._wakeup.wait()
                 continue

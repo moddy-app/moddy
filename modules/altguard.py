@@ -28,6 +28,7 @@ bypass oracle). See docs/features/ALTGUARD.md.
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -271,7 +272,7 @@ class AltGuardModule(ModuleBase):
         if tracker is None or guild is None:
             return  # startup warm-up in the cog covers guilds loaded this early
         try:
-            asyncio.get_running_loop().create_task(tracker.warm(guild))
+            spawn(tracker.warm(guild), name="altguard-invite-warm")
         except RuntimeError:
             pass
 
@@ -723,7 +724,7 @@ class AltGuardModule(ModuleBase):
         if tracker is None:
             return
         try:
-            asyncio.get_running_loop().create_task(self._record_inviter(tracker, member, store))
+            spawn(self._record_inviter(tracker, member, store), name="altguard-record-inviter")
         except RuntimeError:
             pass
 

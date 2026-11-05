@@ -162,7 +162,19 @@ class AltGuard(commands.Cog):
                 )
                 return
 
-        await module.apply_verdict(verdict)
+        # The verdict is already recorded, so a replay would be ignored: a
+        # failure here must be retried now, not lost.
+        for attempt in (1, 2):
+            try:
+                await module.apply_verdict(verdict)
+                break
+            except Exception:  # noqa: BLE001
+                if attempt == 2:
+                    logger.exception(
+                        f"[AltGuard] Could not apply verdict {verdict['verification_id']} "
+                        f"for user {verdict['user_id']} in guild {verdict['guild_id']}")
+                    return
+                await asyncio.sleep(2)
         logger.info(
             f"[AltGuard] Verdict {verdict['verdict']} applied for user "
             f"{verdict['user_id']} in guild {verdict['guild_id']} "

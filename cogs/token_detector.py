@@ -16,6 +16,7 @@ from __future__ import annotations
 from config import COLORS
 
 import asyncio
+from utils.background import spawn
 import base64
 import hashlib
 import hmac
@@ -1135,7 +1136,7 @@ class TokenDetector(commands.Cog):
             BotDetailsButton,
             BotDeleteMsgButton,
         )
-        asyncio.create_task(self._cleanup_token_secrets())
+        spawn(self._cleanup_token_secrets(), name="token-secrets-cleanup")
         logger.info("TokenDetector cog loaded — dynamic items registered.")
 
     async def _cleanup_token_secrets(self) -> None:

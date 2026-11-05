@@ -4,6 +4,7 @@ Module Starboard - Système de tableau d'honneur pour messages populaires
 
 import re
 import asyncio
+from utils.background import spawn
 import logging
 from typing import Dict, Any, Optional
 
@@ -72,7 +73,7 @@ def _extract_meta_content(html: str, props: tuple) -> Optional[str]:
 def _report_dynamic_item_error(interaction: discord.Interaction, error: Exception, source: str):
     """Route a DynamicItem callback error to the central handler (fire-and-forget)."""
     from cogs.error_handler import report_component_error
-    asyncio.create_task(report_component_error(interaction, error, source))
+    spawn(report_component_error(interaction, error, source), name="starboard-error-report")
 
 
 class _StarboardReactorsButton(

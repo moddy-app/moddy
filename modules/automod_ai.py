@@ -53,6 +53,7 @@ qualification, the member's recidivism history and the guild config. See
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import dataclasses
 import logging
 import time
@@ -2369,7 +2370,7 @@ class AutomodModule(ModuleBase):
         if svc is not None:
             svc.spawn(coro, label=f"screen:{self.guild_id}:{member.id}")
             return
-        asyncio.ensure_future(coro)
+        spawn(coro, name=f"automod-screen:{self.guild_id}:{member.id}")
 
     # -- Events (called by ModuleEvents) -----------------------------------
 
