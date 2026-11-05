@@ -18,6 +18,7 @@ from modules.configs._common import (
     crumb,
     module_manage_button,
     open_main_config,
+    refuse_unassignable_roles,
     show,
     state_accent,
 )
@@ -375,6 +376,13 @@ class AutoRestoreRolesConfigView(BaseView):
         await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
+        if interaction.data['values'] and await refuse_unassignable_roles(
+                interaction, [int(r) for r in interaction.data['values']]):
+            # Keep the previous selection: re-render the panel unchanged.
+            view = await self._rebuild(interaction, working_config,
+                                       has_changes=bool(getattr(self, 'has_changes', False)))
+            await show(interaction, view)
+            return
         if interaction.data['values']:
             working_config['included_roles'] = [int(role_id) for role_id in interaction.data['values']]
         else:

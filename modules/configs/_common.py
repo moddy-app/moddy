@@ -34,10 +34,11 @@ from modules.module_manager import (
     normalize_state,
 )
 from utils.bot_permissions import (
-    format_missing,
-    merge_permissions,
-    missing_channel_permissions,
+    analyze_requirements,
+    format_gaps,
+    invite_permissions_for,
     missing_guild_permissions,
+    role_assignment_error,
 )
 
 
@@ -94,17 +95,22 @@ async def check_bot_perms(
     (e.g. deferred). Cache reads only: no network call.
     """
     guild = interaction.guild
-    if guild is None or guild.me is None:
+    if guild is None:
         return True
-
-    missing = missing_guild_permissions(guild, required)
-    channel_missing = missing_channel_permissions(
-        guild, channel_requirements or {}, skip=missing)
-    if not missing and not channel_missing:
-        return True
-
     locale = i18n.get_user_locale(interaction)
-    permissions_list = format_missing(missing, channel_missing, locale)
+    if guild.me is None:
+        # User-installed app used in a server where Moddy is not a member.
+        await say(interaction, t("modules.config.errors.bot_not_in_guild", locale=locale))
+        return False
+
+    # Each permission is checked where Discord checks it: guild-scoped ones
+    # server-wide, channel-scoped ones in the configured channels (a grant on
+    # that channel alone is enough). See utils/bot_permissions.py.
+    gaps = analyze_requirements(guild, required, channel_requirements)
+    if not gaps.any:
+        return True
+
+    permissions_list = format_gaps(gaps, locale)
 
     error_view = ui.LayoutView(timeout=None)
     error_container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
@@ -117,27 +123,28 @@ async def check_bot_perms(
     ))
     error_view.add_item(error_container)
 
-    invite_perms = discord.Permissions.none()
-    for key in merge_permissions(missing, *channel_missing.values()):
-        if hasattr(invite_perms, key):
-            setattr(invite_perms, key, True)
-
-    button_row = ui.ActionRow()
-    button_row.add_item(ui.Button(
-        label=t('modules.config.errors.missing_bot_perms.button', locale=locale),
-        style=discord.ButtonStyle.link,
-        url=(
-            f"https://discord.com/oauth2/authorize?client_id={interaction.client.user.id}"
-            f"&scope=bot&permissions={invite_perms.value}&guild_id={guild.id}"
-        ),
-    ))
-    error_view.add_item(button_row)
+    invite_keys = gaps.invite_keys()
+    if invite_keys:
+        invite_perms = invite_permissions_for(invite_keys)
+        button_row = ui.ActionRow()
+        button_row.add_item(ui.Button(
+            label=t('modules.config.errors.missing_bot_perms.button', locale=locale),
+            style=discord.ButtonStyle.link,
+            url=(
+                f"https://discord.com/oauth2/authorize?client_id={interaction.client.user.id}"
+                f"&scope=bot&permissions={invite_perms.value}&guild_id={guild.id}"
+            ),
+        ))
+        error_view.add_item(button_row)
 
     if followup or interaction.response.is_done():
         await interaction.followup.send(view=error_view, ephemeral=True)
     else:
         await interaction.response.send_message(view=error_view, ephemeral=True)
-    return False
+    # Only gaps that make the module unusable block the screen. A configured
+    # channel that lost a permission (or vanished) is reported above, but the
+    # panel still opens: it is where the admin picks another channel.
+    return not gaps.blocking
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +191,43 @@ async def say(interaction: discord.Interaction, *args, **kwargs) -> None:
         await interaction.followup.send(*args, **kwargs)
     else:
         await interaction.response.send_message(*args, **kwargs)
+
+
+def channel_label(bot, channel_id: Any) -> str:
+    """Plain-text ``#name`` for a select label or a title, safe for every
+    stored value: a deleted channel, an id stored as a string, or a channel the
+    bot can no longer see (obfuscated: its name is the placeholder
+    ``___hidden___``, never shown) all fall back to ``#<id>``."""
+    from utils.bot_permissions import is_obfuscated
+    try:
+        cid = int(channel_id)
+        channel = bot.get_channel(cid) if bot else None
+    except (TypeError, ValueError):
+        return f"#{channel_id or ''}"
+    name = getattr(channel, "name", None)
+    if channel is None or not name or is_obfuscated(channel):
+        return f"#{cid}"
+    return f"#{name}"
+
+
+async def refuse_unassignable_roles(interaction: discord.Interaction,
+                                    role_ids: Sequence[int]) -> bool:
+    """True (after telling the admin) when Moddy cannot give one of ``role_ids``.
+
+    Discord: "A bot can grant roles ... of a lower position than its own highest
+    role" and managed roles cannot be assigned. The message names every
+    offending role and the fix (move Moddy's role above it in Server Settings
+    > Roles). Call it AFTER ``ack`` for every RoleSelect whose roles Moddy
+    hands to members; on True keep the previous selection.
+    """
+    guild = interaction.guild
+    if guild is None or guild.me is None or not role_ids:
+        return False
+    message = role_assignment_error(guild, role_ids, i18n.get_user_locale(interaction))
+    if not message:
+        return False
+    await say(interaction, f"{EMOJIS['error']} {message}")
+    return True
 
 
 # A modal must be the interaction's FIRST response (it cannot follow a defer),

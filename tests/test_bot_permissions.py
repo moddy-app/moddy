@@ -95,10 +95,10 @@ def test_non_sending_modules_opt_out():
 
 
 def test_all_missing_guild_permissions_reported_together():
-    cls = MODULES["interserver"]
+    required = ["view_channel", "send_messages", "manage_webhooks", "manage_roles"]
     guild = _guild(held=["view_channel"])
-    missing = missing_guild_permissions(guild, cls.required_permissions())
-    expected = [k for k in cls.required_permissions() if k != "view_channel"]
+    missing = missing_guild_permissions(guild, required)
+    expected = [k for k in required if k != "view_channel"]
     assert missing == expected
     assert "send_messages" in missing and "manage_webhooks" in missing
 
@@ -141,7 +141,7 @@ def test_channel_map_merges_and_skips_empty():
 
 
 def test_module_channel_requirements_read_config():
-    assert "send_messages" in MODULES["interserver"].channel_requirements({"channel_id": 7})[7]
+    assert "manage_webhooks" in MODULES["interserver"].channel_requirements({"channel_id": 7})[7]
     assert 7 in MODULES["interserver"].channel_requirements({"channel_id": 7})
     assert MODULES["interserver"].channel_requirements({}) == {}
     assert set(MODULES["altguard"].channel_requirements(
