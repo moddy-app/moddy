@@ -346,7 +346,7 @@ class UserInfoView(BaseView):
         """Try to get server information from Discord API using widget, preview, or invite"""
         result = {}
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
             # Try 1: Guild Widget (public, no auth needed)
             try:
                 async with session.get(f"https://discord.com/api/v10/guilds/{guild_id}/widget.json") as resp:
@@ -691,7 +691,7 @@ class User(commands.Cog):
         await interaction.response.send_message(loading_msg, ephemeral=ephemeral)
 
         # Fetch user data from Discord API
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
             headers = {
                 "Authorization": f"Bot {self.bot.http.token}",
                 "User-Agent": "DiscordBot (Moddy, 1.0)"

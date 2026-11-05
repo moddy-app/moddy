@@ -43,13 +43,16 @@ class InviteCommand(StaffCommand):
             ))
             return
 
-        channel = guild.system_channel
-        if not channel or not channel.permissions_for(guild.me).create_instant_invite:
-            channel = next(
-                (ch for ch in guild.text_channels
-                 if ch.permissions_for(guild.me).create_instant_invite),
-                None,
-            )
+        me = guild.me
+        channel = None
+        if me is not None:
+            channel = guild.system_channel
+            if not channel or not channel.permissions_for(me).create_instant_invite:
+                channel = next(
+                    (ch for ch in guild.text_channels
+                     if ch.permissions_for(me).create_instant_invite),
+                    None,
+                )
 
         if not channel:
             await ctx.send(view=design.error(
@@ -63,7 +66,7 @@ class InviteCommand(StaffCommand):
                 max_age=604800, max_uses=5, unique=True,
                 reason=f"Staff invite requested by {ctx.author}",
             )
-        except discord.Forbidden:
+        except discord.HTTPException:
             await ctx.send(view=design.error(
                 t("staff.team.invite.fail_title", locale=locale),
                 t("staff.team.invite.no_perm", locale=locale, name=f"**{guild.name}**"),

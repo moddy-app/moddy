@@ -555,7 +555,7 @@ class Invite(commands.Cog):
 
         # Fetch invite data from Discord API
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
                 headers = {
                     "User-Agent": "DiscordBot (Moddy, 1.0)"
                 }

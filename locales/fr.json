@@ -853,7 +853,11 @@
         "member_hierarchy_title": "Hiérarchie des rôles",
         "member_hierarchy": "Ton rôle le plus haut doit être au-dessus du rôle le plus haut de la cible.",
         "bot_hierarchy_title": "Hiérarchie du bot",
-        "bot_hierarchy": "Le rôle le plus haut de Moddy doit être au-dessus du rôle le plus haut de la cible pour effectuer cette action."
+        "bot_hierarchy": "Le rôle le plus haut de Moddy doit être au-dessus du rôle le plus haut de la cible pour effectuer cette action.",
+        "bot_missing_permission_title": "Permission manquante",
+        "bot_missing_permission": "Moddy a besoin de la permission serveur « {permission} » pour cette action. Accordez-la à son rôle dans Paramètres du serveur > Rôles (une permission accordée uniquement dans un salon ne suffit pas).",
+        "cannot_timeout_admin_title": "Impossible de mettre un administrateur en sourdine",
+        "cannot_timeout_admin": "Discord interdit de mettre en sourdine (timeout) un administrateur ou le propriétaire du serveur."
       }
     }
   },
@@ -1052,12 +1056,27 @@
         "channel_not_found": "Salon introuvable",
         "missing_bot_perms": {
           "title": "Permissions insuffisantes",
-          "description": "Moddy a besoin des permissions suivantes pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder ces permissions manuellement (et vérifier les permissions des salons concernés).",
+          "description": "Moddy a besoin des permissions suivantes pour configurer **{module}** :\n{permissions}\n\nAccordez-les à l'endroit indiqué, ou utilisez le bouton pour réinviter Moddy avec exactement les permissions manquantes.",
           "button": "Réinviter Moddy",
-          "in_channel": "Dans {channel} :"
+          "in_channel": "Dans {channel} :",
+          "hint_guild": "Paramètres du serveur › Rôles › rôle de Moddy : activez-la.",
+          "hint_anywhere": "Activez-la pour le rôle de Moddy sur tout le serveur, ou seulement sur le salon que vous choisirez (paramètres du salon › Permissions).",
+          "hint_channel": "Autorisez-la pour le rôle de Moddy dans les paramètres de {channel} (Modifier le salon › Permissions), ou sur tout le serveur.",
+          "hint_denied": "{channel} refuse explicitement {permissions} à Moddy : une permission accordée sur tout le serveur serait écrasée. Modifiez le salon (ou sa catégorie) › Permissions et autorisez-la pour le rôle de Moddy.",
+          "hidden": "Moddy ne peut pas voir {channel}. Autorisez **Voir le salon** pour le rôle de Moddy dans les paramètres du salon (Modifier le salon › Permissions), ou choisissez un autre salon.",
+          "gone": "Le salon configuré {channel} n'existe plus : choisissez-en un autre dans le panneau.",
+          "timed_out": "Moddy est actuellement en timeout sur ce serveur : il a temporairement perdu toutes ses permissions sauf Voir le salon et Lire l'historique des messages. Retirez le timeout (clic droit sur Moddy dans la liste des membres › Retirer le timeout), puis réessayez."
         },
         "channel_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires dans {channel} :\n{permissions}",
-        "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}"
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}",
+        "role_problem": {
+          "above": "Moddy ne peut pas attribuer {roles} : il est au-dessus du rôle le plus haut de Moddy ({bot_role}). Dans Paramètres du serveur › Rôles, placez le rôle de Moddy au-dessus de {roles}.",
+          "managed": "{roles} est géré par une intégration (bot, booster, abonnement) et ne peut pas être attribué par Moddy. Choisissez un autre rôle.",
+          "everyone": "@everyone ne peut pas être utilisé ici.",
+          "missing": "{roles} n'existe plus. Choisissez un autre rôle."
+        },
+        "save_failed": "Moddy n'a pas pu enregistrer pour le moment (base de données indisponible ou trop lente). Rien n'a été modifié : réessayez dans un instant.",
+        "unavailable": "Moddy ne peut pas joindre sa base de données pour le moment. Réessayez dans un instant."
       },
       "current_value": "Valeur actuelle :",
       "not_configured": "Non configuré",
@@ -3828,6 +3847,7 @@
         "unknown_category": "Cette catégorie n'existe pas.",
         "same_category": "Le ticket est déjà dans cette catégorie.",
         "cannot_edit_channel": "Moddy n'a pas pu modifier le salon du ticket. Vérifiez ses permissions.",
+        "cannot_move_channel": "Moddy ne peut pas déplacer le ticket vers la catégorie **{category}**. Discord exige la permission Gérer les salons sur ce salon et sur la catégorie de destination : autorise le rôle de Moddy dans les permissions de cette catégorie (Voir le salon, Gérer les salons).",
         "invalid_name": "Ce nom ne peut pas être utilisé pour un salon.",
         "already_participant": "Cette personne a déjà accès à ce ticket.",
         "not_a_participant": "Cette personne n'a pas été ajoutée à ce ticket.",

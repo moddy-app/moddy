@@ -854,7 +854,11 @@
         "member_hierarchy_title": "Rollenhierarchie",
         "member_hierarchy": "Deine höchste Rolle muss über der höchsten Rolle des Ziels stehen.",
         "bot_hierarchy_title": "Bot-Hierarchie",
-        "bot_hierarchy": "Moddys höchste Rolle muss über der höchsten Rolle des Ziels stehen, um diese Aktion auszuführen."
+        "bot_hierarchy": "Moddys höchste Rolle muss über der höchsten Rolle des Ziels stehen, um diese Aktion auszuführen.",
+        "bot_missing_permission_title": "Berechtigung fehlt",
+        "bot_missing_permission": "Moddy braucht für diese Aktion die serverweite Berechtigung \"{permission}\". Vergib sie an seine Rolle unter Servereinstellungen > Rollen (eine nur in einem Kanal vergebene Berechtigung reicht nicht).",
+        "cannot_timeout_admin_title": "Administratoren können nicht stummgeschaltet werden",
+        "cannot_timeout_admin": "Discord erlaubt keinen Timeout für Administratoren oder den Serverbesitzer."
       }
     }
   },
@@ -1053,12 +1057,27 @@
         "channel_not_found": "Kanal nicht gefunden",
         "missing_bot_perms": {
           "title": "Unzureichende Berechtigungen",
-          "description": "Moddy benötigt die folgenden Berechtigungen, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigungen manuell (und prüfe die Berechtigungen der betroffenen Kanäle).",
+          "description": "Moddy benötigt die folgenden Berechtigungen, um **{module}** zu konfigurieren:\n{permissions}\n\nErteile sie an der angegebenen Stelle oder lade Moddy über den Button mit genau den fehlenden Berechtigungen neu ein.",
           "button": "Moddy erneut einladen",
-          "in_channel": "In {channel}:"
+          "in_channel": "In {channel}:",
+          "hint_guild": "Servereinstellungen › Rollen › Moddys Rolle: aktiviere sie.",
+          "hint_anywhere": "Aktiviere sie für Moddys Rolle serverweit oder nur auf dem Kanal, den du auswählst (Kanaleinstellungen › Berechtigungen).",
+          "hint_channel": "Erlaube sie für Moddys Rolle in den Einstellungen von {channel} (Kanal bearbeiten › Berechtigungen) oder serverweit.",
+          "hint_denied": "{channel} verweigert Moddy ausdrücklich {permissions}: eine serverweit erteilte Berechtigung würde überschrieben. Bearbeite den Kanal (oder seine Kategorie) › Berechtigungen und erlaube sie für Moddys Rolle.",
+          "hidden": "Moddy kann {channel} nicht sehen. Erlaube **Kanal ansehen** für Moddys Rolle in den Kanaleinstellungen (Kanal bearbeiten › Berechtigungen) oder wähle einen anderen Kanal.",
+          "gone": "Der konfigurierte Kanal {channel} existiert nicht mehr: wähle im Panel einen anderen.",
+          "timed_out": "Moddy hat auf diesem Server aktuell einen Timeout und hat vorübergehend alle Berechtigungen außer Kanal ansehen und Nachrichtenverlauf lesen verloren. Entferne den Timeout (Rechtsklick auf Moddy in der Mitgliederliste › Timeout entfernen) und versuche es erneut."
         },
         "channel_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen in {channel}:\n{permissions}",
-        "guild_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen auf diesem Server:\n{permissions}"
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen auf diesem Server:\n{permissions}",
+        "role_problem": {
+          "above": "Moddy kann {roles} nicht vergeben: Die Rolle steht über Moddys höchster Rolle ({bot_role}). Verschiebe unter Servereinstellungen › Rollen Moddys Rolle über {roles}.",
+          "managed": "{roles} wird von einer Integration verwaltet (Bot, Booster, Abo) und kann von Moddy nicht vergeben werden. Wähle eine andere Rolle.",
+          "everyone": "@everyone kann hier nicht verwendet werden.",
+          "missing": "{roles} existiert nicht mehr. Wähle eine andere Rolle."
+        },
+        "save_failed": "Moddy konnte gerade nicht speichern (Datenbank nicht erreichbar oder zu langsam). Nichts wurde geändert: versuche es gleich erneut.",
+        "unavailable": "Moddy erreicht gerade seine Datenbank nicht. Versuche es gleich erneut."
       },
       "current_value": "Aktueller Wert:",
       "not_configured": "Nicht konfiguriert",
@@ -3829,6 +3848,7 @@
         "unknown_category": "Diese Kategorie gibt es nicht.",
         "same_category": "Das Ticket ist bereits in dieser Kategorie.",
         "cannot_edit_channel": "Moddy konnte den Ticket-Kanal nicht bearbeiten. Prüfe die Rechte.",
+        "cannot_move_channel": "Moddy kann das Ticket nicht in die Kategorie **{category}** verschieben. Discord verlangt Kanäle verwalten für den Kanal und die Zielkategorie: erlaube Moddys Rolle in den Berechtigungen dieser Kategorie (Kanal ansehen, Kanäle verwalten).",
         "invalid_name": "Dieser Name kann nicht für einen Kanal verwendet werden.",
         "already_participant": "Diese Person hat bereits Zugriff auf dieses Ticket.",
         "not_a_participant": "Diese Person wurde diesem Ticket nicht hinzugefügt.",

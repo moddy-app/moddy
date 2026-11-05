@@ -258,7 +258,10 @@ class BrocoliChat(commands.Cog):
 
         lock = self._lock(message.channel.id)
         if lock.locked():
-            await message.reply(view=notice_card("busy", locale), silent=True)
+            try:
+                await message.reply(view=notice_card("busy", locale), silent=True)
+            except discord.HTTPException:
+                pass  # no Send Messages / History here: stay silent
             return
 
         async with lock:
@@ -272,14 +275,26 @@ class BrocoliChat(commands.Cog):
         # Posted before anything else, including before the conversation is
         # opened: opening one is itself a round trip to the backend, and the
         # member should never wonder whether their message was seen.
-        card = await message.channel.send(view=loading_card(locale))
+        try:
+            card = await message.channel.send(view=loading_card(locale))
+        except discord.HTTPException as exc:
+            # No Send Messages here (or the channel is gone): nothing can be
+            # shown, so nothing is attempted. Logged once, never a traceback.
+            logger.info("[Brocoli] cannot post in channel %s: %s", channel_id, exc)
+            return
 
         try:
             conversation_id = await self._conversation(
                 state, guild_id, channel_id, user_id
             )
         except BrocoliError as exc:
-            await card.edit(view=notice_card(exc.code, locale))
+            await self._safe_edit(card, notice_card(exc.code, locale))
+            return
+        except Exception:
+            # Backend/DB down: the member gets the "unavailable" card, not a
+            # card stuck on "thinking".
+            logger.exception("[Brocoli] could not open a conversation in %s", channel_id)
+            await self._safe_edit(card, notice_card("unavailable", locale))
             return
 
         async with message.channel.typing():
@@ -292,7 +307,19 @@ class BrocoliChat(commands.Cog):
                 )
             except BrocoliError as exc:
                 logger.warning("[Brocoli] turn failed (%s): %s", exc.code, exc.detail)
-                await card.edit(view=notice_card(exc.code, locale))
+                await self._safe_edit(card, notice_card(exc.code, locale))
+            except discord.HTTPException as exc:
+                logger.info("[Brocoli] Discord refused an update in %s: %s", channel_id, exc)
+            except Exception:
+                logger.exception("[Brocoli] turn crashed in channel %s", channel_id)
+                await self._safe_edit(card, notice_card("unavailable", locale))
+
+    @staticmethod
+    async def _safe_edit(card: discord.Message, view) -> None:
+        try:
+            await card.edit(view=view)
+        except discord.HTTPException as exc:
+            logger.info("[Brocoli] could not edit card %s: %s", getattr(card, "id", None), exc)
 
     async def _conversation(
         self, state: dict, guild_id: int, channel_id: int, user_id: int
@@ -436,7 +463,15 @@ class BrocoliChat(commands.Cog):
             # A decision resumes the turn, so it gets the same placeholder as a
             # typed message: applying a change can take several seconds and the
             # channel should show that something is happening.
-            card = await interaction.channel.send(view=loading_card(locale))
+            try:
+                card = await interaction.channel.send(view=loading_card(locale))
+            except discord.HTTPException:
+                # No Send Messages: the decision was recorded, report through
+                # the interaction (works without the permission).
+                await interaction.followup.send(
+                    view=notice_card("unavailable", locale), ephemeral=True
+                )
+                return
             await self._render(
                 stream, interaction.channel, conversation_id, locale, card=card
             )

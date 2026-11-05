@@ -146,7 +146,7 @@ class WebhookView(BaseView):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
                 async with session.delete(webhook_url) as response:
                     if response.status == 204:
                         # Success
@@ -201,7 +201,7 @@ class WebhookView(BaseView):
             return
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
                 async with session.get(webhook_url) as response:
                     if response.status == 200:
                         self.webhook_data = await response.json()
@@ -263,7 +263,7 @@ class EditWebhookModal(BaseModal):
             return
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
                 async with session.patch(webhook_url, json={"name": new_name}) as response:
                     if response.status == 200:
                         updated_data = await response.json()
@@ -340,7 +340,7 @@ class SendMessageModal(BaseModal):
             payload["username"] = username
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
                 async with session.post(webhook_url, json=payload) as response:
                     if response.status in [200, 204]:
                         success_title = i18n.get("commands.webhook.send.success.title", locale=self.locale)
@@ -394,7 +394,8 @@ class Webhook(commands.Cog):
         webhook_url = f"https://discord.com/api/webhooks/{webhook_id}/{webhook_token}"
 
         try:
-            async with aiohttp.ClientSession() as session:
+            # Bounded: the command shows a "loading" message until this returns.
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=8)) as session:
                 async with session.get(webhook_url) as response:
                     if response.status == 200:
                         return await response.json()

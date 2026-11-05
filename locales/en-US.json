@@ -854,7 +854,11 @@
         "member_hierarchy_title": "Role Hierarchy",
         "member_hierarchy": "Your highest role must be above the target's highest role.",
         "bot_hierarchy_title": "Bot Hierarchy",
-        "bot_hierarchy": "Moddy's highest role must be above the target's highest role to perform this action."
+        "bot_hierarchy": "Moddy's highest role must be above the target's highest role to perform this action.",
+        "bot_missing_permission_title": "Missing permission",
+        "bot_missing_permission": "Moddy needs the server-wide \"{permission}\" permission for this action. Grant it to its role in Server Settings > Roles (a permission granted only in one channel is not enough).",
+        "cannot_timeout_admin_title": "Can't time out an administrator",
+        "cannot_timeout_admin": "Discord does not allow timing out an administrator or the server owner."
       }
     }
   },
@@ -1053,12 +1057,27 @@
         "channel_not_found": "Channel not found",
         "missing_bot_perms": {
           "title": "Insufficient Permissions",
-          "description": "Moddy needs the following permissions to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it these permissions manually (and check the permissions of the channels involved).",
+          "description": "Moddy needs the following permissions to configure **{module}**:\n{permissions}\n\nGrant them where indicated, or use the button to re-invite Moddy with exactly the missing permissions.",
           "button": "Re-invite Moddy",
-          "in_channel": "In {channel}:"
+          "in_channel": "In {channel}:",
+          "hint_guild": "Server Settings › Roles › Moddy's role: enable it.",
+          "hint_anywhere": "Enable it for Moddy's role server-wide, or only on the channel you will pick (channel settings › Permissions).",
+          "hint_channel": "Allow it for Moddy's role in the settings of {channel} (Edit Channel › Permissions), or server-wide.",
+          "hint_denied": "{channel} explicitly denies {permissions} to Moddy: a server-wide grant would be overridden. Edit the channel (or its category) › Permissions and allow it for Moddy's role.",
+          "hidden": "Moddy cannot see {channel}. Allow **View Channel** for Moddy's role in the channel settings (Edit Channel › Permissions), or pick another channel.",
+          "gone": "The configured channel {channel} no longer exists: pick another one in the panel.",
+          "timed_out": "Moddy is currently timed out on this server, so it temporarily lost every permission except View Channel and Read Message History. Remove the timeout (right-click Moddy in the member list › Remove Timeout), then try again."
         },
         "channel_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions in {channel}:\n{permissions}",
-        "guild_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions on this server:\n{permissions}"
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions on this server:\n{permissions}",
+        "role_problem": {
+          "above": "Moddy cannot give {roles}: it is above Moddy's highest role ({bot_role}). In Server Settings › Roles, move Moddy's role above {roles}.",
+          "managed": "{roles} is managed by an integration (bot, booster, subscription) and cannot be given by Moddy. Pick another role.",
+          "everyone": "@everyone cannot be used here.",
+          "missing": "{roles} no longer exists. Pick another role."
+        },
+        "save_failed": "Moddy could not save right now (the database is unavailable or too slow). Nothing was changed: try again in a moment.",
+        "unavailable": "Moddy cannot reach its database right now. Try again in a moment."
       },
       "current_value": "Current value:",
       "not_configured": "Not configured",
@@ -3829,6 +3848,7 @@
         "unknown_category": "That category does not exist.",
         "same_category": "The ticket is already in that category.",
         "cannot_edit_channel": "Moddy could not edit the ticket channel. Check its permissions.",
+        "cannot_move_channel": "Moddy can't move the ticket to the category **{category}**. Discord requires Manage Channels on the ticket channel and on the destination category: allow Moddy's role in that category's permissions (View Channel, Manage Channels).",
         "invalid_name": "That name cannot be used for a channel.",
         "already_participant": "They already have access to this ticket.",
         "not_a_participant": "They were not added to this ticket.",

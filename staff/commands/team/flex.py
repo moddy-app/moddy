@@ -38,10 +38,14 @@ class FlexCommand(StaffCommand):
         else:
             try:
                 await ctx.channel.send(view=view)
-                await ctx.message.delete()
-            except discord.Forbidden:
+            except discord.HTTPException:
                 await ctx.send(view=design.error(
                     t("staff.common.error.title", locale=locale),
                     t("staff.team.flex.no_perm", locale=locale),
                 ))
+            else:
+                try:
+                    await ctx.message.delete()
+                except discord.HTTPException:
+                    pass  # the flex is posted; a lingering command is harmless
         logger.info("Staff %s used flex", ctx.author.id)

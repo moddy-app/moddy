@@ -1162,9 +1162,16 @@ class TokenDetector(commands.Cog):
             return
         _PROCESSING.add(message.id)
         try:
-            await asyncio.gather(
-                *[self._handle_token(message, token) for token in set(matches)]
+            results = await asyncio.gather(
+                *[self._handle_token(message, token) for token in set(matches)],
+                return_exceptions=True,
             )
+            # One bad token (network down, DM closed, deleted message) must not
+            # hide the others; log each failure once with its context.
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning("TokenDetector: handling a token in message %s failed: %r",
+                                   message.id, result)
         finally:
             _PROCESSING.discard(message.id)
 
