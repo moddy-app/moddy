@@ -1126,6 +1126,21 @@
       },
       "external": {
         "save_refused": "Este módulo lo gestiona **{app}** en este servidor. Transfiérelo a Moddy para editarlo aquí."
+      },
+      "test": {
+        "button": "Enviar una prueba",
+        "hint": "Envíalo una vez ahora para ver exactamente lo que recibirán los miembros.",
+        "marker": "Mensaje de prueba enviado por {user} desde /config.",
+        "cooldown": "Espera {seconds} s antes de enviar otra prueba.",
+        "result": {
+          "sent_channel": "Mensaje de prueba enviado en {channel}.",
+          "sent_dm": "Mensaje de prueba enviado a tus mensajes directos.",
+          "not_found": "Este mensaje ya no existe. Vuelve a abrir el panel para ver la configuración actual.",
+          "channel_missing": "No se encuentra el canal configurado. Elige otro.",
+          "no_permission": "Moddy no puede enviar mensajes en {channel}. Revisa sus permisos en ese canal.",
+          "dm_closed": "No se pudo enviarte un MD: tus mensajes directos están cerrados para este servidor.",
+          "failed": "No se pudo enviar la prueba. Inténtalo de nuevo en un momento."
+        }
       }
     },
     "welcome_channel": {
@@ -1135,10 +1150,8 @@
       "config": {
         "title": "Mensajes de bienvenida",
         "description": "Envía un mensaje de bienvenida en un canal cuando un miembro entra al servidor.",
-        "limit": "Hasta {max} mensajes de bienvenida por servidor.",
         "manage_placeholder": "Gestionar un mensaje de bienvenida",
         "list": {
-          "title": "Mensajes configurados",
           "count": "{count}/{max} mensaje(s) de bienvenida",
           "empty": "Todavía no hay mensajes de bienvenida. Añade uno para empezar.",
           "paused": "En pausa"
@@ -1212,10 +1225,8 @@
       "config": {
         "title": "Mensajes privados de bienvenida",
         "description": "Envía un mensaje privado a los nuevos miembros cuando entran al servidor.",
-        "limit": "Hasta {max} mensajes privados por servidor.",
         "manage_placeholder": "Gestionar un mensaje privado",
         "list": {
-          "title": "Mensajes configurados",
           "count": "{count}/{max} mensaje(s) privado(s)",
           "empty": "Todavía no hay mensajes privados. Añade uno para empezar.",
           "entry_label": "Mensaje {index}",
@@ -1536,8 +1547,6 @@
         "service_down": "**El servicio de notificaciones no está disponible en este momento.** Aún puedes editar tu configuración, pero los cambios pueden tardar un poco en aplicarse.",
         "manage_placeholder": "Selecciona una suscripción a gestionar",
         "list": {
-          "title": "Cuentas seguidas",
-          "count": "{count} cuenta(s) seguida(s)",
           "roles": "{count} rol(es) mencionado(s)",
           "paused": "en pausa",
           "empty": "Todavía no sigues ninguna cuenta. Añade una para empezar a recibir notificaciones.",
@@ -1682,6 +1691,9 @@
         "limit_reached_free": "<:warning:1519789903100121139> Los servidores gratuitos solo pueden seguir **1 cuenta por plataforma**. Elimina una o pásate a Premium para seguir hasta 5.",
         "limit_reached_premium": "<:warning:1519789903100121139> Has alcanzado el máximo de **5 cuentas por plataforma** para este servidor.",
         "internal_error": "<:error:1519790252594827264> Algo salió mal. Inténtalo de nuevo."
+      },
+      "test": {
+        "sample_title": "Esta es una publicación de prueba"
       }
     },
     "bump_reminder": {
@@ -1690,12 +1702,9 @@
       "config": {
         "title": "Recordatorio de bump",
         "description": "Una ventana de bump perdida es visibilidad perdida. Moddy reconoce un bump **exitoso** en el canal que elijas, agradece a quien lo hizo y avisa al canal en cuanto el comando vuelve a estar disponible.",
-        "limit": "{max} recordatorio(s) por directorio.",
         "manage_placeholder": "Gestionar un recordatorio existente",
         "all_configured": "Has alcanzado tu cuota en todos los directorios compatibles.",
         "list": {
-          "title": "Recordatorios configurados",
-          "count": "{count} recordatorio(s)",
           "empty": "Todavía no hay recordatorios. Elige un directorio abajo para empezar.",
           "every": "Cada {interval}",
           "paused": "En pausa"

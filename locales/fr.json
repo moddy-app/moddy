@@ -1125,6 +1125,21 @@
       },
       "external": {
         "save_refused": "Ce module est géré par **{app}** sur ce serveur. Transfère-le vers Moddy pour le modifier ici."
+      },
+      "test": {
+        "button": "Envoyer un test",
+        "hint": "Envoie-le une fois maintenant pour voir exactement ce que recevront les membres.",
+        "marker": "Message de test envoyé par {user} depuis /config.",
+        "cooldown": "Patiente encore {seconds} s avant un nouveau test.",
+        "result": {
+          "sent_channel": "Message de test envoyé dans {channel}.",
+          "sent_dm": "Message de test envoyé dans tes messages privés.",
+          "not_found": "Ce message n'existe plus. Rouvre le panneau pour voir la configuration actuelle.",
+          "channel_missing": "Le salon configuré est introuvable. Choisis-en un autre.",
+          "no_permission": "Moddy ne peut pas envoyer de message dans {channel}. Vérifie ses permissions dans ce salon.",
+          "dm_closed": "Impossible de t'envoyer un message privé : tes MP sont fermés pour ce serveur.",
+          "failed": "Le test n'a pas pu être envoyé. Réessaie dans un instant."
+        }
       }
     },
     "welcome_channel": {
@@ -1134,10 +1149,8 @@
       "config": {
         "title": "Messages de bienvenue",
         "description": "Envoie un message de bienvenue dans un salon quand un membre rejoint le serveur.",
-        "limit": "Jusqu'à {max} messages de bienvenue par serveur.",
         "manage_placeholder": "Gérer un message de bienvenue",
         "list": {
-          "title": "Messages configurés",
           "count": "{count}/{max} message(s) de bienvenue",
           "empty": "Aucun message de bienvenue pour l'instant. Ajoute-en un pour commencer.",
           "paused": "En pause"
@@ -1211,10 +1224,8 @@
       "config": {
         "title": "Messages privés de bienvenue",
         "description": "Envoie un message privé aux nouveaux membres quand ils rejoignent le serveur.",
-        "limit": "Jusqu'à {max} messages privés par serveur.",
         "manage_placeholder": "Gérer un message privé",
         "list": {
-          "title": "Messages configurés",
           "count": "{count}/{max} message(s) privé(s)",
           "empty": "Aucun message privé pour l'instant. Ajoute-en un pour commencer.",
           "entry_label": "Message {index}",
@@ -1535,8 +1546,6 @@
         "service_down": "**Le service de notifications est actuellement injoignable.** Vous pouvez toujours modifier votre configuration, mais les changements peuvent mettre un instant à s'appliquer.",
         "manage_placeholder": "Sélectionnez un abonnement à gérer",
         "list": {
-          "title": "Comptes suivis",
-          "count": "{count} compte(s) suivi(s)",
           "roles": "{count} rôle(s) mentionné(s)",
           "paused": "en pause",
           "empty": "Aucun compte suivi pour le moment. Ajoutez-en un pour commencer à recevoir des notifications.",
@@ -1681,6 +1690,9 @@
         "limit_reached_free": "<:warning:1519789903100121139> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
         "limit_reached_premium": "<:warning:1519789903100121139> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
         "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
+      },
+      "test": {
+        "sample_title": "Ceci est une publication de test"
       }
     },
     "bump_reminder": {
@@ -1689,12 +1701,9 @@
       "config": {
         "title": "Rappel de bump",
         "description": "Une fenêtre de bump ratée, c'est de la visibilité perdue. Moddy reconnaît un bump **réussi** dans le salon que vous désignez, remercie la personne, et rappelle le salon dès que la commande redevient disponible.",
-        "limit": "{max} rappel(s) par site de référencement.",
         "manage_placeholder": "Gérer un rappel existant",
         "all_configured": "Vous avez atteint votre quota sur chaque site pris en charge.",
         "list": {
-          "title": "Rappels configurés",
-          "count": "{count} rappel(s)",
           "empty": "Aucun rappel pour l'instant. Choisissez un site ci-dessous pour commencer.",
           "every": "Toutes les {interval}",
           "paused": "En pause"

@@ -37,7 +37,7 @@ from discord import ui
 from cogs.error_handler import BaseModal, BaseView
 from config import COLORS
 from modules.configs._common import (
-    ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
+    ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal, quote,
     module_manage_button, open_main_config, show, state_accent,
 )
 from modules.tickets import (
@@ -332,7 +332,7 @@ class TicketsConfigView(BaseView):
 
         if self.panels:
             for panel in self.panels:
-                container.add_item(ui.TextDisplay(self._render_entry(panel)))
+                container.add_item(ui.TextDisplay(quote(self._render_entry(panel))))
 
             row = ui.ActionRow()
             select = ui.Select(

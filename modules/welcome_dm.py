@@ -339,3 +339,38 @@ class WelcomeDmModule(ModuleBase):
                     )
             except Exception as e:
                 logger.error(f"Error sending DM welcome: {e}", exc_info=True)
+
+
+# --------------------------------------------------------------------------- #
+# Test send (/config "Send a test" button, modules/configs/_test_send.py)
+# --------------------------------------------------------------------------- #
+async def send_test(bot, guild: discord.Guild, member: discord.Member,
+                    ref: str, locale: str):
+    """DM one welcome message to ``member`` (the person who clicked) right now.
+
+    Through the notification system like a real one: recorded, attributed to
+    the server, reportable.
+    """
+    from modules.configs._test_send import TestResult, add_test_marker
+
+    saved = await bot.module_manager.get_module_config(guild.id, WelcomeDmModule.MODULE_ID)
+    entry = next((m for m in normalize_config(saved)['messages'] if m['id'] == ref), None)
+    if entry is None:
+        return TestResult("not_found")
+
+    view, allowed = build_welcome_view(entry, member, guild, locale)
+    add_test_marker(view, member, locale)
+    result = await bot.notifications.send_dm(
+        member,
+        content=welcome_content(entry, guild.name),
+        source=NotificationSource.guild(guild.id),
+        variables=message_variables(member, guild),
+        view=view,
+        allowed_mentions=allowed,
+        locale=locale,
+    )
+    if result.forbidden:
+        return TestResult("dm_closed")
+    if result.delivered:
+        return TestResult("sent_dm")
+    return TestResult("failed")

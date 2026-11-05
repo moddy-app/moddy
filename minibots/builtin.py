@@ -40,6 +40,7 @@ COMMON_PERSISTENT_VIEWS = (
     "cogs.config:ConfigMainView",
     "modules.configs.server_settings_config:ServerSettingsConfigView",
     "modules.configs._common:ModuleStatePersistence",
+    "modules.configs._test_send:TestSendPersistence",
     "utils.minibot_transfer:MinibotTransferPersistence",
     "utils.notification_views:NotificationsPersistence",
 )

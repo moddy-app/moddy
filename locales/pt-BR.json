@@ -1126,6 +1126,21 @@
       },
       "external": {
         "save_refused": "Este módulo é gerenciado por **{app}** neste servidor. Transfira-o para o Moddy para editá-lo aqui."
+      },
+      "test": {
+        "button": "Enviar um teste",
+        "hint": "Envie uma vez agora para ver exatamente o que os membros vão receber.",
+        "marker": "Mensagem de teste enviada por {user} pelo /config.",
+        "cooldown": "Aguarde {seconds}s antes de enviar outro teste.",
+        "result": {
+          "sent_channel": "Mensagem de teste enviada em {channel}.",
+          "sent_dm": "Mensagem de teste enviada na sua DM.",
+          "not_found": "Esta mensagem não existe mais. Reabra o painel para ver a configuração atual.",
+          "channel_missing": "O canal configurado não foi encontrado. Escolha outro.",
+          "no_permission": "O Moddy não pode enviar mensagens em {channel}. Verifique as permissões dele nesse canal.",
+          "dm_closed": "Não foi possível te enviar uma DM: suas DMs estão fechadas para este servidor.",
+          "failed": "Não foi possível enviar o teste. Tente novamente em instantes."
+        }
       }
     },
     "welcome_channel": {
@@ -1135,10 +1150,8 @@
       "config": {
         "title": "Mensagens de boas-vindas",
         "description": "Envia uma mensagem de boas-vindas em um canal quando um membro entra no servidor.",
-        "limit": "Até {max} mensagens de boas-vindas por servidor.",
         "manage_placeholder": "Gerenciar uma mensagem de boas-vindas",
         "list": {
-          "title": "Mensagens configuradas",
           "count": "{count}/{max} mensagem(ns) de boas-vindas",
           "empty": "Nenhuma mensagem de boas-vindas ainda. Adicione uma para começar.",
           "paused": "Pausada"
@@ -1212,10 +1225,8 @@
       "config": {
         "title": "Mensagens privadas de boas-vindas",
         "description": "Envia uma mensagem privada aos novos membros quando eles entram no servidor.",
-        "limit": "Até {max} mensagens privadas por servidor.",
         "manage_placeholder": "Gerenciar uma mensagem privada",
         "list": {
-          "title": "Mensagens configuradas",
           "count": "{count}/{max} mensagem(ns) privada(s)",
           "empty": "Nenhuma mensagem privada ainda. Adicione uma para começar.",
           "entry_label": "Mensagem {index}",
@@ -1536,8 +1547,6 @@
         "service_down": "**O serviço de notificações está atualmente inacessível.** Você ainda pode editar sua configuração, mas as alterações podem demorar para ser aplicadas.",
         "manage_placeholder": "Selecione uma inscrição para gerenciar",
         "list": {
-          "title": "Contas seguidas",
-          "count": "{count} conta(s) seguida(s)",
           "roles": "{count} cargo(s) mencionado(s)",
           "paused": "pausado",
           "empty": "Nenhuma conta seguida ainda. Adicione uma para começar a receber notificações.",
@@ -1682,6 +1691,9 @@
         "limit_reached_free": "<:warning:1519789903100121139> Servidores gratuitos podem seguir apenas **1 conta por plataforma**. Remova uma ou faça upgrade para o Premium para seguir até 5.",
         "limit_reached_premium": "<:warning:1519789903100121139> Você atingiu o máximo de **5 contas por plataforma** para este servidor.",
         "internal_error": "<:error:1519790252594827264> Algo deu errado. Tente novamente."
+      },
+      "test": {
+        "sample_title": "Esta é uma publicação de teste"
       }
     },
     "bump_reminder": {
@@ -1690,12 +1702,9 @@
       "config": {
         "title": "Lembrete de bump",
         "description": "Uma janela de bump perdida é visibilidade perdida. O Moddy reconhece um bump **bem-sucedido** no canal que você indicar, agradece quem o executou e chama o canal de volta assim que o comando fica disponível de novo.",
-        "limit": "{max} lembrete(s) por diretório.",
         "manage_placeholder": "Gerenciar um lembrete existente",
         "all_configured": "Você atingiu sua cota em todos os diretórios compatíveis.",
         "list": {
-          "title": "Lembretes configurados",
-          "count": "{count} lembrete(s)",
           "empty": "Nenhum lembrete ainda. Escolha um diretório abaixo para começar.",
           "every": "A cada {interval}",
           "paused": "Pausado"

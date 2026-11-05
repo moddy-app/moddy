@@ -172,6 +172,20 @@ async def ack(interaction: discord.Interaction) -> None:
         pass
 
 
+async def ack_thinking(interaction: discord.Interaction) -> None:
+    """Acknowledge with a NEW ephemeral "thinking" answer instead of an edit.
+
+    For a button that reports something without touching the panel it sits on
+    (the "Send a test" button): the answer arrives later via ``followup``.
+    """
+    if interaction.response.is_done():
+        return
+    try:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+    except (discord.InteractionResponded, discord.NotFound):
+        pass
+
+
 async def show(interaction: discord.Interaction, view: discord.ui.LayoutView) -> None:
     """Replace the panel message with ``view``.
 
@@ -191,6 +205,16 @@ async def say(interaction: discord.Interaction, *args, **kwargs) -> None:
         await interaction.followup.send(*args, **kwargs)
     else:
         await interaction.response.send_message(*args, **kwargs)
+
+
+def quote(text: str) -> str:
+    """Render one entry of a /config list as a block quote.
+
+    Every line gets the ``> `` bar so a multi-line entry (title, then ``-#``
+    details) reads as one block and the reader sees where it stops and the
+    next one starts — no separator needed between entries.
+    """
+    return "\n".join(f"> {line}" for line in text.split("\n"))
 
 
 def channel_label(bot, channel_id: Any) -> str:

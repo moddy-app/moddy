@@ -333,3 +333,38 @@ class WelcomeChannelModule(ModuleBase):
                 )
             except Exception as e:
                 logger.error(f"Error sending channel welcome: {e}", exc_info=True)
+
+
+# --------------------------------------------------------------------------- #
+# Test send (/config "Send a test" button, modules/configs/_test_send.py)
+# --------------------------------------------------------------------------- #
+async def send_test(bot, guild: discord.Guild, member: discord.Member,
+                    ref: str, locale: str):
+    """Post one welcome message right now, with ``member`` as the newcomer.
+
+    Same rendering and the same permission checks as a real join; only the
+    tester can be pinged, and a line under the card says it is a test.
+    """
+    from modules.configs._test_send import TestResult, add_test_marker
+
+    saved = await bot.module_manager.get_module_config(guild.id, WelcomeChannelModule.MODULE_ID)
+    entry = next((m for m in normalize_config(saved)['messages'] if m['id'] == ref), None)
+    if entry is None:
+        return TestResult("not_found")
+
+    channel = guild.get_channel(entry.get('channel_id') or 0)
+    if not isinstance(channel, discord.TextChannel):
+        return TestResult("channel_missing", entry.get('channel_id'))
+    if guild.me is not None and not can_act_in(channel, guild.me, ["view_channel", "send_messages"]):
+        return TestResult("no_permission", channel.id)
+
+    view, _ = build_welcome_view(entry, member, guild)
+    add_test_marker(view, member, locale)
+    try:
+        await channel.send(view=view, allowed_mentions=discord.AllowedMentions(
+            everyone=False, roles=False, users=[member]))
+    except discord.Forbidden:
+        return TestResult("no_permission", channel.id)
+    except discord.NotFound:
+        return TestResult("channel_missing", channel.id)
+    return TestResult("sent_channel", channel.id)

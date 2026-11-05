@@ -1126,6 +1126,21 @@
       },
       "external": {
         "save_refused": "This module is run by **{app}** on this server. Transfer it to Moddy to edit it here."
+      },
+      "test": {
+        "button": "Send a test",
+        "hint": "Send it once now to see exactly what members will get.",
+        "marker": "Test message sent by {user} from /config.",
+        "cooldown": "Wait {seconds}s before sending another test.",
+        "result": {
+          "sent_channel": "Test message sent in {channel}.",
+          "sent_dm": "Test message sent to your DMs.",
+          "not_found": "This message no longer exists. Reopen the panel to see the current configuration.",
+          "channel_missing": "The configured channel can't be found. Pick another one.",
+          "no_permission": "Moddy can't send messages in {channel}. Check its permissions in that channel.",
+          "dm_closed": "Couldn't DM you: your DMs are closed for this server.",
+          "failed": "The test couldn't be sent. Try again in a moment."
+        }
       }
     },
     "welcome_channel": {
@@ -1135,10 +1150,8 @@
       "config": {
         "title": "Welcome messages",
         "description": "Send a welcome message in a channel when a member joins the server.",
-        "limit": "Up to {max} welcome messages per server.",
         "manage_placeholder": "Manage a welcome message",
         "list": {
-          "title": "Configured messages",
           "count": "{count}/{max} welcome message(s)",
           "empty": "No welcome message yet. Add one to get started.",
           "paused": "Paused"
@@ -1212,10 +1225,8 @@
       "config": {
         "title": "Welcome DMs",
         "description": "Send a private message to new members when they join the server.",
-        "limit": "Up to {max} welcome DMs per server.",
         "manage_placeholder": "Manage a welcome DM",
         "list": {
-          "title": "Configured messages",
           "count": "{count}/{max} welcome DM(s)",
           "empty": "No welcome DM yet. Add one to get started.",
           "entry_label": "Message {index}",
@@ -1536,8 +1547,6 @@
         "service_down": "**The notification service is currently unreachable.** You can still edit your configuration, but changes may take a moment to apply.",
         "manage_placeholder": "Select a subscription to manage",
         "list": {
-          "title": "Followed accounts",
-          "count": "{count} account(s) followed",
           "roles": "{count} role(s) pinged",
           "paused": "paused",
           "empty": "No account followed yet. Add one to start receiving notifications.",
@@ -1682,6 +1691,9 @@
         "limit_reached_free": "<:warning:1519789903100121139> Free servers can follow only **1 account per platform**. Remove one or upgrade to Premium to follow up to 5.",
         "limit_reached_premium": "<:warning:1519789903100121139> You've reached the maximum of **5 accounts per platform** for this server.",
         "internal_error": "<:error:1519790252594827264> Something went wrong. Please try again."
+      },
+      "test": {
+        "sample_title": "This is a test post"
       }
     },
     "bump_reminder": {
@@ -1690,12 +1702,9 @@
       "config": {
         "title": "Bump Reminder",
         "description": "A missed bump window is visibility lost. Moddy recognises a **successful** bump in the channel you point it at, thanks whoever ran it, and calls the channel back the moment the command is available again.",
-        "limit": "{max} reminder(s) per directory.",
         "manage_placeholder": "Manage an existing reminder",
         "all_configured": "You have reached your quota on every supported directory.",
         "list": {
-          "title": "Configured reminders",
-          "count": "{count} reminder(s)",
           "empty": "No reminder yet. Pick a directory below to get started.",
           "every": "Every {interval}",
           "paused": "Paused"

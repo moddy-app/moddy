@@ -411,3 +411,71 @@ def build_notification_view(
 
     allowed = discord.AllowedMentions(everyone=False, users=False, roles=bool(role_ids))
     return view, allowed
+
+
+# --------------------------------------------------------------------------- #
+# Test send (/config "Send a test" button, modules/configs/_test_send.py)
+# --------------------------------------------------------------------------- #
+def _profile_url(subscription: Dict[str, Any]) -> Optional[str]:
+    """Best public link to the followed account, for the test's link button."""
+    platform = subscription.get("platform")
+    target = subscription.get("target_id") or ""
+    handle = (subscription.get("identifier") or target).lstrip("@")
+    if platform == "youtube":
+        return f"https://www.youtube.com/channel/{target}" if target.startswith("UC") \
+            else f"https://www.youtube.com/@{handle}"
+    if platform == "twitch":
+        return f"https://www.twitch.tv/{handle}"
+    if platform == "bluesky":
+        return f"https://bsky.app/profile/{target or handle}"
+    if platform == "instagram":
+        return f"https://www.instagram.com/{handle}"
+    if platform == "rss":
+        url = subscription.get("identifier") or ""
+        return url if url.startswith(("http://", "https://")) else None
+    return None
+
+
+def sample_event(subscription: Dict[str, Any], locale: str) -> Dict[str, Any]:
+    """A made-up post from the followed account, for a test notification."""
+    return {
+        "platform": subscription.get("platform", ""),
+        "target_id": subscription.get("target_id"),
+        "author_name": subscription.get("display_name") or subscription.get("identifier") or "",
+        "author_avatar": subscription.get("avatar_url"),
+        "title": t("modules.social_notifications.test.sample_title", locale=locale),
+        "url": _profile_url(subscription),
+        "timestamp": int(time.time()),
+    }
+
+
+async def send_test(bot, guild: discord.Guild, member: discord.Member,
+                    ref: str, locale: str):
+    """Post one notification right now with a sample post from the account.
+
+    ``ref`` is the subscription row id. Rendered exactly like a real post; the
+    roles it would mention are shown but not notified.
+    """
+    from modules.configs._test_send import TestResult, add_test_marker
+    from utils.bot_permissions import can_act_in
+
+    subscriptions = await bot.db.list_social_subscriptions(guild.id)
+    sub = next((s for s in subscriptions if str(s.get("id")) == str(ref)), None)
+    if sub is None:
+        return TestResult("not_found")
+
+    channel = guild.get_channel_or_thread(sub.get("channel_id") or 0)
+    if not isinstance(channel, (discord.TextChannel, discord.Thread)):
+        return TestResult("channel_missing", sub.get("channel_id"))
+    if guild.me is not None and not can_act_in(channel, guild.me, ["send_messages"]):
+        return TestResult("no_permission", channel.id)
+
+    view, _ = build_notification_view(sample_event(sub, locale), sub, locale)
+    add_test_marker(view, member, locale)
+    try:
+        await channel.send(view=view, allowed_mentions=discord.AllowedMentions.none())
+    except discord.Forbidden:
+        return TestResult("no_permission", channel.id)
+    except discord.NotFound:
+        return TestResult("channel_missing", channel.id)
+    return TestResult("sent_channel", channel.id)

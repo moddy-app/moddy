@@ -28,7 +28,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from modules.configs._common import (
-    ack, check_guild_perms, crumb, load_before_modal, show,
+    ack, check_guild_perms, crumb, load_before_modal, quote, show,
 )
 from modules.configs.tickets_config import (
     PanelAppearanceModal,
@@ -415,7 +415,7 @@ class TicketPanelConfigView(BaseView):
             return
 
         for category in categories:
-            container.add_item(ui.TextDisplay(self._render_category(category)))
+            container.add_item(ui.TextDisplay(quote(self._render_category(category))))
 
         row = ui.ActionRow()
         row.add_item(TicketPanelSelect(

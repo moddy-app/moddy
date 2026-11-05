@@ -1126,6 +1126,21 @@
       },
       "external": {
         "save_refused": "Dieses Modul wird auf diesem Server von **{app}** verwaltet. Übertrage es auf Moddy, um es hier zu bearbeiten."
+      },
+      "test": {
+        "button": "Test senden",
+        "hint": "Sende sie jetzt einmal, um genau zu sehen, was Mitglieder erhalten.",
+        "marker": "Testnachricht von {user} über /config gesendet.",
+        "cooldown": "Warte noch {seconds} s bis zum nächsten Test.",
+        "result": {
+          "sent_channel": "Testnachricht in {channel} gesendet.",
+          "sent_dm": "Testnachricht an deine Direktnachrichten gesendet.",
+          "not_found": "Diese Nachricht existiert nicht mehr. Öffne das Panel erneut, um die aktuelle Konfiguration zu sehen.",
+          "channel_missing": "Der konfigurierte Kanal wurde nicht gefunden. Wähle einen anderen.",
+          "no_permission": "Moddy kann in {channel} keine Nachrichten senden. Prüfe seine Berechtigungen in diesem Kanal.",
+          "dm_closed": "Konnte dir keine DM senden: Deine Direktnachrichten sind für diesen Server geschlossen.",
+          "failed": "Der Test konnte nicht gesendet werden. Versuche es gleich noch einmal."
+        }
       }
     },
     "welcome_channel": {
@@ -1135,10 +1150,8 @@
       "config": {
         "title": "Willkommensnachrichten",
         "description": "Sendet eine Willkommensnachricht in einen Kanal, wenn ein Mitglied dem Server beitritt.",
-        "limit": "Bis zu {max} Willkommensnachrichten pro Server.",
         "manage_placeholder": "Eine Willkommensnachricht verwalten",
         "list": {
-          "title": "Eingerichtete Nachrichten",
           "count": "{count}/{max} Willkommensnachricht(en)",
           "empty": "Noch keine Willkommensnachricht. Füge eine hinzu, um zu starten.",
           "paused": "Pausiert"
@@ -1212,10 +1225,8 @@
       "config": {
         "title": "Willkommens-Direktnachrichten",
         "description": "Sendet neuen Mitgliedern eine Direktnachricht, wenn sie dem Server beitreten.",
-        "limit": "Bis zu {max} Direktnachrichten pro Server.",
         "manage_placeholder": "Eine Direktnachricht verwalten",
         "list": {
-          "title": "Eingerichtete Nachrichten",
           "count": "{count}/{max} Direktnachricht(en)",
           "empty": "Noch keine Direktnachricht. Füge eine hinzu, um zu starten.",
           "entry_label": "Nachricht {index}",
@@ -1536,8 +1547,6 @@
         "service_down": "**Der Benachrichtigungsdienst ist derzeit nicht erreichbar.** Du kannst deine Konfiguration weiterhin bearbeiten, Änderungen können jedoch etwas Zeit brauchen, um wirksam zu werden.",
         "manage_placeholder": "Wähle ein zu verwaltendes Abonnement",
         "list": {
-          "title": "Gefolgte Konten",
-          "count": "{count} Konto/Konten gefolgt",
           "roles": "{count} Rolle(n) erwähnt",
           "paused": "pausiert",
           "empty": "Noch kein Konto gefolgt. Füge eines hinzu, um Benachrichtigungen zu erhalten.",
@@ -1682,6 +1691,9 @@
         "limit_reached_free": "<:warning:1519789903100121139> Kostenlose Server können nur **1 Konto pro Plattform** folgen. Entferne eines oder wechsle zu Premium, um bis zu 5 zu folgen.",
         "limit_reached_premium": "<:warning:1519789903100121139> Du hast das Maximum von **5 Konten pro Plattform** für diesen Server erreicht.",
         "internal_error": "<:error:1519790252594827264> Etwas ist schiefgelaufen. Bitte versuche es erneut."
+      },
+      "test": {
+        "sample_title": "Das ist ein Testbeitrag"
       }
     },
     "bump_reminder": {
@@ -1690,12 +1702,9 @@
       "config": {
         "title": "Bump-Erinnerung",
         "description": "Ein verpasstes Bump-Fenster ist verlorene Sichtbarkeit. Moddy erkennt einen **erfolgreichen** Bump im Kanal deiner Wahl, bedankt sich bei der Person und meldet sich im Kanal, sobald der Befehl wieder verfügbar ist.",
-        "limit": "{max} Erinnerung(en) pro Verzeichnis.",
         "manage_placeholder": "Bestehende Erinnerung verwalten",
         "all_configured": "Du hast dein Kontingent bei jedem unterstützten Verzeichnis erreicht.",
         "list": {
-          "title": "Eingerichtete Erinnerungen",
-          "count": "{count} Erinnerung(en)",
           "empty": "Noch keine Erinnerung. Wähle unten ein Verzeichnis, um zu beginnen.",
           "every": "Alle {interval}",
           "paused": "Pausiert"

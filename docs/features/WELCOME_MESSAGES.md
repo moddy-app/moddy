@@ -181,3 +181,11 @@ Main panel ──► Add message ──► (channel + message customization) ─
   not persisted across a restart — same accepted loss as the Social
   Notifications add/manage views, see
   [PERSISTENT_VIEWS.md](../guides/PERSISTENT_VIEWS.md).
+
+
+## Send a test
+
+The entry's manage screen and the "created" confirmation carry a **Send a
+test** button (`modules/configs/_test_send.py`, sender `send_test` in the
+module file). It posts the entry in its channel right away with the clicker as the newcomer (same rendering and permission checks as a real join; only the clicker can be pinged). A `-#` line under the card says it is a test and who
+sent it; 10 s cooldown per entry; Manage Server re-checked on every click.

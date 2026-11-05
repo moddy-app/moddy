@@ -340,3 +340,60 @@ class BumpReminderModule(ModuleBase):
             return None
 
         return {'hit': hit, 'entry': entry}
+
+
+# --------------------------------------------------------------------------- #
+# Test send (/config "Send a test" button, modules/configs/_test_send.py)
+# --------------------------------------------------------------------------- #
+async def send_test(bot, guild: discord.Guild, member: discord.Member,
+                    ref: str, locale: str):
+    """Post one reminder card right now, as if ``member`` had just bumped.
+
+    The exact card a real reminder posts, through the same notification path.
+    The configured roles are shown but **not** notified: a test that pings a
+    whole role would be the one thing worse than no test.
+    """
+    from cogs.bump_reminder import _reminder_content
+    from modules.configs._test_send import TestResult, add_test_marker
+    from notifications.models import NotificationSource
+    from utils.bot_permissions import can_act_in
+    from utils.bump_views import NO_MENTIONS, build_reminder_card
+
+    saved = await bot.module_manager.get_module_config(guild.id, BumpReminderModule.MODULE_ID)
+    entry = next((r for r in normalize_config(saved)['reminders'] if r['id'] == ref), None)
+    spec = bot_by_key(entry['bot']) if entry else None
+    if entry is None or spec is None:
+        return TestResult("not_found")
+
+    channel = guild.get_channel(entry.get('channel_id') or 0)
+    if not isinstance(channel, discord.TextChannel):
+        return TestResult("channel_missing", entry.get('channel_id'))
+    if guild.me is not None and not can_act_in(channel, guild.me, ["view_channel", "send_messages"]):
+        return TestResult("no_permission", channel.id)
+
+    role_ids = [rid for rid in entry.get('role_ids') or [] if guild.get_role(rid) is not None]
+    view = build_reminder_card(
+        spec, locale=locale,
+        role_ids=role_ids,
+        bumper_id=member.id,
+        mention_bumper=entry.get('ping_mode') == "auto",
+        bumped_at=datetime.now(timezone.utc),
+        guild_name=guild.name,
+    )
+    add_test_marker(view, member, locale)
+    result = await bot.notifications.send_channel(
+        channel,
+        content=_reminder_content(spec, guild.name),
+        source=NotificationSource.service_guild(BumpReminderModule.MODULE_ID, guild.id),
+        guild_id=guild.id,
+        variables={"server": guild.name, "directory": spec.name},
+        view=view,
+        allowed_mentions=NO_MENTIONS,
+        locale=locale,
+        attribution=False,
+    )
+    if result.delivered:
+        return TestResult("sent_channel", channel.id)
+    if isinstance(result.error, discord.Forbidden):
+        return TestResult("no_permission", channel.id)
+    return TestResult("failed", channel.id)

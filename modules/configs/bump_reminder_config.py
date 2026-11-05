@@ -46,8 +46,9 @@ from modules.bump_reminder import (
     reminders_per_bot,
 )
 from config import COLORS
+from modules.configs._test_send import TestSendButton, test_button_row
 from modules.configs._common import (
-    ack, channel_label, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
+    quote, ack, channel_label, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
     module_manage_button, open_main_config, say, show, state_accent,
 )
 from utils.components_v2 import create_success_message
@@ -307,25 +308,16 @@ class BumpReminderConfigView(BaseView):
         container.add_item(ui.TextDisplay(
             t('modules.bump_reminder.config.description', locale=self.locale)
         ))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.bump_reminder.config.limit', locale=self.locale, max=self.cap)}"
-        ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.reminders:
-            container.add_item(ui.TextDisplay(
-                f"**{t('modules.bump_reminder.config.list.title', locale=self.locale)}**\n"
-                f"-# {t('modules.bump_reminder.config.list.count', locale=self.locale, count=len(self.reminders))}"
-            ))
             for entry in self.reminders:
-                container.add_item(ui.TextDisplay(self._render_entry(entry)))
+                container.add_item(ui.TextDisplay(quote(self._render_entry(entry))))
         else:
             container.add_item(ui.TextDisplay(
                 f"{INFO} {t('modules.bump_reminder.config.list.empty', locale=self.locale)}"
             ))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         available = self._available_bots()
         if not available:
@@ -551,6 +543,8 @@ class ManageBumpReminderView(BaseView):
         )
         remove_btn.callback = self.on_remove
         button_row.add_item(remove_btn)
+        if self.entry.get('id') and spec is not None:
+            button_row.add_item(TestSendButton(_MODULE_ID, self.entry['id'], locale=self.locale))
         self.add_item(button_row)
 
     def _render_summary(self) -> str:
@@ -730,19 +724,22 @@ def _resolve_interval(raw: Optional[str], bot_key: str) -> Optional[int]:
 
 
 async def _write(interaction: discord.Interaction, reminders: List[Dict[str, Any]],
-                 success_title_key: str, success_description_key: str) -> None:
+                 success_title_key: str, success_description_key: str,
+                 test_ref: Optional[str] = None) -> None:
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     success, error = await _save(bot, interaction.guild_id, reminders, interaction.user.id)
     await _render_main(interaction)
     if success:
-        await interaction.followup.send(
-            view=create_success_message(
-                t(success_title_key, locale=locale),
-                t(success_description_key, locale=locale),
-            ),
-            ephemeral=True,
+        view = create_success_message(
+            t(success_title_key, locale=locale),
+            t(success_description_key, locale=locale),
         )
+        # "Send a test" right under the confirmation (modules/configs/_test_send.py).
+        row = test_button_row(_MODULE_ID, test_ref, locale)
+        if row is not None:
+            view.add_item(row)
+        await interaction.followup.send(view=view, ephemeral=True)
     else:
         await interaction.followup.send(
             t('modules.config.save.error', locale=locale, error=error or ''),
@@ -764,12 +761,14 @@ async def _create_reminder(interaction: discord.Interaction, *, bot_key: str,
         return
 
     reminders = await _load(bot, interaction.guild_id)
-    reminders.append(new_entry(
+    entry = new_entry(
         bot_key, channel_id=channel_id, role_ids=role_ids,
         ping_mode=ping_mode, interval=interval, created_by=interaction.user.id,
-    ))
+    )
+    reminders.append(entry)
     await _write(interaction, reminders,
-                'modules.bump_reminder.add.title', 'modules.bump_reminder.add.success')
+                'modules.bump_reminder.add.title', 'modules.bump_reminder.add.success',
+                test_ref=entry['id'])
 
 
 def _edit_reminder(entry_id: str):

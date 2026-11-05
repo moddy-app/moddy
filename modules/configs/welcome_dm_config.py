@@ -31,9 +31,11 @@ from discord import ui
 from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
+    quote,
     check_guild_perms, ack, show, say, crumb, crumb_segment, state_accent, config_state,
     module_manage_button, open_main_config,
 )
+from modules.configs._test_send import TestSendButton, confirmation_view
 from modules.welcome_dm import (
     DEFAULT_ACCENT_COLOR,
     MAX_MESSAGE_LENGTH,
@@ -231,19 +233,14 @@ class WelcomeDmConfigView(BaseView):
         container.add_item(ui.TextDisplay(
             t('modules.welcome_dm.config.description', locale=self.locale)
         ))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.welcome_dm.config.limit', locale=self.locale, max=MAX_WELCOME_DMS)}"
-        ))
-
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.messages:
             container.add_item(ui.TextDisplay(
-                f"**{t('modules.welcome_dm.config.list.title', locale=self.locale)}**\n"
                 f"-# {t('modules.welcome_dm.config.list.count', locale=self.locale, count=len(self.messages), max=MAX_WELCOME_DMS)}"
             ))
             for index, entry in enumerate(self.messages, start=1):
-                container.add_item(ui.TextDisplay(self._render_entry(index, entry)))
+                container.add_item(ui.TextDisplay(quote(self._render_entry(index, entry))))
 
             manage_row = ui.ActionRow()
             options = [
@@ -352,8 +349,9 @@ class WelcomeDmConfigView(BaseView):
             )
             return
 
+        entry_id = new_message_id()
         messages.append({
-            'id': new_message_id(),
+            'id': entry_id,
             'message': message or get_default_message(locale),
             'accent_color': color,
             'enabled': True,
@@ -366,7 +364,12 @@ class WelcomeDmConfigView(BaseView):
         if success:
             await _render_main(interaction)
             await interaction.followup.send(
-                t('modules.welcome_dm.add.success', locale=locale), ephemeral=True,
+                view=confirmation_view(
+                    _MODULE_ID, entry_id, locale,
+                    t('modules.welcome_dm.add.success', locale=locale),
+                    accent=color,
+                ),
+                ephemeral=True,
             )
         else:
             await interaction.followup.send(
@@ -475,6 +478,8 @@ class ManageWelcomeDmView(BaseView):
         )
         msg_btn.callback = self.on_edit_message
         msg_row.add_item(msg_btn)
+        if self.entry.get('id'):
+            msg_row.add_item(TestSendButton(_MODULE_ID, self.entry['id'], locale=self.locale))
         container.add_item(msg_row)
 
         self.add_item(container)
