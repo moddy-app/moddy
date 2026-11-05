@@ -37,6 +37,9 @@ class ServerTagEvents(commands.Cog):
         self.bot = bot
         # event -> (original parser, our wrapper)
         self._wrapped: Dict[str, tuple] = {}
+        # Strong references to the fire-and-forget sync tasks (the loop only
+        # keeps weak ones, a task can vanish mid-run otherwise).
+        self._tasks: set = set()
 
     async def cog_load(self):
         self._install_parsers()
@@ -75,7 +78,10 @@ class ServerTagEvents(commands.Cog):
                 logger.debug(f"Server tag observe failed on {event}: {e}")
             result = original(data)
             if event == "GUILD_MEMBER_UPDATE":
-                self._schedule_sync(data)
+                try:
+                    self._schedule_sync(data)
+                except Exception as e:  # noqa: BLE001 - never break the gateway read loop
+                    logger.debug(f"Server tag sync not scheduled: {e}")
             return result
         return parse
 
@@ -102,7 +108,9 @@ class ServerTagEvents(commands.Cog):
         if loaded is not None and 'auto_role' not in loaded:
             # The server's modules are loaded and Auto Role is not one of them.
             return
-        asyncio.create_task(self._sync(guild_id, user_id))
+        task = asyncio.create_task(self._sync(guild_id, user_id))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     async def _sync(self, guild_id: int, user_id: int) -> None:
         if not self.bot.module_manager:

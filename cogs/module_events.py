@@ -337,6 +337,15 @@ class ModuleEvents(commands.Cog):
             return
 
         try:
+            # Only a message of an active inter-server channel can have relayed
+            # copies: this keeps the database lookup (and its failure modes)
+            # off every message deletion of every other server.
+            source_module = await self.bot.module_manager.get_module_instance(
+                message.guild.id, 'interserver')
+            if (source_module is None or not source_module.enabled
+                    or message.channel.id != getattr(source_module, 'channel_id', None)):
+                return
+
             # Vérifie si c'est un message inter-serveur
             interserver_msg = await self.bot.db.get_interserver_message_by_original(message.id)
             if not interserver_msg:
@@ -354,14 +363,16 @@ class ModuleEvents(commands.Cog):
                     if not channel:
                         continue
 
-                    # Supprime le message
-                    msg = await channel.fetch_message(relayed['message_id'])
-                    await msg.delete()
+                    # Goes through the destination's webhook (no permission
+                    # needed), falling back to a plain delete.
+                    await source_module.delete_relayed_copy(channel, relayed['message_id'])
                 except discord.NotFound:
                     # Message déjà supprimé
                     pass
+                except discord.Forbidden:
+                    logger.debug(f"Cannot delete relayed message {relayed.get('message_id')}: forbidden")
                 except Exception as e:
-                    logger.error(f"Error deleting relayed message {relayed['message_id']}: {e}")
+                    logger.error(f"Error deleting relayed message {relayed.get('message_id')}: {e}")
 
             # Marque le message comme supprimé en DB
             await self.bot.db.delete_interserver_message(interserver_msg['moddy_id'])

@@ -223,6 +223,46 @@ def build_attribution_line(ctx: Dict[str, Any], *, locale: str = "en-US") -> Opt
     return None
 
 
+def inject_guild_badge(view, guild_id: int, badge: str) -> int:
+    """Add ``badge`` to a card that prints its OWN "sent by" line.
+
+    Sanction, expiry and appeal cards end with
+    ``-# Sent by [**Server**](link) (`id`)`` built by the feature itself
+    (``attribution=False``), so the generic attribution line — the one that
+    carries the check mark — is never appended to them. This puts the badge
+    right after the server link on every ``-#`` line naming ``guild_id``,
+    the same place :func:`build_attribution_line` puts it. Idempotent; returns
+    how many lines were changed; never raises.
+    """
+    if not badge or not guild_id:
+        return 0
+    marker = f") (`{guild_id}`)"
+    changed = 0
+
+    def walk(item):
+        nonlocal changed
+        content = getattr(item, "content", None)
+        if isinstance(content, str) and marker in content:
+            lines = content.split("\n")
+            for i, line in enumerate(lines):
+                if line.startswith("-# ") and marker in line \
+                        and f"){badge} (`{guild_id}`)" not in line:
+                    lines[i] = line.replace(marker, f"){badge} (`{guild_id}`)", 1)
+                    changed += 1
+            try:
+                item.content = "\n".join(lines)
+            except Exception:  # noqa: BLE001
+                pass
+        for child in list(getattr(item, "children", None) or ()):
+            walk(child)
+
+    try:
+        walk(view)
+    except Exception as exc:  # noqa: BLE001 - the badge must never cost the message
+        logger.debug("Could not inject the guild badge: %s", exc)
+    return changed
+
+
 def author_is_guild(source: NotificationSource) -> bool:
     """Whether the wording came from the server rather than from Moddy."""
     return source.author is ContentAuthor.GUILD

@@ -15,7 +15,7 @@ import discord
 import logging
 
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import can_act_in, channel_map, channel_validation_error
 from utils.emojis import TIMER
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode')
@@ -50,6 +50,10 @@ MIN_BASELINE = 0.5
 INCREASE_COOLDOWN = 30    # seconds — fast rise
 DECREASE_COOLDOWN = 300   # seconds — slow descent, one step at a time
 
+# After a refused edit (missing permission, deleted channel, 2FA...) wait this
+# long before trying that channel again.
+FAILURE_BACKOFF = 300     # seconds
+
 
 @dataclass
 class ChannelState:
@@ -60,6 +64,9 @@ class ChannelState:
     last_decrease_time: float = 0.0
     # Each entry: (timestamp: float, author_id: int)
     message_log: deque = field(default_factory=deque)
+    # Monotonic time before which no edit is attempted (a failed edit backs off
+    # instead of being retried every TASK_INTERVAL).
+    blocked_until: float = 0.0
 
 
 class AdaptiveSlowmodeModule(ModuleBase):
@@ -95,7 +102,10 @@ class AdaptiveSlowmodeModule(ModuleBase):
     MODULE_DESCRIPTION = "Ajuste automatiquement le slowmode selon l'activité"
     MODULE_EMOJI = TIMER
     MODULE_ORDER = 70
-    REQUIRED_BOT_PERMISSIONS = ["manage_channels"]
+    # Manage Channels is checked IN the edited channel (a grant on that channel
+    # alone is enough), so it is declared in channel_requirements(), not as a
+    # guild-wide requirement.
+    REQUIRED_BOT_PERMISSIONS: List[str] = []
     SENDS_MESSAGES = False  # only edits the channels' slowmode
 
     @classmethod
@@ -123,8 +133,18 @@ class AdaptiveSlowmodeModule(ModuleBase):
             self.config = config_data
 
             raw_channels = config_data.get("channels", {})
-            # JSON keys are always strings — normalise to int keys.
-            self.channels_config = {int(k): v for k, v in raw_channels.items()}
+            if not isinstance(raw_channels, dict):
+                raw_channels = {}
+            # JSON keys are always strings — normalise to int keys. A malformed
+            # entry (non-numeric id, non-object value) is skipped on its own
+            # instead of failing the whole module (or the monitor every 10 s).
+            self.channels_config = {}
+            for key, value in raw_channels.items():
+                try:
+                    self.channels_config[int(key)] = value if isinstance(value, dict) else {}
+                except (TypeError, ValueError):
+                    logger.warning(f"Ignoring invalid slowmode channel key {key!r} "
+                                   f"(guild {self.guild_id})")
 
             # Sync channel states: remove stale, add missing.
             for ch_id in list(self._channel_states):
@@ -244,58 +264,72 @@ class AdaptiveSlowmodeModule(ModuleBase):
         if not guild:
             return
 
-        for ch_id, ch_cfg in self.channels_config.items():
-            min_delay  = ch_cfg.get("min_delay", 0)
-            max_delay  = ch_cfg.get("max_delay", 120)
-            sensitivity = ch_cfg.get("sensitivity", "medium")
-            thresholds = SENSITIVITY_THRESHOLDS.get(sensitivity, SENSITIVITY_THRESHOLDS["medium"])
+        for ch_id, ch_cfg in list(self.channels_config.items()):
+            try:
+                await self._check_channel(guild, ch_id, ch_cfg, now)
+            except Exception as e:  # noqa: BLE001 - one channel must not stop the others
+                logger.error(
+                    f"[Guild {self.guild_id}] adaptive_slowmode failed on channel {ch_id}: {e}",
+                    exc_info=True,
+                )
 
-            state = self._channel_states.setdefault(ch_id, ChannelState())
+    async def _check_channel(self, guild: discord.Guild, ch_id: int,
+                             ch_cfg: Dict[str, Any], now: float):
+        min_delay  = ch_cfg.get("min_delay", 0)
+        max_delay  = ch_cfg.get("max_delay", 120)
+        if (not isinstance(min_delay, int) or not isinstance(max_delay, int)
+                or isinstance(min_delay, bool) or isinstance(max_delay, bool)
+                or min_delay < 0 or max_delay > 21600 or min_delay >= max_delay):
+            return  # malformed stored values: leave the channel alone
+        sensitivity = ch_cfg.get("sensitivity", "medium")
+        thresholds = SENSITIVITY_THRESHOLDS.get(sensitivity, SENSITIVITY_THRESHOLDS["medium"])
 
-            channel = guild.get_channel(ch_id)
-            if not channel or not isinstance(channel, discord.TextChannel):
-                continue
+        state = self._channel_states.setdefault(ch_id, ChannelState())
 
-            # Prune stale entries from the rolling window.
-            cutoff = now - ACTIVITY_WINDOW
-            while state.message_log and state.message_log[0][0] < cutoff:
-                state.message_log.popleft()
+        channel = guild.get_channel(ch_id)
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
 
-            # Compute weighted activity metric.
-            if state.message_log:
-                count = len(state.message_log)
-                unique_authors = len({entry[1] for entry in state.message_log})
-                author_factor = min(1.5, unique_authors / 5.0)
-                activity = count * author_factor
-            else:
-                activity = 0.0
+        # Prune stale entries from the rolling window.
+        cutoff = now - ACTIVITY_WINDOW
+        while state.message_log and state.message_log[0][0] < cutoff:
+            state.message_log.popleft()
 
-            # Update EWMA baseline.
-            state.baseline = EWMA_ALPHA * activity + (1.0 - EWMA_ALPHA) * state.baseline
+        # Compute weighted activity metric.
+        if state.message_log:
+            count = len(state.message_log)
+            unique_authors = len({entry[1] for entry in state.message_log})
+            author_factor = min(1.5, unique_authors / 5.0)
+            activity = count * author_factor
+        else:
+            activity = 0.0
 
-            # Ratio vs. long-term average.
-            ratio = activity / max(state.baseline, MIN_BASELINE)
+        # Update EWMA baseline.
+        state.baseline = EWMA_ALPHA * activity + (1.0 - EWMA_ALPHA) * state.baseline
 
-            # Target level with hysteresis.
-            target = self._compute_target_level(ratio, state.current_level, thresholds)
+        # Ratio vs. long-term average.
+        ratio = activity / max(state.baseline, MIN_BASELINE)
 
-            if target == state.current_level:
-                continue
+        # Target level with hysteresis.
+        target = self._compute_target_level(ratio, state.current_level, thresholds)
 
-            going_up = target > state.current_level
+        if target == state.current_level:
+            return
 
-            if going_up:
-                apply_level = target
-                cooldown   = INCREASE_COOLDOWN
-                last_edit  = state.last_increase_time
-            else:
-                apply_level = state.current_level - 1
-                cooldown   = DECREASE_COOLDOWN
-                last_edit  = state.last_decrease_time
+        going_up = target > state.current_level
 
-            if now - last_edit >= cooldown:
-                new_delay = self._level_to_delay(apply_level, min_delay, max_delay)
-                await self._apply_slowmode(channel, new_delay, state, apply_level, going_up, now)
+        if going_up:
+            apply_level = target
+            cooldown   = INCREASE_COOLDOWN
+            last_edit  = state.last_increase_time
+        else:
+            apply_level = state.current_level - 1
+            cooldown   = DECREASE_COOLDOWN
+            last_edit  = state.last_decrease_time
+
+        if now - last_edit >= cooldown and now >= state.blocked_until:
+            new_delay = self._level_to_delay(apply_level, min_delay, max_delay)
+            await self._apply_slowmode(channel, new_delay, state, apply_level, going_up, now)
 
     @staticmethod
     def _compute_target_level(ratio: float, current_level: int, thresholds: List[float]) -> int:
@@ -340,6 +374,18 @@ class AdaptiveSlowmodeModule(ModuleBase):
                 state.current_level = new_level
                 return
 
+            # Modify Channel needs Manage Channels IN the channel. A channel
+            # that denies it, hides itself from the bot or is obfuscated gets a
+            # long back-off instead of a 403 every ten seconds.
+            me = channel.guild.me
+            if me is not None and not can_act_in(channel, me, ["view_channel", "manage_channels"]):
+                state.blocked_until = now + FAILURE_BACKOFF
+                logger.info(
+                    f"[Guild {self.guild_id}] slowmode skipped on {channel.id}: "
+                    f"Manage Channels is missing there"
+                )
+                return
+
             direction = "hausse" if going_up else "baisse"
             await channel.edit(
                 slowmode_delay=delay,
@@ -354,14 +400,21 @@ class AdaptiveSlowmodeModule(ModuleBase):
 
             arrow = "↑" if going_up else "↓"
             logger.info(
-                f"[Guild {self.guild_id}] #{channel.name}: "
+                f"[Guild {self.guild_id}] {channel.id}: "
                 f"slowmode → {delay}s (level {new_level} {arrow})"
             )
 
         except discord.Forbidden:
+            # 2FA-protected server, hierarchy of a channel override, race with
+            # a permission change: back off, do not hammer the API.
+            state.blocked_until = now + FAILURE_BACKOFF
             logger.warning(
-                f"Missing Manage Channels permission on #{channel.name} "
+                f"Missing Manage Channels permission on channel {channel.id} "
                 f"(guild {self.guild_id})"
             )
+        except discord.NotFound:
+            state.blocked_until = now + FAILURE_BACKOFF
+            logger.info(f"Slowmode channel {channel.id} vanished (guild {self.guild_id})")
         except discord.HTTPException as e:
-            logger.error(f"HTTP error applying slowmode on #{channel.name}: {e}")
+            state.blocked_until = now + TASK_INTERVAL * 3
+            logger.error(f"HTTP error applying slowmode on channel {channel.id}: {e}")

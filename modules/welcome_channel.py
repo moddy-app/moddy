@@ -29,7 +29,7 @@ import discord
 from discord import ui
 
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import can_act_in, channel_map, channel_validation_error
 from utils.emojis import WAVING_HAND
 from utils.i18n import t
 
@@ -302,6 +302,17 @@ class WelcomeChannelModule(ModuleBase):
                     )
                     continue
 
+                # Discord checks Send Messages IN the channel (deny overwrite,
+                # hidden/obfuscated channel, bot timed out): skip quietly, the
+                # other entries may well be fine.
+                if guild.me is not None and not can_act_in(
+                        channel, guild.me, ["view_channel", "send_messages"]):
+                    logger.info(
+                        f"Cannot post channel welcome in {entry['channel_id']} "
+                        f"(guild {self.guild_id}): missing permissions there"
+                    )
+                    continue
+
                 view, allowed = build_welcome_view(entry, member, guild)
                 await channel.send(view=view, allowed_mentions=allowed)
                 self.count("sent")
@@ -313,6 +324,12 @@ class WelcomeChannelModule(ModuleBase):
                 logger.warning(
                     f"Missing permissions to send channel welcome in guild {self.guild_id} "
                     f"(channel {entry.get('channel_id')})"
+                )
+            except discord.NotFound:
+                # Channel deleted between the cache read and the send.
+                logger.info(
+                    f"Welcome channel {entry.get('channel_id')} vanished "
+                    f"(guild {self.guild_id})"
                 )
             except Exception as e:
                 logger.error(f"Error sending channel welcome: {e}", exc_info=True)

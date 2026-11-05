@@ -60,7 +60,7 @@ class HeartbeatClient:
     def start(self) -> None:
         """Start the background heartbeat loop. Safe to call once; a no-op
         (with a warning) when HM_URL or HM_INGEST_TOKEN is not configured."""
-        if self._task is not None:
+        if self._task is not None and not self._task.done():
             return
         if not self.url or not self.token:
             logger.warning(
@@ -95,7 +95,8 @@ class HeartbeatClient:
 
     async def _loop(self) -> None:
         timeout = aiohttp.ClientTimeout(total=5)
-        self._session = aiohttp.ClientSession(timeout=timeout)
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(timeout=timeout)
         while True:
             try:
                 payload = await self._payload()

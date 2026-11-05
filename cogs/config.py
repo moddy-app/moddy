@@ -23,6 +23,7 @@ from utils.i18n import i18n, t
 from utils.emojis import EMOJIS, SETTINGS
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
+from utils.errors import ModdyError, Unavailable
 from cogs.error_handler import BaseView
 from utils.incognito import resolve_default_incognito
 from modules.configs._common import (
@@ -479,8 +480,18 @@ class ConfigMainView(BaseView):
             )
             return
 
-        config_view = await build_module_config_view(
-            bot, guild_id, user_id, locale, module_id, module_config)
+        try:
+            config_view = await build_module_config_view(
+                bot, guild_id, user_id, locale, module_id, module_config)
+        except ModdyError:
+            raise
+        except Exception:
+            # One module's screen failing to build (malformed stored config, a
+            # bug) must not break /config: the main panel stays as it is and the
+            # admin gets a clean card instead of an interaction that hangs.
+            logger.exception("Config screen of module %s failed to build (guild %s)",
+                             module_id, guild_id)
+            raise Unavailable(t('modules.config.errors.unavailable', locale=locale))
 
         if config_view:
             # Affiche la vue de configuration du module
@@ -553,7 +564,8 @@ class Config(commands.Cog):
         # où on le sélectionne (voir ConfigMainView.on_module_select).
 
         # Vérifie que l'utilisateur a les permissions de gérer le serveur
-        if not interaction.user.guild_permissions.manage_guild:
+        user_perms = getattr(interaction.user, "guild_permissions", None)
+        if user_perms is None or not user_perms.manage_guild:
             await interaction.response.send_message(
                 t('modules.config.errors.no_user_perms', interaction),
                 ephemeral=True

@@ -854,7 +854,11 @@
         "member_hierarchy_title": "Hierarquia de Cargos",
         "member_hierarchy": "Seu cargo mais alto deve estar acima do cargo mais alto do alvo.",
         "bot_hierarchy_title": "Hierarquia do Bot",
-        "bot_hierarchy": "O cargo mais alto do Moddy deve estar acima do cargo mais alto do alvo para executar esta ação."
+        "bot_hierarchy": "O cargo mais alto do Moddy deve estar acima do cargo mais alto do alvo para executar esta ação.",
+        "bot_missing_permission_title": "Permissão ausente",
+        "bot_missing_permission": "O Moddy precisa da permissão de servidor \"{permission}\" para esta ação. Conceda-a ao cargo dele em Configurações do servidor > Cargos (uma permissão concedida só em um canal não basta).",
+        "cannot_timeout_admin_title": "Não é possível silenciar um administrador",
+        "cannot_timeout_admin": "O Discord não permite aplicar timeout a um administrador ou ao dono do servidor."
       }
     }
   },
@@ -1053,12 +1057,27 @@
         "channel_not_found": "Canal não encontrado",
         "missing_bot_perms": {
           "title": "Permissões Insuficientes",
-          "description": "O Moddy precisa das seguintes permissões para configurar **{module}**:\n{permissions}\n\nReconvide o bot ou conceda essas permissões manualmente (e verifique as permissões dos canais envolvidos).",
+          "description": "O Moddy precisa das seguintes permissões para configurar **{module}**:\n{permissions}\n\nConceda-as onde indicado, ou use o botão para reconvidar o Moddy com exatamente as permissões que faltam.",
           "button": "Reconvidar o Moddy",
-          "in_channel": "Em {channel}:"
+          "in_channel": "Em {channel}:",
+          "hint_guild": "Configurações do servidor › Cargos › cargo do Moddy: ative-a.",
+          "hint_anywhere": "Ative-a para o cargo do Moddy em todo o servidor, ou apenas no canal que você escolher (configurações do canal › Permissões).",
+          "hint_channel": "Permita-a para o cargo do Moddy nas configurações de {channel} (Editar canal › Permissões), ou em todo o servidor.",
+          "hint_denied": "{channel} nega explicitamente {permissions} ao Moddy: uma permissão concedida em todo o servidor seria sobrescrita. Edite o canal (ou sua categoria) › Permissões e permita-a para o cargo do Moddy.",
+          "hidden": "O Moddy não consegue ver {channel}. Permita **Ver canal** para o cargo do Moddy nas configurações do canal (Editar canal › Permissões), ou escolha outro canal.",
+          "gone": "O canal configurado {channel} não existe mais: escolha outro no painel.",
+          "timed_out": "O Moddy está em timeout neste servidor, então perdeu temporariamente todas as permissões exceto Ver canal e Ler histórico de mensagens. Remova o timeout (clique direito no Moddy na lista de membros › Remover timeout) e tente novamente."
         },
         "channel_missing_perms": "<:error:1519790252594827264> O Moddy não tem todas as permissões necessárias em {channel}:\n{permissions}",
-        "guild_missing_perms": "<:error:1519790252594827264> O Moddy não tem todas as permissões necessárias neste servidor:\n{permissions}"
+        "guild_missing_perms": "<:error:1519790252594827264> O Moddy não tem todas as permissões necessárias neste servidor:\n{permissions}",
+        "role_problem": {
+          "above": "O Moddy não pode atribuir {roles}: está acima do cargo mais alto do Moddy ({bot_role}). Em Configurações do servidor › Cargos, mova o cargo do Moddy acima de {roles}.",
+          "managed": "{roles} é gerenciado por uma integração (bot, booster, assinatura) e não pode ser atribuído pelo Moddy. Escolha outro cargo.",
+          "everyone": "@everyone não pode ser usado aqui.",
+          "missing": "{roles} não existe mais. Escolha outro cargo."
+        },
+        "save_failed": "O Moddy não conseguiu salvar agora (banco de dados indisponível ou lento demais). Nada foi alterado: tente novamente em instantes.",
+        "unavailable": "O Moddy não consegue acessar o banco de dados agora. Tente novamente em instantes."
       },
       "current_value": "Valor atual:",
       "not_configured": "Não configurado",
@@ -1242,6 +1261,13 @@
         "empty_message": "A mensagem de boas-vindas não pode estar vazia",
         "message_too_long": "A mensagem de boas-vindas não pode exceder {max} caracteres",
         "invalid_color": "A cor de destaque é inválida"
+      },
+      "extras": {
+        "translate": "Traduzir",
+        "website": "Site",
+        "docs": "Documentação",
+        "loading": "Traduzindo…",
+        "card_title": "Tradução"
       }
     },
     "interserver": {
@@ -2114,7 +2140,9 @@
         "note_rename_failed": "O Moddy não conseguiu redefinir o apelido (permissão ausente ou hierarquia de cargos): somente advertência.",
         "note_not_displayed": "Este nome não é o exibido neste servidor: somente advertência.",
         "fixed_title": "Perfil corrigido",
-        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido."
+        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido.",
+        "lifted_dm_title": "Seu castigo foi removido",
+        "lifted_dm_body": "Você alterou seu {kind}: já pode falar em **{server}** novamente."
       },
       "panel": {
         "home": {
@@ -3829,6 +3857,7 @@
         "unknown_category": "Essa categoria não existe.",
         "same_category": "O ticket já está nessa categoria.",
         "cannot_edit_channel": "O Moddy não conseguiu editar o canal do ticket. Verifique as permissões dele.",
+        "cannot_move_channel": "O Moddy não consegue mover o ticket para a categoria **{category}**. O Discord exige a permissão Gerenciar canais no canal e na categoria de destino: permita o cargo do Moddy nas permissões dessa categoria (Ver canal, Gerenciar canais).",
         "invalid_name": "Esse nome não pode ser usado para um canal.",
         "already_participant": "Essa pessoa já tem acesso a este ticket.",
         "not_a_participant": "Essa pessoa não foi adicionada a este ticket.",

@@ -3,6 +3,7 @@ Module Manager pour Moddy
 Gère le chargement, la configuration et le fonctionnement des modules de serveur
 """
 
+import asyncio
 import functools
 import logging
 from typing import Dict, Any, Optional, List, Type
@@ -164,9 +165,13 @@ class ModuleBase(ABC):
 
     @classmethod
     def required_permissions(cls) -> List[str]:
-        """Everything the bot must hold guild-wide: baseline + module list.
+        """Every permission the module needs: baseline + module list.
 
-        This is what /config checks, all at once, before opening the screen.
+        The full list is what an invite link asks for. /config does NOT check it
+        all server-wide: ``check_bot_perms`` splits it with
+        ``utils.bot_permissions.split_by_scope`` and verifies channel-scoped keys
+        (send, webhooks, reactions, pins, threads, slowmode...) in the configured
+        channels, guild-scoped keys (manage_roles, kick, ban...) server-wide.
         """
         from utils.bot_permissions import BASELINE_BOT_PERMISSIONS, merge_permissions
         baseline = ([k for k in BASELINE_BOT_PERMISSIONS if k not in cls.BASELINE_OPTIONAL]
@@ -451,33 +456,63 @@ class ModuleManager:
         if stored is None:
             try:
                 guild_data = await self.bot.db.get_guild(guild_id)
-                stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+                stored = self.stored_modules(guild_data, guild_id)
             except Exception as e:
                 logger.error(f"[FAIL] Could not read modules of guild {guild_id}: {e}")
                 return
         for module_id, module_class in self.registered_modules.items():
             if not module_class.DEFAULT_ENABLED or module_id in loaded:
                 continue
-            if is_foreign(stored.get(module_id), self.app):
-                continue
-            if self.default_gate is not None:
-                try:
-                    if not await self.default_gate(guild_id, module_class):
-                        continue
-                except Exception as e:
-                    logger.error(f"[FAIL] Default gate failed for {module_id} in {guild_id}: {e}")
+            try:
+                if is_foreign(stored.get(module_id), self.app):
                     continue
-            module_instance = module_class(self.bot, guild_id)
-            if await self._load_instance(module_instance, module_instance.get_default_config()):
-                loaded[module_id] = module_instance
-                if module_instance.enabled:
-                    await module_instance.enable()
+                if self.default_gate is not None:
+                    try:
+                        if not await self.default_gate(guild_id, module_class):
+                            continue
+                    except Exception as e:
+                        logger.error(f"[FAIL] Default gate failed for {module_id} in {guild_id}: {e}")
+                        continue
+                module_instance = module_class(self.bot, guild_id)
+                if await self._load_instance(module_instance, module_instance.get_default_config()):
+                    loaded[module_id] = module_instance
+                    if module_instance.enabled:
+                        await module_instance.enable()
+            except Exception as e:  # one module never stops the others
+                logger.error(f"[FAIL] Default module {module_id} failed to start in guild "
+                             f"{guild_id}: {e}", exc_info=True)
+                loaded.pop(module_id, None)
 
     async def _load_instance(self, module: ModuleBase, config: Dict[str, Any]) -> bool:
         """``load_config`` + the generic state, the only way configs get loaded."""
         ok = await module.load_config(config)
         module.apply_state(config)
         return ok
+
+    @staticmethod
+    def stored_modules(guild_data: Any, guild_id: Any = None) -> Dict[str, Any]:
+        """``data.modules`` of a guild row, whatever shape the row has.
+
+        A missing row, ``data`` / ``modules`` that are not objects, or one module
+        config that is not an object (hand-edited JSON, a bad dashboard push)
+        must never explode a load or a /config screen: the offending entry is
+        dropped with ONE warning and the module simply loads from its defaults.
+        """
+        data = guild_data.get('data') if isinstance(guild_data, dict) else None
+        modules = data.get('modules') if isinstance(data, dict) else None
+        if not isinstance(modules, dict):
+            if modules not in (None, {}):
+                logger.warning(f"[Modules] guild {guild_id}: stored 'modules' is "
+                               f"{type(modules).__name__}, ignored")
+            return {}
+        clean: Dict[str, Any] = {}
+        for module_id, config in modules.items():
+            if config is None or isinstance(config, dict):
+                clean[module_id] = config
+            else:
+                logger.warning(f"[Modules] guild {guild_id}: stored config of {module_id} is "
+                               f"{type(config).__name__}, loaded as defaults")
+        return clean
 
     def register_module(self, module_class: Type[ModuleBase]):
         """
@@ -556,7 +591,7 @@ class ModuleManager:
         try:
             # Récupère les données du serveur
             guild_data = await self.bot.db.get_guild(guild_id)
-            modules_config = guild_data.get('data', {}).get('modules', {})
+            modules_config = self.stored_modules(guild_data, guild_id)
 
             # Migre les configurations stockées sous un ancien module id
             modules_config = await self._migrate_legacy_ids(guild_id, modules_config)
@@ -565,36 +600,15 @@ class ModuleManager:
             if guild_id not in self.active_modules:
                 self.active_modules[guild_id] = {}
 
-            # Charge chaque module configuré
+            # Charge chaque module configuré. Chaque module est isolé : un
+            # load_config / enable qui lève ne doit pas empêcher les autres.
             for module_id, config_data in modules_config.items():
-                if module_id not in self.registered_modules:
-                    # Ignore silently old/obsolete module configurations
-                    # This can happen when modules are renamed or removed
-                    logger.debug(f"Skipping module {module_id} (configured but not registered - likely obsolete)")
-                    continue
-                if not self.owns(config_data) or self.is_suspended(guild_id, module_id):
-                    # Another application (a mini-bot) runs this one here.
-                    stale = self.active_modules[guild_id].pop(module_id, None)
-                    if stale is not None:
-                        try:
-                            await stale.disable()
-                        except Exception:
-                            pass
-                    continue
-
-                # Crée une instance du module
-                module_class = self.registered_modules[module_id]
-                module_instance = module_class(self.bot, guild_id)
-
-                # Charge la configuration
-                if await self._load_instance(module_instance, config_data):
-                    self.active_modules[guild_id][module_id] = module_instance
-                    # Active le module si la config est valide (enabled est déterminé dans load_config)
-                    if module_instance.enabled:
-                        await module_instance.enable()
-                    logger.info(f"Module loaded: {module_id} (guild: {guild_id}, enabled: {module_instance.enabled})")
-                else:
-                    logger.error(f"[FAIL] Failed to load module {module_id} for guild {guild_id}")
+                try:
+                    await self._load_one_stored_module(guild_id, module_id, config_data)
+                except Exception as e:
+                    logger.error(f"[FAIL] Module {module_id} failed to load for guild "
+                                 f"{guild_id}: {e}", exc_info=True)
+                    self.active_modules[guild_id].pop(module_id, None)
 
             # Opt-out modules run with their defaults where nothing is stored.
             await self._load_default_modules(guild_id, modules_config)
@@ -603,6 +617,39 @@ class ModuleManager:
 
         except Exception as e:
             logger.error(f"[FAIL] Error loading modules for guild {guild_id}: {e}", exc_info=True)
+
+    async def _load_one_stored_module(self, guild_id: int, module_id: str,
+                                      config_data: Optional[Dict[str, Any]]) -> None:
+        """Load (and enable) ONE stored module config; raises on failure so the
+        caller can isolate it."""
+        if module_id not in self.registered_modules:
+            # Ignore silently old/obsolete module configurations
+            # This can happen when modules are renamed or removed
+            logger.debug(f"Skipping module {module_id} (configured but not registered - likely obsolete)")
+            return
+        if not self.owns(config_data) or self.is_suspended(guild_id, module_id):
+            # Another application (a mini-bot) runs this one here.
+            stale = self.active_modules[guild_id].pop(module_id, None)
+            if stale is not None:
+                try:
+                    await stale.disable()
+                except Exception:
+                    pass
+            return
+
+        # Crée une instance du module
+        module_class = self.registered_modules[module_id]
+        module_instance = module_class(self.bot, guild_id)
+
+        # Charge la configuration (absent / vide = valeurs par défaut)
+        if await self._load_instance(module_instance, config_data or {}):
+            self.active_modules[guild_id][module_id] = module_instance
+            # Active le module si la config est valide (enabled est déterminé dans load_config)
+            if module_instance.enabled:
+                await module_instance.enable()
+            logger.info(f"Module loaded: {module_id} (guild: {guild_id}, enabled: {module_instance.enabled})")
+        else:
+            logger.error(f"[FAIL] Failed to load module {module_id} for guild {guild_id}")
 
     async def _migrate_legacy_ids(self, guild_id: int,
                                   modules_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -879,7 +926,7 @@ class ModuleManager:
             (success, error_message)
         """
         if not self.bot.db:
-            return False, "No database connection"
+            return False, await self._save_failed_message(guild_id)
 
         # Vérifie que le module existe
         if module_id not in self.registered_modules:
@@ -901,7 +948,8 @@ class ModuleManager:
             # otherwise silently resume a paused module) and keep it out of
             # validation.
             config_data = dict(config_data)
-            previous = await self.get_module_config(guild_id, module_id) or {}
+            previous = await self.get_module_config(
+                guild_id, module_id, raise_errors=True) or {}
             # A config another application runs is not editable from here:
             # it has to be transferred first (manual handoff, never a silent
             # takeover — see minibots/ownership.py).
@@ -991,8 +1039,21 @@ class ModuleManager:
             return True, None
 
         except Exception as e:
+            # Database outage, malformed input, a module bug: the panel gets a
+            # clean localized sentence (never the raw exception) and stays usable.
             logger.error(f"[FAIL] Error saving module config: {e}", exc_info=True)
-            return False, f"Internal error: {str(e)}"
+            return False, await self._save_failed_message(guild_id)
+
+    async def _save_failed_message(self, guild_id: int) -> str:
+        """Localized "could not save, nothing changed" (never raises)."""
+        from utils.i18n import t
+        locale = "en-US"
+        try:
+            from utils.guild_language import guild_locale
+            locale = await asyncio.wait_for(guild_locale(self.bot, guild_id), timeout=1.5)
+        except Exception:  # noqa: BLE001 - the outage that broke the save may break this too
+            pass
+        return t('modules.config.errors.save_failed', locale=locale)
 
     async def delete_module_config(self, guild_id: int, module_id: str) -> bool:
         """
@@ -1077,21 +1138,25 @@ class ModuleManager:
             return statuses
         try:
             guild_data = await self.bot.db.get_guild(guild_id)
-            stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+            stored = self.stored_modules(guild_data, guild_id)
         except Exception as e:
             logger.error(f"[FAIL] Could not read module states for guild {guild_id}: {e}")
             return statuses
         for module_id, module_class in self.registered_modules.items():
-            config = stored.get(module_id)
-            for old_id, new_id in LEGACY_MODULE_IDS.items():
-                if not config and new_id == module_id:
-                    config = stored.get(old_id)
-            if not self.owns(config):
-                statuses[module_id] = STATUS_EXTERNAL
-                continue
-            config = self.effective_config(module_id, config)
-            if config:
-                statuses[module_id] = module_class.stored_state(config)
+            try:
+                config = stored.get(module_id)
+                for old_id, new_id in LEGACY_MODULE_IDS.items():
+                    if not config and new_id == module_id:
+                        config = stored.get(old_id)
+                if not self.owns(config):
+                    statuses[module_id] = STATUS_EXTERNAL
+                    continue
+                config = self.effective_config(module_id, config)
+                if config:
+                    statuses[module_id] = module_class.stored_state(config)
+            except Exception as e:  # one bad stored config never hides the others
+                logger.warning(f"[Modules] status of {module_id} unreadable in guild "
+                               f"{guild_id}: {e}")
         return statuses
 
     async def get_foreign_modules(self, guild_id: int) -> Dict[str, str]:
@@ -1101,7 +1166,7 @@ class ModuleManager:
             return {}
         try:
             guild_data = await self.bot.db.get_guild(guild_id)
-            stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+            stored = self.stored_modules(guild_data, guild_id)
         except Exception as e:
             logger.error(f"[FAIL] Could not read module owners for guild {guild_id}: {e}")
             return {}
@@ -1237,23 +1302,27 @@ class ModuleManager:
             logger.error(f"[FAIL] Error setting state of {module_id}: {e}", exc_info=True)
             return False, "internal_error"
 
-    async def get_module_config(self, guild_id: int, module_id: str) -> Optional[Dict[str, Any]]:
+    async def get_module_config(self, guild_id: int, module_id: str, *,
+                                raise_errors: bool = False) -> Optional[Dict[str, Any]]:
         """
         Récupère la configuration d'un module depuis la DB
 
         Args:
             guild_id: ID du serveur
             module_id: ID du module
+            raise_errors: re-raise a database failure instead of answering None
+                ("not configured"). Writers use it: an outage must never look
+                like an empty config that is then saved over the real one.
 
         Returns:
-            Configuration du module ou None
+            Configuration du module ou None (also for a malformed stored value)
         """
         if not self.bot.db:
             return None
 
         try:
             guild_data = await self.bot.db.get_guild(guild_id)
-            modules_config = guild_data.get('data', {}).get('modules', {})
+            modules_config = self.stored_modules(guild_data, guild_id)
             config = modules_config.get(module_id)
             if config:
                 return config
@@ -1264,6 +1333,8 @@ class ModuleManager:
             return config
         except Exception as e:
             logger.error(f"[FAIL] Error getting module config: {e}", exc_info=True)
+            if raise_errors:
+                raise
             return None
 
     async def load_all_modules(self):

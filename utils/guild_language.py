@@ -149,6 +149,11 @@ async def get_language_setting(bot, guild: Union[discord.Guild, int, None]) -> s
 
     setting = AUTO
     db = getattr(bot, "db", None)
+    if db is None:
+        # Database down (or not yet reconnected): answer "auto" but do NOT
+        # cache it, or a server's explicit language would stay ignored after
+        # the database comes back.
+        return AUTO
     if db is not None:
         try:
             guild_row = await db.get_guild(guild_id)

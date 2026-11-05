@@ -150,7 +150,16 @@ class StaffCommandsRouter(StaffCommandsCog):
                 ))
                 return
 
-        allowed, reason = await self._has_permission(command, message.author.id)
+        try:
+            allowed, reason = await self._has_permission(command, message.author.id)
+        except Exception as exc:  # noqa: BLE001 - permission store (database) unreachable
+            logger.error("Staff permission check failed for %s.%s: %s",
+                         command_type.value, command_name, exc)
+            await self.reply_with_tracking(message, design.error(
+                t("staff.common.error.title", locale="en-US"),
+                t("staff.common.error.description", locale="en-US"),
+            ))
+            return
         if not allowed:
             await self.reply_with_tracking(message, design.permission_denied("en-US", reason))
             return

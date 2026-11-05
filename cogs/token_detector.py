@@ -16,6 +16,7 @@ from __future__ import annotations
 from config import COLORS
 
 import asyncio
+from utils.background import spawn
 import base64
 import hashlib
 import hmac
@@ -1135,7 +1136,7 @@ class TokenDetector(commands.Cog):
             BotDetailsButton,
             BotDeleteMsgButton,
         )
-        asyncio.create_task(self._cleanup_token_secrets())
+        spawn(self._cleanup_token_secrets(), name="token-secrets-cleanup")
         logger.info("TokenDetector cog loaded — dynamic items registered.")
 
     async def _cleanup_token_secrets(self) -> None:
@@ -1162,9 +1163,16 @@ class TokenDetector(commands.Cog):
             return
         _PROCESSING.add(message.id)
         try:
-            await asyncio.gather(
-                *[self._handle_token(message, token) for token in set(matches)]
+            results = await asyncio.gather(
+                *[self._handle_token(message, token) for token in set(matches)],
+                return_exceptions=True,
             )
+            # One bad token (network down, DM closed, deleted message) must not
+            # hide the others; log each failure once with its context.
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning("TokenDetector: handling a token in message %s failed: %r",
+                                   message.id, result)
         finally:
             _PROCESSING.discard(message.id)
 

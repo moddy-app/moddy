@@ -20,6 +20,7 @@ come from :mod:`minibots.builtin`, staff commands from :mod:`minibots.staff`.
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import contextlib
 import importlib
 import inspect
@@ -150,7 +151,7 @@ class MiniBotClient(commands.Bot):
             from minibots import builtin, staff
             from minibots.emojis import sync_application_emojis
             await staff.learn_developers(self)
-            asyncio.create_task(self._sync_emojis(sync_application_emojis))
+            spawn(self._sync_emojis(sync_application_emojis), name="minibot-emoji-sync")
             await builtin.sync_commands(self)
         if self.runtime is not None:
             await self.runtime.on_client_ready(self)

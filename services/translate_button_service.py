@@ -368,7 +368,8 @@ class TranslateButtonService:
                 except discord.NotFound:
                     self.tracker.forget(*key)  # deleted meanwhile: start a fresh prompt
                 except discord.HTTPException as exc:
-                    logger.warning("Translate button: could not extend a prompt: %s", exc)
+                    level = logging.WARNING if getattr(exc, "status", 0) >= 500 else logging.DEBUG
+                    logger.log(level, "Translate button: could not extend a prompt: %s", exc)
                     return False
                 else:
                     self.tracker.extend(state, message.id, now)
@@ -383,7 +384,11 @@ class TranslateButtonService:
                 logger.debug("Translate button: no permission to reply in channel %s", channel.id)
                 return False
             except discord.HTTPException as exc:
-                logger.warning("Translate button: could not post a prompt: %s", exc)
+                # A 4xx here is the message deleted meanwhile (an automod, a
+                # fast delete) or a permission race: expected, stay quiet.
+                # Only a server-side failure deserves a warning.
+                level = logging.WARNING if getattr(exc, "status", 0) >= 500 else logging.DEBUG
+                logger.log(level, "Translate button: could not post a prompt: %s", exc)
                 return False
             self.tracker.start(*key, reply.id, message.id, language, now)
             self.schedule_delete(channel.get_partial_message(reply.id), key, delete_after)

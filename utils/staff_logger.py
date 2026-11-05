@@ -70,13 +70,16 @@ class StaffLogger:
         # used to be posted here has been removed.
         tech = getattr(self.bot, "tech_logger", None)
         if tech:
-            await tech.log_staff_command(
-                command_type, command_name, executor,
-                args=args,
-                guild=target_server,
-                success=success,
-            )
-            logger.info(f"Logged staff command: {command_type}.{command_name} by {executor.id}")
+            try:
+                await tech.log_staff_command(
+                    command_type, command_name, executor,
+                    args=args,
+                    guild=target_server,
+                    success=success,
+                )
+                logger.info(f"Logged staff command: {command_type}.{command_name} by {executor.id}")
+            except Exception as e:  # logging must never fail the staff command
+                logger.warning(f"Staff command log failed: {e}")
 
     async def log_action(
         self,
@@ -101,12 +104,15 @@ class StaffLogger:
         # Technical log (webhook-based, separate channel)
         tech = getattr(self.bot, "tech_logger", None)
         if tech:
-            await tech.log_staff_action(
-                action, executor, description,
-                target=target,
-                success=success,
-                additional_info=additional_info,
-            )
+            try:
+                await tech.log_staff_action(
+                    action, executor, description,
+                    target=target,
+                    success=success,
+                    additional_info=additional_info,
+                )
+            except Exception as e:  # logging must never fail the staff action
+                logger.warning(f"Staff action log failed: {e}")
 
         channel = await self.get_log_channel()
         if not channel:

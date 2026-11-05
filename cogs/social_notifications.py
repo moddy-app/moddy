@@ -28,6 +28,7 @@ from modules.social_notifications import (
     platform_subscription_limit,
     normalize_identifier,
 )
+from utils.bot_permissions import can_act_in
 from utils.guild_language import guild_locale
 
 logger = logging.getLogger('moddy.cogs.social_notifications')
@@ -46,6 +47,8 @@ class SocialNotifications(commands.Cog):
         self.feeds = FeedsClient(bot)
         # Expose for the configuration views.
         bot.feeds_client = self.feeds
+        # (guild_id, channel_id, reason) already reported in the logs.
+        self._warned: set = set()
 
     async def cog_load(self):
         try:
@@ -253,34 +256,56 @@ class SocialNotifications(commands.Cog):
 
         paused: Dict[int, bool] = {}
         for sub in followers:
-            guild = self.bot.get_guild(sub["guild_id"])
-            if not guild:
-                continue
-            if guild.id not in paused:
-                try:
-                    paused[guild.id] = await is_guild_paused(self.bot, guild.id)
-                except Exception:
-                    paused[guild.id] = False
-            if paused[guild.id]:
-                continue
-            channel = guild.get_channel(sub["channel_id"])
-            if not isinstance(channel, (discord.TextChannel, discord.Thread)):
-                continue
-
-            locale = await guild_locale(self.bot, guild)
+            # One follower (deleted channel, locked channel, broken row, a
+            # failing locale lookup...) must never stop the others being served.
             try:
-                view, allowed = build_notification_view(event, sub, locale)
-                await channel.send(view=view, allowed_mentions=allowed)
+                await self._dispatch_to(sub, event, paused)
             except discord.Forbidden:
-                logger.warning(
-                    f"[Social] Missing permissions to post in channel {sub['channel_id']} "
-                    f"(guild {sub['guild_id']})"
-                )
+                self._warn_once(sub, "Missing permissions to post")
+            except discord.NotFound:
+                self._warn_once(sub, "Channel no longer exists")
             except Exception as e:
                 logger.error(
-                    f"[Social] Failed to dispatch event to guild {sub['guild_id']}: {e}",
+                    f"[Social] Failed to dispatch event to guild {sub.get('guild_id')}: {e}",
                     exc_info=True,
                 )
+
+    def _warn_once(self, sub: Dict[str, Any], reason: str) -> None:
+        """Log an unusable destination once, not once per notification."""
+        key = (sub.get("guild_id"), sub.get("channel_id"), reason)
+        if key in self._warned:
+            return
+        if len(self._warned) > 2000:
+            self._warned.clear()
+        self._warned.add(key)
+        logger.warning(
+            f"[Social] {reason} in channel {sub.get('channel_id')} (guild {sub.get('guild_id')})")
+
+    async def _dispatch_to(self, sub: Dict[str, Any], event: Dict[str, Any],
+                           paused: Dict[int, bool]) -> None:
+        guild = self.bot.get_guild(sub["guild_id"])
+        if not guild:
+            return
+        if guild.id not in paused:
+            try:
+                paused[guild.id] = await is_guild_paused(self.bot, guild.id)
+            except Exception:
+                paused[guild.id] = False
+        if paused[guild.id]:
+            return
+        channel = guild.get_channel_or_thread(sub["channel_id"])
+        if not isinstance(channel, (discord.TextChannel, discord.Thread)):
+            return
+        # Send Messages is checked IN the channel (Send Messages in Threads in
+        # a thread). A channel that denies the bot, hides itself from it, or an
+        # archived-and-locked thread is skipped without a 403.
+        if guild.me is not None and not can_act_in(channel, guild.me, ["send_messages"]):
+            self._warn_once(sub, "Missing permissions to post")
+            return
+
+        locale = await guild_locale(self.bot, guild)
+        view, allowed = build_notification_view(event, sub, locale)
+        await channel.send(view=view, allowed_mentions=allowed)
 
     # ------------------------------------------------------------------ #
     # Guild cleanup

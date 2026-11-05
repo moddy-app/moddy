@@ -216,7 +216,7 @@ class VerifyAnnouncementButton(
 
         try:
             source = await interaction.channel.fetch_message(self.message_id)
-        except discord.NotFound:
+        except (discord.NotFound, discord.Forbidden):
             await interaction.followup.send(
                 view=create_error_message(
                     t("announcement_verification.error.title", locale=locale),

@@ -14,7 +14,7 @@ from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE
 from utils import guild_tags
 from modules.configs._common import (
     check_guild_perms, ack, show, state_accent, config_state, module_manage_button,
-    open_main_config, crumb,
+    open_main_config, crumb, refuse_unassignable_roles,
 )
 
 logger = logging.getLogger('moddy.modules.auto_role_config')
@@ -220,7 +220,14 @@ class AutoRoleConfigView(BaseView):
         await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
-        working_config[key] = [int(role_id) for role_id in interaction.data.get('values', [])]
+        selected = [int(role_id) for role_id in interaction.data.get('values', [])]
+        if await refuse_unassignable_roles(interaction, selected):
+            # Keep the previous selection: re-render the panel unchanged.
+            changed = self._is_live_for(interaction) and self.has_changes
+            view = await self._rebuild(interaction, working_config, has_changes=changed)
+            await show(interaction, view)
+            return
+        working_config[key] = selected
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
         await show(interaction, view)

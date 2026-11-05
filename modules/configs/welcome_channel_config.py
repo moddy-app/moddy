@@ -30,7 +30,7 @@ from discord import ui
 from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
-    check_guild_perms, ack, show, say, crumb, crumb_segment, state_accent, config_state,
+    check_guild_perms, ack, channel_label, show, say, crumb, crumb_segment, state_accent, config_state,
     module_manage_button, open_main_config,
 )
 from modules.welcome_channel import (
@@ -309,8 +309,7 @@ class WelcomeChannelConfigView(BaseView):
         self.add_item(button_row)
 
     def _entry_label(self, entry: Dict[str, Any]) -> str:
-        channel = self.bot.get_channel(entry['channel_id']) if self.bot and entry.get('channel_id') else None
-        return f"#{channel.name}" if channel else f"#{entry.get('channel_id', '')}"
+        return channel_label(self.bot, entry.get('channel_id'))
 
     def _entry_preview(self, entry: Dict[str, Any]) -> str:
         """First line of the message, flattened for a select description."""

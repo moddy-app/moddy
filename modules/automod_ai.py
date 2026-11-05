@@ -53,6 +53,7 @@ qualification, the member's recidivism history and the guild config. See
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import dataclasses
 import logging
 import time
@@ -1349,6 +1350,17 @@ class AutomodModule(ModuleBase):
             return act.FAIL_PERMISSION
         return None
 
+    @staticmethod
+    def _forbidden_code(error: "discord.Forbidden", default: str) -> str:
+        """Failure code for a 403 on a sanction.
+
+        60003 is Discord's "two-factor required" answer: the bot holds the
+        permission, but the server owner has not enabled 2FA on a server that
+        demands it for moderation. That is a permission gap to fix, not a role
+        hierarchy problem, and the card must say so.
+        """
+        return act.FAIL_PERMISSION if getattr(error, "code", None) == 60003 else default
+
     # -- Decision application ----------------------------------------------
 
     def _message_snapshot(self, message: discord.Message, decision: Decision) -> Dict[str, Any]:
@@ -1546,8 +1558,8 @@ class AutomodModule(ModuleBase):
                     await guild.ban(member if member is not None else discord.Object(id=uid),
                                     reason=audit, delete_message_seconds=purge)
                     applied.append("ban")
-                except discord.Forbidden:
-                    failed["ban"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["ban"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["ban"] = act.FAIL_DISCORD
         elif removal == "kick":
@@ -1560,12 +1572,18 @@ class AutomodModule(ModuleBase):
                     self._mark_moddy_initiated(member.id, "kick")
                     await guild.kick(member, reason=audit)
                     applied.append("kick")
-                except discord.Forbidden:
-                    failed["kick"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["kick"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["kick"] = act.FAIL_DISCORD
         elif "mute" in actions:
             code = self._blocker(guild, member, "moderate_members")
+            if code is None and getattr(
+                    getattr(member, "guild_permissions", None), "administrator", False):
+                # Discord answers 403 to a timeout on anyone holding Administrator
+                # (docs: Modify Guild Member): do not even try, and report it as
+                # the "cannot act on this member" case it is.
+                code = act.FAIL_HIERARCHY
             if code is not None:
                 failed["mute"] = code
             else:
@@ -1583,8 +1601,8 @@ class AutomodModule(ModuleBase):
                         applied.append("mute")
                     else:
                         failed["mute"] = act.FAIL_UNVERIFIED
-                except discord.Forbidden:
-                    failed["mute"] = act.FAIL_HIERARCHY
+                except discord.Forbidden as e:
+                    failed["mute"] = self._forbidden_code(e, act.FAIL_HIERARCHY)
                 except discord.HTTPException:
                     failed["mute"] = act.FAIL_DISCORD
         return applied, failed
@@ -2352,7 +2370,7 @@ class AutomodModule(ModuleBase):
         if svc is not None:
             svc.spawn(coro, label=f"screen:{self.guild_id}:{member.id}")
             return
-        asyncio.ensure_future(coro)
+        spawn(coro, name=f"automod-screen:{self.guild_id}:{member.id}")
 
     # -- Events (called by ModuleEvents) -----------------------------------
 
@@ -2641,7 +2659,10 @@ class AutomodModule(ModuleBase):
         if renew:
             me = guild.me
             if (me is not None and member != guild.owner and me.top_role > member.top_role
-                    and me.guild_permissions.moderate_members):
+                    and me.guild_permissions.moderate_members
+                    # Discord refuses a timeout on anyone holding Administrator.
+                    and not getattr(getattr(member, "guild_permissions", None),
+                                    "administrator", False)):
                 locale = self.guild_locale(guild)
                 duration = timedelta(hours=ac.PROFILE_HOLD_DURATION_HOURS)
                 try:
@@ -2689,6 +2710,7 @@ class AutomodModule(ModuleBase):
         db = getattr(self.bot, "db", None)
         guild = member.guild if member is not None else self.bot.get_guild(hold["guild_id"])
         kind = hold["kind"]
+        lifted = False
         if member is not None:
             until = getattr(member, "timed_out_until", None)
             ours = hold.get("timeout_until")
@@ -2697,6 +2719,7 @@ class AutomodModule(ModuleBase):
                     locale = self.guild_locale(guild)
                     await member.timeout(None, reason=t(
                         "modules.automod_ai.profile.lift_reason", locale=locale)[:512])
+                    lifted = True
                 except (discord.Forbidden, discord.HTTPException):
                     pass
         if db is not None:
@@ -2728,6 +2751,39 @@ class AutomodModule(ModuleBase):
                                       hold["asset_key"])
         if announce and guild is not None:
             await self._notify_profile_fixed(guild, int(hold["user_id"]), kind)
+        if lifted and guild is not None:
+            await self._dm_profile_lifted(member, guild, kind)
+
+    async def _dm_profile_lifted(self, member: discord.Member, guild: discord.Guild,
+                                 kind: str) -> None:
+        """Tell the member their timeout is over (they were told when it began).
+
+        Through the notification system, attributed to the server. Best-effort:
+        closed DMs or a notification outage never undo the lift.
+        """
+        notifications = getattr(self.bot, "notifications", None)
+        if notifications is None:
+            return
+        from notifications.models import NotificationContent, NotificationSource
+        from utils.emojis import MIC_OFF
+        locale = self.guild_locale(guild)
+        kind_label = t(f"modules.automod_ai.profile.kind.{kind}", locale=locale)
+        try:
+            await notifications.send_dm(
+                member,
+                content=NotificationContent(
+                    title=t("modules.automod_ai.profile.lifted_dm_title", locale=locale),
+                    body=t("modules.automod_ai.profile.lifted_dm_body", locale=locale,
+                           kind="{kind}", server="{server}"),
+                    icon=MIC_OFF,
+                    template_id=f"automod.profile_lifted.{kind}",
+                ),
+                source=NotificationSource.service_guild("automod_ai", guild.id),
+                variables={"kind": kind_label, "server": guild.name},
+                locale=locale,
+            )
+        except Exception as e:  # noqa: BLE001 - the member is already free
+            logger.debug("automod: profile lift DM failed for %s: %s", member.id, e)
 
     async def _notify_profile_fixed(self, guild: discord.Guild, user_id: int, kind: str):
         """A short "profile fixed" line in the mandatory alert channel."""

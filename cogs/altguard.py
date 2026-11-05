@@ -162,7 +162,19 @@ class AltGuard(commands.Cog):
                 )
                 return
 
-        await module.apply_verdict(verdict)
+        # The verdict is already recorded, so a replay would be ignored: a
+        # failure here must be retried now, not lost.
+        for attempt in (1, 2):
+            try:
+                await module.apply_verdict(verdict)
+                break
+            except Exception:  # noqa: BLE001
+                if attempt == 2:
+                    logger.exception(
+                        f"[AltGuard] Could not apply verdict {verdict['verification_id']} "
+                        f"for user {verdict['user_id']} in guild {verdict['guild_id']}")
+                    return
+                await asyncio.sleep(2)
         logger.info(
             f"[AltGuard] Verdict {verdict['verdict']} applied for user "
             f"{verdict['user_id']} in guild {verdict['guild_id']} "
@@ -274,7 +286,15 @@ class AltGuard(commands.Cog):
             return
 
         for guild in list(self.bot.guilds):
-            await self.resync_guild(guild)
+            # One guild failing (gateway hiccup, malformed config, service
+            # error) must not stop the others -- nor kill this loop for good.
+            try:
+                await self.resync_guild(guild)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[AltGuard] Resync crashed for guild {guild.id}: {e}",
+                             exc_info=True)
 
     async def resync_guild(self, guild: discord.Guild) -> bool:
         """Send one guild's full member list to the service.

@@ -19,6 +19,7 @@ background with a live progress panel; everything is recorded under one
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -279,7 +280,7 @@ async def _start_broadcast(interaction: discord.Interaction, ctx, *, target: str
         except Exception as exc:  # noqa: BLE001 — a background task must not die silently
             logger.error("Broadcast failed: %s", exc, exc_info=True)
 
-    asyncio.create_task(_run())
+    spawn(_run(), name="com-send-broadcast")
     return _progress_panel({"total": 0, "sent": 0, "failed": 0},
                            total=len(audience), locale=locale)
 

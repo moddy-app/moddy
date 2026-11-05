@@ -69,14 +69,20 @@ class StatsRollup:
 
     async def _loop(self) -> None:
         while True:
+            delay = self.interval
             try:
-                await self.run()
+                db = getattr(self.bot, "db", None)
+                if not db or not getattr(db, "pool", None):
+                    delay = min(delay, 60.0)  # database down: look again soon
+                else:
+                    await self.run()
             except asyncio.CancelledError:
                 break
             except Exception as exc:
                 logger.warning("stats rollup failed: %s", exc)
+                delay = min(delay, 900.0)  # failed pass: retry in 15 min, not 6 h
             try:
-                await asyncio.sleep(self.interval)
+                await asyncio.sleep(delay)
             except asyncio.CancelledError:
                 break
 

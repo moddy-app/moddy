@@ -57,11 +57,18 @@ async def load_all(bot) -> int:
     if db is None:
         return 0
     rows = await db.get_users_with_preferences()
+    fresh: Dict[int, Dict[str, str]] = {}
+    for row in rows:
+        # One malformed stored blob must not cost everybody's preferences.
+        try:
+            user_id, raw = row
+            cleaned = _clean(raw)
+            if cleaned:
+                fresh[int(user_id)] = cleaned
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Skipping malformed preferences row: %s", exc)
     _cache.clear()
-    for user_id, raw in rows:
-        cleaned = _clean(raw)
-        if cleaned:
-            _cache[int(user_id)] = cleaned
+    _cache.update(fresh)
     logger.info("Loaded user preferences for %d users", len(_cache))
     return len(_cache)
 

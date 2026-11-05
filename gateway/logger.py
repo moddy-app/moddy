@@ -54,6 +54,7 @@ class GatewayLogger:
         # is a three-row read instead of a scan (see docs/infra/STATS.md).
         self._stats = stats
         self._flush_task: Optional[asyncio.Task] = None
+        self._webhook_tasks: set = set()
         self._local: deque = deque(maxlen=_LOCAL_BUFFER_MAX)
 
     def set_tech_logger(self, tech_logger) -> None:
@@ -74,7 +75,10 @@ class GatewayLogger:
                 await self._flush_task
             except asyncio.CancelledError:
                 pass
-        await self._do_flush()
+        try:
+            await self._do_flush()
+        except Exception as exc:
+            logger.warning("Final gateway log flush failed: %s", exc)
 
     async def record(
         self,
@@ -132,14 +136,19 @@ class GatewayLogger:
             try:
                 await self._redis.rpush(self._config.log_buffer_key, json.dumps(entry))
             except Exception as exc:
+                # Redis down: keep the entry in memory (bounded deque) so the
+                # next PG flush still writes it.
                 logger.debug("Redis buffer push failed: %s", exc)
+                self._local.append(entry)
 
         # Real-time webhook (best-effort, fire-and-forget)
         if self._tech_logger:
-            asyncio.create_task(
+            task = asyncio.create_task(
                 self._safe_webhook(entry, request_payload, response_data),
                 name="gateway-webhook-log",
             )
+            self._webhook_tasks.add(task)  # strong ref: asyncio holds tasks weakly
+            task.add_done_callback(self._webhook_tasks.discard)
 
     def _count(self, entry: dict) -> None:
         """Fold one call into the daily counters. Synchronous and unfailing."""
@@ -201,13 +210,13 @@ class GatewayLogger:
 
         batch_size = self._config.log_flush_batch
         rows = []
-        if self._redis is None:
-            while self._local and len(rows) < batch_size:
-                rows.append(self._local.popleft())
-        else:
+        if self._redis is not None:
             rows = await self._pop_redis(batch_size)
             if rows is None:
-                return
+                rows = []
+        # Entries kept in memory while Redis was unavailable (or not configured).
+        while self._local and len(rows) < batch_size:
+            rows.append(self._local.popleft())
 
         if not rows:
             return
@@ -225,7 +234,15 @@ class GatewayLogger:
             for _ in range(batch_size):
                 pipe.lpop(self._config.log_buffer_key)
             results = await pipe.execute()
-            return [json.loads(r) for r in results if r]
+            rows = []
+            for raw in results:
+                if not raw:
+                    continue
+                try:
+                    rows.append(json.loads(raw))
+                except (TypeError, ValueError):
+                    logger.warning("Dropping an unreadable gateway log entry")
+            return rows
         except Exception as exc:
             logger.warning("Failed to pop log buffer from Redis: %s", exc)
             return None
@@ -283,4 +300,5 @@ class GatewayLogger:
                 pipe.lpush(self._config.log_buffer_key, json.dumps(row))
             await pipe.execute()
         except Exception as exc2:
-            logger.error("Failed to re-queue log entries: %s", exc2)
+            logger.error("Failed to re-queue log entries to Redis, keeping them in memory: %s", exc2)
+            self._local.extendleft(reversed(rows))

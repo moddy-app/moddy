@@ -144,6 +144,11 @@ async def on_channel_delete(service, channel: discord.abc.GuildChannel) -> None:
 async def on_channel_update(service, before: discord.abc.GuildChannel,
                             after: discord.abc.GuildChannel) -> None:
     guild = after.guild
+    # A channel the bot cannot see is obfuscated: its fields and overwrites are
+    # placeholders, so a diff against them would log changes that never happened.
+    from utils.bot_permissions import is_obfuscated
+    if is_obfuscated(before) or is_obfuscated(after):
+        return
 
     await emit_diffs(
         service, guild, CHANNEL_RULES, before, after,

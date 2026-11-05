@@ -109,6 +109,22 @@ class Gateway:
         self.urlscan = None
         self.cloudconvert = None
 
+    def rebind(self, redis=None, pool=None) -> None:
+        """Hand the gateway a Redis client / DB pool that came up after start().
+
+        Redis or Postgres that were down at boot leave None inside the quota
+        manager, rate limiter and logger (they fail open); when the dependency
+        recovers, the bot calls this so they use it again. A no-op before
+        start() or for an argument left as None.
+        """
+        for component in (self._quota, self._ratelimiter, self._gw_logger):
+            if component is None:
+                continue
+            if redis is not None and hasattr(component, "_redis"):
+                component._redis = redis
+            if pool is not None and hasattr(component, "_pool"):
+                component._pool = pool
+
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
         from .quota import QuotaManager

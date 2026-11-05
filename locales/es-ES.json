@@ -854,7 +854,11 @@
         "member_hierarchy_title": "Jerarquía de roles",
         "member_hierarchy": "Tu rol más alto debe estar por encima del rol más alto del objetivo.",
         "bot_hierarchy_title": "Jerarquía del bot",
-        "bot_hierarchy": "El rol más alto de Moddy debe estar por encima del rol más alto del objetivo para realizar esta acción."
+        "bot_hierarchy": "El rol más alto de Moddy debe estar por encima del rol más alto del objetivo para realizar esta acción.",
+        "bot_missing_permission_title": "Permiso faltante",
+        "bot_missing_permission": "Moddy necesita el permiso de servidor «{permission}» para esta acción. Concédelo a su rol en Ajustes del servidor > Roles (un permiso concedido solo en un canal no basta).",
+        "cannot_timeout_admin_title": "No se puede aislar a un administrador",
+        "cannot_timeout_admin": "Discord no permite aislar (timeout) a un administrador ni al propietario del servidor."
       }
     }
   },
@@ -1053,12 +1057,27 @@
         "channel_not_found": "Canal no encontrado",
         "missing_bot_perms": {
           "title": "Permisos insuficientes",
-          "description": "Moddy necesita los siguientes permisos para configurar **{module}**:\n{permissions}\n\nVuelve a invitar al bot o concédele estos permisos manualmente (y revisa los permisos de los canales implicados).",
+          "description": "Moddy necesita los siguientes permisos para configurar **{module}**:\n{permissions}\n\nConcédelos donde se indica, o usa el botón para volver a invitar a Moddy con exactamente los permisos que faltan.",
           "button": "Volver a invitar a Moddy",
-          "in_channel": "En {channel}:"
+          "in_channel": "En {channel}:",
+          "hint_guild": "Ajustes del servidor › Roles › rol de Moddy: actívalo.",
+          "hint_anywhere": "Actívalo para el rol de Moddy en todo el servidor, o solo en el canal que elijas (ajustes del canal › Permisos).",
+          "hint_channel": "Permítelo para el rol de Moddy en los ajustes de {channel} (Editar canal › Permisos), o en todo el servidor.",
+          "hint_denied": "{channel} deniega explícitamente {permissions} a Moddy: un permiso concedido en todo el servidor sería anulado. Edita el canal (o su categoría) › Permisos y permítelo para el rol de Moddy.",
+          "hidden": "Moddy no puede ver {channel}. Permite **Ver canal** para el rol de Moddy en los ajustes del canal (Editar canal › Permisos), o elige otro canal.",
+          "gone": "El canal configurado {channel} ya no existe: elige otro en el panel.",
+          "timed_out": "Moddy está aislado temporalmente (timeout) en este servidor, así que perdió todos sus permisos salvo Ver canal y Leer el historial de mensajes. Quita el aislamiento (clic derecho en Moddy en la lista de miembros › Quitar aislamiento) y vuelve a intentarlo."
         },
         "channel_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en {channel}:\n{permissions}",
-        "guild_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en este servidor:\n{permissions}"
+        "guild_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en este servidor:\n{permissions}",
+        "role_problem": {
+          "above": "Moddy no puede asignar {roles}: está por encima del rol más alto de Moddy ({bot_role}). En Ajustes del servidor › Roles, mueve el rol de Moddy por encima de {roles}.",
+          "managed": "{roles} está gestionado por una integración (bot, booster, suscripción) y Moddy no puede asignarlo. Elige otro rol.",
+          "everyone": "@everyone no se puede usar aquí.",
+          "missing": "{roles} ya no existe. Elige otro rol."
+        },
+        "save_failed": "Moddy no pudo guardar ahora mismo (base de datos no disponible o demasiado lenta). No se ha cambiado nada: inténtalo de nuevo en un momento.",
+        "unavailable": "Moddy no puede acceder a su base de datos ahora mismo. Inténtalo de nuevo en un momento."
       },
       "current_value": "Valor actual:",
       "not_configured": "Sin configurar",
@@ -1242,6 +1261,13 @@
         "empty_message": "El mensaje de bienvenida no puede estar vacío",
         "message_too_long": "El mensaje de bienvenida no puede superar los {max} caracteres",
         "invalid_color": "El color de acento no es válido"
+      },
+      "extras": {
+        "translate": "Traducir",
+        "website": "Sitio web",
+        "docs": "Documentación",
+        "loading": "Traduciendo…",
+        "card_title": "Traducción"
       }
     },
     "interserver": {
@@ -2114,7 +2140,9 @@
         "note_rename_failed": "Moddy no pudo restablecer el apodo (falta un permiso o por la jerarquía de roles): solo advertencia.",
         "note_not_displayed": "Este nombre no es el que se muestra en este servidor: solo advertencia.",
         "fixed_title": "Perfil corregido",
-        "fixed_body": "{user} ({user_id}) cambió su {kind}: se levantó el aislamiento."
+        "fixed_body": "{user} ({user_id}) cambió su {kind}: se levantó el aislamiento.",
+        "lifted_dm_title": "Tu aislamiento se ha levantado",
+        "lifted_dm_body": "Cambiaste tu {kind}: ya puedes volver a hablar en **{server}**."
       },
       "panel": {
         "home": {
@@ -3829,6 +3857,7 @@
         "unknown_category": "Esa categoría no existe.",
         "same_category": "El ticket ya está en esa categoría.",
         "cannot_edit_channel": "Moddy no ha podido editar el canal del ticket. Comprueba sus permisos.",
+        "cannot_move_channel": "Moddy no puede mover el ticket a la categoría **{category}**. Discord exige el permiso Gestionar canales en el canal y en la categoría de destino: permite el rol de Moddy en los permisos de esa categoría (Ver canal, Gestionar canales).",
         "invalid_name": "Ese nombre no se puede usar para un canal.",
         "already_participant": "Esa persona ya tiene acceso a este ticket.",
         "not_a_participant": "Esa persona no fue añadida a este ticket.",

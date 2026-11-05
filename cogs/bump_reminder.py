@@ -32,6 +32,7 @@ from discord.ext import commands, tasks
 
 from bumpreminder import bot_by_app_id, bot_by_key
 from notifications.models import NotificationContent, NotificationSource
+from utils.bot_permissions import can_act_in
 from utils.bump_views import (
     LATE_AFTER,
     NO_MENTIONS,
@@ -241,8 +242,16 @@ class BumpReminder(commands.Cog):
             bumper = await get_or_fetch_member(guild, state['bumper_id'])
 
         for entry in entries:
-            await self._post(guild, spec, entry, state, locale,
-                             bumper=bumper, bumped_at=bumped_at, late_by=late_by)
+            # One broken channel (deleted, locked, hidden) must not cost the
+            # server's other channels their reminder.
+            try:
+                await self._post(guild, spec, entry, state, locale,
+                                 bumper=bumper, bumped_at=bumped_at, late_by=late_by)
+            except Exception as e:  # noqa: BLE001
+                logger.error(
+                    f"Bump reminder failed for guild {guild.id} channel "
+                    f"{entry.get('channel_id')}: {e}", exc_info=True)
+                continue
             stats = getattr(self.bot, "stats", None)
             if stats is not None:
                 stats.incr("bump.reminded", guild_id=guild.id,
@@ -258,12 +267,15 @@ class BumpReminder(commands.Cog):
                 f"Bump reminder channel {entry['channel_id']} gone (guild {guild.id})")
             return
 
-        perms = channel.permissions_for(guild.me)
-        if not perms.view_channel or not perms.send_messages:
+        me = guild.me
+        if me is None or not can_act_in(channel, me, ["view_channel", "send_messages"]):
+            # Checked in the channel itself: deny overwrite, hidden/obfuscated
+            # channel, or Moddy timed out.
             logger.warning(
                 f"Cannot post bump reminder in guild {guild.id} channel {channel.id} "
                 "— missing permissions")
             return
+        perms = channel.permissions_for(me)
 
         # Three ways the last bumper gets mentioned, and only these three.
         ping_mode = entry['ping_mode']

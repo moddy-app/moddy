@@ -119,9 +119,14 @@ class LogsModule(ModuleBase):
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
     MODULE_EMOJI = NEWSPAPER
     MODULE_ORDER = 25
-    # Delivery goes through webhooks, with a plain channel.send fallback
-    # (embeds + files) when a webhook cannot be created.
-    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks", "embed_links", "attach_files"]
+    # Delivery goes through a webhook when Moddy can manage one IN the log
+    # channel (manage_webhooks is channel-scoped: Discord checks it there, not
+    # server-wide), and through a plain channel.send otherwise. Nothing is
+    # needed server-wide: demanding manage_webhooks guild-wide refused servers
+    # that only granted it on the log channel, and the log channel itself is
+    # often a restricted one (hidden from @everyone).
+    SENDS_MESSAGES = False
+    REQUIRED_BOT_PERMISSIONS: List[str] = []
     CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "embed_links"]
 
     @classmethod

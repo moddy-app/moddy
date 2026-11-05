@@ -30,6 +30,7 @@ import discord
 
 from aidetector import manifest as mf
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import can_act_in
 from utils.emojis import AI_SHIELD
 
 logger = logging.getLogger("moddy.modules.ai_detector")
@@ -144,8 +145,13 @@ class AiDetectorModule(ModuleBase):
             return
         if not self.categories or not self.handles_channel(message.channel):
             return
+        # Default-enabled: degrade silently. A reply needs View Channel, Send
+        # Messages (Send Messages in Threads inside a thread) and Read Message
+        # History IN the channel (error 160002 otherwise), so the image is not
+        # even downloaded where the verdict could not be posted.
         me = message.guild.me
-        if me is not None and not message.channel.permissions_for(me).send_messages:
+        if me is not None and not can_act_in(
+                message.channel, me, ["send_messages", "read_message_history"]):
             return
 
         found = await service.analyze_message(
@@ -168,7 +174,9 @@ class AiDetectorModule(ModuleBase):
             logger.debug(f"No permission to reply to an image in guild {self.guild_id}")
             return
         except discord.HTTPException as e:
-            logger.warning(f"Could not reply to an image in guild {self.guild_id}: {e}")
+            # Includes the original message being deleted meanwhile (very
+            # common for images): nothing worth a warning.
+            logger.debug(f"Could not reply to an image in guild {self.guild_id}: {e}")
             return
         self.count(result.kind)
         service.record(result.kind, "auto")

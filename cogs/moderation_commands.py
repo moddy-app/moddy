@@ -255,6 +255,14 @@ def _hierarchy_check(
     # The bot needs to be strictly above the target to execute the Discord
     # action. Warn is a no-op on Discord's side, so the bot hierarchy is
     # irrelevant for it.
+    if action == "mute" and target.guild_permissions.administrator:
+        # Discord answers 403 to a timeout on an administrator, whatever the
+        # bot's own permissions are (docs: Modify Guild Member).
+        return _make_error_view(
+            t("commands.moderation.errors.cannot_timeout_admin_title", locale=locale),
+            t("commands.moderation.errors.cannot_timeout_admin", locale=locale),
+        )
+
     if action != "warn":
         me = guild.me
         if me is not None and me.top_role <= target.top_role:
@@ -264,6 +272,34 @@ def _hierarchy_check(
             )
 
     return None
+
+
+_ACTION_BOT_PERMISSION = {
+    "ban": "ban_members",
+    "kick": "kick_members",
+    "mute": "moderate_members",
+}
+
+
+def _bot_permission_check(guild: discord.Guild, action: str, locale: str) -> Optional[ui.LayoutView]:
+    """Error card when Moddy lacks the SERVER-WIDE permission the action needs.
+
+    ban / kick / timeout are guild-level actions in Discord, so the guild
+    permission is the right place to look (a channel overwrite cannot grant
+    them). ``guild.me`` can be missing from the cache; Discord then decides.
+    """
+    needed = _ACTION_BOT_PERMISSION.get(action)
+    me = guild.me
+    if needed is None or me is None:
+        return None
+    if getattr(me.guild_permissions, needed, False):
+        return None
+    from utils.bot_permissions import permission_name
+    return _make_error_view(
+        t("commands.moderation.errors.bot_missing_permission_title", locale=locale),
+        t("commands.moderation.errors.bot_missing_permission", locale=locale,
+          permission=permission_name(needed, locale)),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -613,6 +649,11 @@ class SanctionModal(BaseModal):
             )
             return
 
+        perm_err = _bot_permission_check(self.guild, self.action, self.locale)
+        if perm_err is not None:
+            await interaction.followup.send(view=perm_err, ephemeral=True)
+            return
+
         # Re-validate hierarchy for every selected target. The slash-command
         # decorator only sees the first target — extra ones added in the modal
         # need explicit checks. Any failure aborts the whole sanction.
@@ -633,6 +674,18 @@ class SanctionModal(BaseModal):
                 user, reason, duration, expires_at, group_id, notify_dm, attachments
             )
             results.append(r)
+
+        if self.action != "warn" and not any(r["discord_ok"] for r in results):
+            # Discord refused every target (2FA server, hierarchy changed, ...):
+            # never confirm a sanction that was not applied.
+            await interaction.followup.send(
+                view=_make_error_view(
+                    t("commands.moderation.errors.all_failed_title", locale=self.locale),
+                    t("commands.moderation.errors.all_failed", locale=self.locale),
+                ),
+                ephemeral=True,
+            )
+            return
 
         await self._send_confirmation(interaction, results, reason, expires_at)
 
@@ -679,7 +732,7 @@ class SanctionModal(BaseModal):
         discord_reason = _build_discord_reason(reference, self.mod, expires_at, reason)
         discord_ok = await self._discord_action(user, discord_reason, duration)
 
-        if notify_dm:
+        if notify_dm and discord_ok:
             guild_locale = await _guild_locale(self.bot, self.guild)
             await self._send_dm(user, reason, expires_at, reference, guild_locale, attachments)
 

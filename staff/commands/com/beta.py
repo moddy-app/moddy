@@ -21,6 +21,7 @@ row), and the whole run shares one ``batch_id``.
 from __future__ import annotations
 
 import asyncio
+from utils.background import spawn
 import logging
 import uuid as uuid_module
 from typing import Any, Dict, List, Tuple
@@ -331,7 +332,7 @@ async def _start(interaction: discord.Interaction, ctx,
         except Exception as exc:  # noqa: BLE001 — a background task must not die silently
             logger.error("Beta announcement failed: %s", exc, exc_info=True)
 
-    asyncio.create_task(_run())
+    spawn(_run(), name="com-beta-campaign")
 
 
 def _progress_panel(stats: Dict[str, Any], *, total: int, locale: str) -> BaseView:

@@ -47,7 +47,7 @@ from modules.bump_reminder import (
 )
 from config import COLORS
 from modules.configs._common import (
-    ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
+    ack, channel_label, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
     module_manage_button, open_main_config, say, show, state_accent,
 )
 from utils.components_v2 import create_success_message
@@ -379,9 +379,7 @@ class BumpReminderConfigView(BaseView):
         self.add_item(button_row)
 
     def _entry_channel_name(self, entry: Dict[str, Any]) -> str:
-        channel = (self.bot.get_channel(entry['channel_id'])
-                   if self.bot and entry.get('channel_id') else None)
-        return f"#{channel.name}" if channel else f"#{entry.get('channel_id', '')}"
+        return channel_label(self.bot, entry.get('channel_id'))
 
     def _entry_label(self, entry: Dict[str, Any]) -> str:
         spec = bot_by_key(entry['bot'])

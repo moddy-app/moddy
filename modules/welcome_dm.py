@@ -202,7 +202,8 @@ def welcome_content(entry: Dict[str, Any], guild_name: str) -> NotificationConte
 
 
 def build_welcome_view(entry: Dict[str, Any], member: discord.Member,
-                       guild: discord.Guild) -> Tuple[ui.LayoutView, discord.AllowedMentions]:
+                       guild: discord.Guild,
+                       locale: str = "en-US") -> Tuple[ui.LayoutView, discord.AllowedMentions]:
     """Build the Components V2 DM for one welcome entry.
 
     The container holds **only** the guild's own text — no bot-authored extras —
@@ -214,6 +215,12 @@ def build_welcome_view(entry: Dict[str, Any], member: discord.Member,
     container = ui.Container(accent_colour=discord.Colour(entry_accent_color(entry)))
     container.add_item(ui.TextDisplay(text or member.mention))
     view.add_item(container)
+
+    # Exceptionally, a few servers (Moddy's own) get a Translate button and
+    # Website / Documentation links under the card (utils/welcome_dm_views.py).
+    from utils.welcome_dm_views import add_extras_row, has_extras
+    if has_extras(guild.id):
+        add_extras_row(view, guild.id, locale)
 
     # A DM cannot mass-ping, but a guild's text could still carry @everyone or
     # a role mention: keep the same constraint as the channel module.
@@ -304,7 +311,7 @@ class WelcomeDmModule(ModuleBase):
             if not entry.get('enabled', True):
                 continue
             try:
-                view, allowed = build_welcome_view(entry, member, guild)
+                view, allowed = build_welcome_view(entry, member, guild, locale)
                 # Through the notification system: the DM is recorded,
                 # attributed to this server, and reportable — the text is the
                 # server's own words, which is exactly what can be abused.

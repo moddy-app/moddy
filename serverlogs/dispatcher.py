@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Dict, List, Optional, Tuple
 
 import discord
@@ -34,6 +35,11 @@ MAX_EMBEDS_PER_MESSAGE = 10
 BATCH_WINDOW = 0.75
 #: Pending entries kept per channel before the oldest are dropped.
 QUEUE_MAXSIZE = 500
+#: How long "no usable webhook" is remembered before trying again. An admin who
+#: grants Manage Webhooks (or frees a slot) must not have to restart the bot.
+NEGATIVE_WEBHOOK_TTL = 300.0
+#: Minimum delay between two warnings about the same unreachable channel.
+WARN_INTERVAL = 600.0
 
 
 class _Payload:
@@ -62,6 +68,9 @@ class LogDispatcher:
         self._webhooks: Dict[int, Optional[discord.Webhook]] = {}
         self._webhook_locks: Dict[int, asyncio.Lock] = {}
         self._dropped: Dict[int, int] = {}
+        # channel id -> monotonic time until which a missing webhook is trusted
+        self._negative_until: Dict[int, float] = {}
+        self._last_warning: Dict[int, float] = {}
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -101,6 +110,16 @@ class LogDispatcher:
     def invalidate_webhook(self, channel_id: int) -> None:
         """Forget a cached webhook (deleted in Discord, permissions changed…)."""
         self._webhooks.pop(channel_id, None)
+        self._negative_until.pop(channel_id, None)
+
+    def _warn(self, channel_id: int, message: str) -> None:
+        """Warn about a channel at most once per :data:`WARN_INTERVAL`."""
+        now = time.monotonic()
+        if now - self._last_warning.get(channel_id, -WARN_INTERVAL) >= WARN_INTERVAL:
+            self._last_warning[channel_id] = now
+            logger.warning(message)
+        else:
+            logger.debug(message)
 
     async def close(self) -> None:
         """Cancel every worker — called when the cog is unloaded."""
@@ -172,20 +191,34 @@ class LogDispatcher:
         mergeable = [p for p in batch if p.batchable]
         standalone = [p for p in batch if not p.batchable]
 
+        # One bad chunk must not swallow the rest of the batch.
         for chunk_start in range(0, len(mergeable), MAX_EMBEDS_PER_MESSAGE):
             chunk = mergeable[chunk_start:chunk_start + MAX_EMBEDS_PER_MESSAGE]
-            await self._send(channel, [p.embed for p in chunk], [])
+            try:
+                await self._send(channel, [p.embed for p in chunk], [])
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[Logs] Could not deliver a batch in {channel_id}: {e}",
+                             exc_info=True)
 
         for payload in standalone:
-            await self._send(channel, [payload.embed], payload.files)
+            try:
+                await self._send(channel, [payload.embed], payload.files)
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"[Logs] Could not deliver a log in {channel_id}: {e}",
+                             exc_info=True)
 
     async def _send(self, channel, embeds: List[discord.Embed],
                     files: List[discord.File]) -> None:
         if not embeds:
             return
 
-        webhook, thread = await self._get_webhook(channel)
-        if webhook is not None:
+        # Up to two tries through the webhook: a webhook deleted by a member
+        # (10015 Unknown Webhook) is recreated and the batch is retried at once
+        # instead of being sent through the slower fallback.
+        for attempt in range(2):
+            webhook, thread = await self._get_webhook(channel)
+            if webhook is None:
+                break
             try:
                 kwargs = {"embeds": embeds, "files": files} if files else {"embeds": embeds}
                 if thread is not None:
@@ -193,14 +226,57 @@ class LogDispatcher:
                 await webhook.send(wait=False, **kwargs)
                 return
             except discord.NotFound:
-                # Webhook deleted behind our back — drop it and fall through.
-                self.invalidate_webhook(channel.id)
+                # Webhook deleted behind our back — forget it and recreate.
+                self._forget_webhook(channel)
+                # Files are single-use streams: only retry when there are none.
+                if files:
+                    break
+                continue
             except discord.HTTPException as e:
+                if e.status == 400 and len(embeds) > 1:
+                    # Typically the 6000-character total limit of one message:
+                    # send the embeds one by one rather than losing them all.
+                    for embed in embeds:
+                        await self._send(channel, [embed], [])
+                    return
                 logger.warning(f"[Logs] Webhook send failed in {channel.id}: {e}")
-                self.invalidate_webhook(channel.id)
+                if e.status < 500 and e.status != 429:
+                    self._forget_webhook(channel)
+                break
 
+        await self._fallback_send(channel, embeds, files)
+
+    def _forget_webhook(self, channel) -> None:
+        target = channel.parent if isinstance(channel, discord.Thread) and channel.parent \
+            else channel
+        self.invalidate_webhook(target.id)
+
+    async def _fallback_send(self, channel, embeds: List[discord.Embed],
+                             files: List[discord.File]) -> None:
+        """Plain ``channel.send`` when no webhook is usable."""
+        from utils.bot_permissions import channel_missing, is_obfuscated
+        me = channel.guild.me if getattr(channel, "guild", None) else None
+        if is_obfuscated(channel):
+            self._warn(channel.id, f"[Logs] Log channel {channel.id} is hidden from "
+                                   f"the bot: logs are not delivered")
+            return
+        # Unknown bot member (stale cache): just try, Discord decides.
+        missing = channel_missing(channel, me, ["send_messages", "embed_links"]) \
+            if me is not None else []
+        if missing:
+            self._warn(channel.id, f"[Logs] Cannot post logs in {channel.id}: "
+                                   f"missing {', '.join(missing)}")
+            return
+        # A transcript is a bonus: without attach_files the log goes out bare.
+        if files and me is not None and channel_missing(channel, me, ["attach_files"]):
+            files = []
         try:
             await channel.send(embeds=embeds, files=files or discord.utils.MISSING)
+        except discord.NotFound:
+            logger.info(f"[Logs] Log channel {channel.id} no longer exists")
+        except discord.Forbidden as e:
+            self._warn(channel.id, f"[Logs] Fallback send refused in {channel.id}: "
+                                   f"{e.code} {e.text}")
         except discord.HTTPException as e:
             logger.warning(f"[Logs] Fallback send failed in {channel.id}: {e}")
 
@@ -226,21 +302,36 @@ class LogDispatcher:
         cached = self._webhooks.get(target.id)
         if cached is not None:
             return cached, thread
-        if target.id in self._webhooks:  # cached negative result
-            return None, thread
+        if time.monotonic() < self._negative_until.get(target.id, 0.0):
+            return None, thread  # cached negative result, retried after the TTL
 
         lock = self._webhook_locks.setdefault(target.id, asyncio.Lock())
         async with lock:
-            if target.id in self._webhooks:
-                return self._webhooks[target.id], thread
+            cached = self._webhooks.get(target.id)
+            if cached is not None:
+                return cached, thread
+            if time.monotonic() < self._negative_until.get(target.id, 0.0):
+                return None, thread
 
-            webhook = await self._resolve_webhook(target)
-            self._webhooks[target.id] = webhook
+            try:
+                webhook = await self._resolve_webhook(target)
+            except Exception as e:  # noqa: BLE001 - fall back to channel.send
+                logger.warning(f"[Logs] Webhook lookup failed in {target.id}: {e}")
+                webhook = None
+            if webhook is not None:
+                self._webhooks[target.id] = webhook
+                self._negative_until.pop(target.id, None)
+            else:
+                self._negative_until[target.id] = time.monotonic() + NEGATIVE_WEBHOOK_TTL
             return webhook, thread
 
     async def _resolve_webhook(self, channel) -> Optional[discord.Webhook]:
+        from utils.bot_permissions import channel_missing
         me = channel.guild.me if channel.guild else None
-        if me is None or not channel.permissions_for(me).manage_webhooks:
+        # Webhooks are managed IN the channel (docs: Create Webhook / Get Channel
+        # Webhooks need MANAGE_WEBHOOKS there); a hidden channel reports
+        # view_channel as missing and is skipped as well.
+        if me is None or channel_missing(channel, me, ["manage_webhooks"]):
             return None
 
         try:
@@ -267,5 +358,8 @@ class LogDispatcher:
                 reason="Moddy server logs",
             )
         except discord.HTTPException as e:
-            logger.warning(f"[Logs] Could not create a webhook in {channel.id}: {e}")
+            # 30007 = the channel already holds 15 webhooks; logs then use the
+            # plain-message fallback, and the lookup is retried after the TTL.
+            self._warn(channel.id, f"[Logs] Could not create a webhook in "
+                                   f"{channel.id}: {e}")
             return None

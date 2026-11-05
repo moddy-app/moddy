@@ -12,8 +12,9 @@ db = None
 async def setup_database(database_url: str = None) -> ModdyDatabase:
     """Initialise et retourne l'instance de base de données"""
     global db
-    db = ModdyDatabase(database_url)
-    await db.connect()
+    instance = ModdyDatabase(database_url)
+    await instance.connect()  # raises on failure: the global stays untouched
+    db = instance
     return db
 
 

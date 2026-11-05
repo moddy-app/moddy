@@ -109,7 +109,13 @@ if result.forbidden:      # DMs closed — every other send would fail the same
 ```
 
 Pass `attribution=False` when the card you hand over already ends with its own
-`sent_by` line.
+`sent_by` line. The service still adds the server's check mark (verified or
+OFFICIAL server) to that line automatically: `inject_guild_badge()` puts it
+right after the server link on every `-#` line naming the guild id, the same
+place the generic line carries it. A feature that later REBUILDS such a card
+(e.g. the appeal flow editing the sanction DM) calls
+`bot.notifications.badge_own_attribution(view, guild_id, locale=...)` before
+editing.
 
 `send_dm` returns a `DeliveryResult` (`notification_id`, `message`, `status`,
 `error`, plus `delivered` / `forbidden`). It never raises on a delivery

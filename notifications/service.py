@@ -39,6 +39,7 @@ from notifications.models import (
 )
 from notifications.render import (
     build_attribution_line, build_content_view, resolve_source_context,
+    inject_guild_badge,
 )
 
 logger = logging.getLogger("moddy.notifications")
@@ -288,8 +289,15 @@ class NotificationService:
                 variables=variables, platforms=platforms, locale=locale,
                 batch_id=batch_id,
             )
-        payload = await self._build_view(record, content, source, variables, view,
-                                         locale, attribution)
+        try:
+            payload = await self._build_view(record, content, source, variables, view,
+                                             locale, attribution)
+        except Exception as exc:  # noqa: BLE001 - sending a notification never raises
+            logger.error("Could not build notification card: %s", exc, exc_info=True)
+            await self._mark(str(record["id"]) if record else None, Platform.DISCORD,
+                             DeliveryStatus.FAILED, error=f"render: {exc}"[:200])
+            return DeliveryResult(str(record["id"]) if record else None, None,
+                                  DeliveryStatus.FAILED, exc)
         # DMs follow the recipient's icon theme (light Discord theme -> dark icons).
         with use_icon_theme_for(getattr(user, "id", None)):
             return await self._deliver(
@@ -319,8 +327,15 @@ class NotificationService:
             recipient_id=guild_id or getattr(getattr(channel, "guild", None), "id", None),
             variables=variables, platforms=platforms, locale=locale, batch_id=batch_id,
         )
-        payload = await self._build_view(record, content, source, variables, view,
-                                         locale, attribution)
+        try:
+            payload = await self._build_view(record, content, source, variables, view,
+                                             locale, attribution)
+        except Exception as exc:  # noqa: BLE001 - sending a notification never raises
+            logger.error("Could not build notification card: %s", exc, exc_info=True)
+            await self._mark(str(record["id"]) if record else None, Platform.DISCORD,
+                             DeliveryStatus.FAILED, error=f"render: {exc}"[:200])
+            return DeliveryResult(str(record["id"]) if record else None, None,
+                                  DeliveryStatus.FAILED, exc)
         return await self._deliver(
             destination=channel, record=record, view=payload,
             allowed_mentions=allowed_mentions,
@@ -340,6 +355,18 @@ class NotificationService:
         ctx = await self.source_context(
             record, locale=locale or record.get("locale") or "en-US")
         return build_attribution_line(ctx, locale=locale or "en-US")
+
+    async def badge_own_attribution(self, view, guild_id: int, *,
+                                    locale: str = "en-US") -> None:
+        """Give a card's own "sent by" line the server's check mark (verified
+        or official server). Best-effort: never raises, never blocks a DM."""
+        try:
+            ctx = await resolve_source_context(
+                self.bot, NotificationSource.service_guild("badge", int(guild_id)),
+                locale=locale)
+            inject_guild_badge(view, int(guild_id), ctx.get("badge") or "")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Guild badge skipped for %s: %s", guild_id, exc)
 
     @staticmethod
     def append_attribution(view: discord.ui.LayoutView, line: Optional[str]) -> None:
@@ -361,7 +388,11 @@ class NotificationService:
         if not attribution or not source.has_attribution:
             # Official notices say nothing about their origin: they ARE Moddy.
             # `attribution=False` is for the callers whose card already prints
-            # its own "sent by" line (sanction DMs, expiry DMs).
+            # its own "sent by" line (sanction DMs, expiry DMs): that line still
+            # gets the server's check mark, automatically.
+            if source.has_attribution and source.guild_id:
+                await self.badge_own_attribution(payload, source.guild_id,
+                                                 locale=locale or "en-US")
             return payload
 
         # The line is plain text built from the source itself, so a failed
@@ -398,6 +429,15 @@ class NotificationService:
         except discord.HTTPException as exc:
             await self._mark(notification_id, Platform.DISCORD, DeliveryStatus.FAILED,
                              error=str(exc))
+            self._count_delivery(record, Platform.DISCORD, False)
+            return DeliveryResult(notification_id, None, DeliveryStatus.FAILED, exc)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - network error, closed session, bad destination
+            logger.warning("Notification %s could not be delivered: %s: %s",
+                           notification_id, type(exc).__name__, exc)
+            await self._mark(notification_id, Platform.DISCORD, DeliveryStatus.FAILED,
+                             error=f"{type(exc).__name__}: {exc}"[:200])
             self._count_delivery(record, Platform.DISCORD, False)
             return DeliveryResult(notification_id, None, DeliveryStatus.FAILED, exc)
 
@@ -480,7 +520,7 @@ class NotificationService:
     async def _fetch_owner(self, guild: discord.Guild) -> Optional[discord.abc.User]:
         try:
             return await self.bot.fetch_user(guild.owner_id) if guild.owner_id else None
-        except discord.HTTPException:
+        except Exception:  # noqa: BLE001 - HTTP error, network, closed session
             return None
 
     # ------------------------------------------------------------------ #
@@ -515,7 +555,7 @@ class NotificationService:
             if user is None:
                 try:
                     user = await self.bot.fetch_user(user_id)
-                except discord.HTTPException:
+                except Exception:  # noqa: BLE001 - one lookup must not stop the campaign
                     user = None
             if user is None:
                 await self.record(
@@ -561,10 +601,14 @@ class NotificationService:
             if guild is None:
                 stats["failed"] += 1
             else:
-                results = await self.notify_guild(
-                    guild, content=content, source=source, variables=variables,
-                    dm_owner=dm_owner, batch_id=batch_id,
-                )
+                try:
+                    results = await self.notify_guild(
+                        guild, content=content, source=source, variables=variables,
+                        dm_owner=dm_owner, batch_id=batch_id,
+                    )
+                except Exception as exc:  # noqa: BLE001 - one server must not stop the campaign
+                    logger.error("Broadcast to guild %s failed: %s", guild_id, exc, exc_info=True)
+                    results = []
                 stats["sent" if any(r.delivered for r in results) else "failed"] += 1
 
             if progress and stats["total"] % 25 == 0:

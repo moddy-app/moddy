@@ -125,7 +125,7 @@ class Avatar(commands.Cog):
 
         # Fetch user data from Discord API
         user_id = str(user.id)
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
             headers = {
                 "Authorization": f"Bot {self.bot.http.token}",
                 "User-Agent": "DiscordBot (Moddy, 1.0)"

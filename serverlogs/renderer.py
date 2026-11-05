@@ -76,6 +76,12 @@ def fmt_channel(channel: Any) -> str:
     channel_id = getattr(channel, "id", None)
     if channel_id is None:
         return escape(str(channel))
+    # A channel the bot cannot see is obfuscated by Discord (its name becomes
+    # "___hidden___"): only the mention is trustworthy, the reader's own client
+    # resolves it.
+    from utils.bot_permissions import is_obfuscated
+    if is_obfuscated(channel) or name == "___hidden___":
+        return f"<#{channel_id}>"
     if name:
         return f"{escape(f'#{name}')} (<#{channel_id}>)"
     return f"<#{channel_id}>"

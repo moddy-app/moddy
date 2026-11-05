@@ -67,6 +67,7 @@ class MiniBotRuntime:
         self.started_at = time.time()
         self._client_factory = client_factory
         self._tasks: List[asyncio.Task] = []
+        self._control_tasks: set = set()
         self._periodic: List[Tuple[str, float, Callable[["MiniBotRuntime"], Awaitable]]] = []
         self._stopping = False
 
@@ -89,6 +90,12 @@ class MiniBotRuntime:
 
     async def start(self) -> None:
         await self._publish_registry()
+        # A dependency that was down at boot is retried in the background; when
+        # it comes back the clients restart so they pick it up.
+        callbacks = getattr(self.resources, "on_recovered", None)
+        if callbacks is not None:
+            callbacks.append(self._on_dependency_recovered)
+            self.resources.start_recovery()
         for app, state in self.apps.items():
             if not state.spec.token:
                 state.state = mstatus.STATE_NO_TOKEN
@@ -102,6 +109,18 @@ class MiniBotRuntime:
             self._tasks.append(asyncio.create_task(self._run_periodic(name, interval, job)))
         running = sum(1 for s in self.apps.values() if s.task is not None)
         logger.info("Mini-bots runtime started: %d mini-bot(s), %d running", len(self.apps), running)
+
+    async def _on_dependency_recovered(self, what: str) -> None:
+        if what == "redis" and not any(t.get_name() == "minibots:control" for t in self._tasks):
+            self._tasks.append(asyncio.create_task(self._control_loop(), name="minibots:control"))
+        for state in self.apps.values():
+            client = state.client
+            if client is not None and not client.is_closed():
+                state.restart_requested = True
+                try:
+                    await client.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
     async def stop(self) -> None:
         self._stopping = True
@@ -141,7 +160,15 @@ class MiniBotRuntime:
         set_brand(state.spec.name)
         backoff = BACKOFF_START
         while not self._stopping:
-            client = self._make_client(state.spec)
+            try:
+                client = self._make_client(state.spec)
+            except Exception as exc:  # noqa: BLE001 — supervised: retry, never die
+                state.state = mstatus.STATE_CRASHED
+                state.last_error = f"{type(exc).__name__}: {exc}"[:200]
+                logger.error("Mini-bot %s could not be built: %s", state.spec.id, exc, exc_info=True)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, BACKOFF_MAX)
+                continue
             state.client = client
             state.state = mstatus.STATE_CONNECTING
             state.restart_requested = False
@@ -201,9 +228,15 @@ class MiniBotRuntime:
         return tech.for_app(tech.bot, state.spec.id, state.spec.name)
 
     async def _lifecycle(self, state: _AppState, event: str, lines: List[str]) -> None:
-        tech = self.app_logger(state)
-        if tech is not None:
-            await tech.log_minibot_lifecycle(event, lines)
+        # Best-effort: a dead webhook / logger must never break supervision.
+        try:
+            tech = self.app_logger(state)
+            if tech is not None:
+                await tech.log_minibot_lifecycle(event, lines)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Mini-bot lifecycle log %s failed: %s", event, exc)
 
     # --------------------------------------------------------------- status
 
@@ -252,7 +285,12 @@ class MiniBotRuntime:
 
     async def _heartbeat_loop(self) -> None:
         while True:
-            await self._write_status()
+            try:
+                await self._write_status()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # noqa: BLE001 — the heartbeat outlives its own bugs
+                logger.warning("Mini-bots heartbeat failed: %s", exc)
             await asyncio.sleep(mstatus.HEARTBEAT_SECONDS)
 
     async def _run_periodic(self, name: str, interval: float, job) -> None:
@@ -270,21 +308,33 @@ class MiniBotRuntime:
     # -------------------------------------------------------------- control
 
     async def _control_loop(self) -> None:
+        delay = 5.0
         while True:
+            pubsub = None
             try:
                 pubsub = self.resources.redis.pubsub()
                 await pubsub.subscribe(mstatus.CONTROL_CHANNEL)
+                delay = 5.0
                 async for message in pubsub.listen():
                     if message.get("type") != "message":
                         continue
                     data = mstatus.parse_control(message.get("data"))
                     if data is not None:
-                        asyncio.create_task(self.handle_control(data))
+                        task = asyncio.create_task(self.handle_control(data))
+                        self._control_tasks.add(task)  # strong ref until done
+                        task.add_done_callback(self._control_tasks.discard)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:  # noqa: BLE001
                 logger.error("Mini-bots control channel error: %s", exc)
-                await asyncio.sleep(5)
+            finally:
+                if pubsub is not None:
+                    try:
+                        await pubsub.aclose()
+                    except Exception:  # noqa: BLE001
+                        pass
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 60.0)
 
     async def handle_control(self, data: dict) -> None:
         kind = data.get("type")

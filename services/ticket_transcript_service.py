@@ -300,6 +300,10 @@ class TicketTranscriptService:
             logger.error(f"[Tickets] Could not read the history of "
                          f"{getattr(channel, 'id', '?')}: {e}")
             return None
+        except Exception as e:  # noqa: BLE001 - archiving never fails a closure
+            logger.error(f"[Tickets] Transcript export crashed on channel "
+                         f"{getattr(channel, 'id', '?')}: {e}", exc_info=True)
+            return None
 
         # zstd level 19 on a long ticket takes seconds of pure CPU: keep it
         # (and the JSON dump) off the event loop or every pending interaction

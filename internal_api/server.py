@@ -16,6 +16,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import hmac
 import logging
+import math
 import os
 import time
 import psutil
@@ -63,8 +64,40 @@ _check_auth = check_auth
 
 @app.get("/health")
 async def health():
-    """Health check pour Railway — toujours 200 quand le process est vivant."""
-    return {"status": "healthy", "service": "moddy-bot"}
+    """Health check pour Railway — toujours 200 quand le process est vivant.
+
+    Always HTTP 200 (a restart would not fix a Postgres or Redis outage, it
+    would only turn a partial outage into a total one), but the body is honest:
+    ``status`` is ``healthy``, ``degraded`` (a dependency is down) or
+    ``starting`` (the gateway is not ready), with the individual ``checks``.
+    This route never raises, whatever state the bot is in.
+    """
+    checks = {}
+    try:
+        bot = _bot
+        if bot is None:
+            checks["bot"] = "starting"
+        else:
+            ready = bool(bot.is_ready())
+            checks["discord"] = "ok" if ready else "starting"
+            if os.getenv("DATABASE_URL"):
+                db = getattr(bot, "db", None)
+                checks["database"] = (
+                    "ok" if (db is not None and getattr(db, "pool", None) is not None)
+                    else "down")
+            if os.getenv("REDIS_URL"):
+                checks["redis"] = "ok" if getattr(bot, "redis", None) is not None else "down"
+    except Exception as e:  # noqa: BLE001 - /health must never 500
+        logger.warning("health check inspection failed: %s", e)
+        checks["inspection"] = "error"
+
+    if "starting" in checks.values():
+        state = "starting"
+    elif any(v != "ok" for v in checks.values()):
+        state = "degraded"
+    else:
+        state = "healthy"
+    return {"status": state, "service": "moddy-bot", "checks": checks}
 
 
 @app.get("/ping")
@@ -90,14 +123,21 @@ async def status(request: Request):
                      "shards": [], "latency_ms": 0, "uptime_seconds": 0, "memory_mb": 0}
         )
 
+    def _ms(value) -> float:
+        # latency is NaN until the gateway answered once; NaN is not valid JSON
+        try:
+            return round(value * 1000, 2) if math.isfinite(value) else 0
+        except (TypeError, ValueError):
+            return 0
+
     # Shards
     if bot.shard_count:
         shards = [
-            {"id": sid, "latency": round(shard.latency * 1000, 2), "is_closed": shard.is_closed()}
+            {"id": sid, "latency": _ms(shard.latency), "is_closed": shard.is_closed()}
             for sid, shard in bot.shards.items()
         ]
     else:
-        shards = [{"id": 0, "latency": round(bot.latency * 1000, 2), "is_closed": False}]
+        shards = [{"id": 0, "latency": _ms(bot.latency), "is_closed": False}]
 
     # Memory
     try:
@@ -115,7 +155,7 @@ async def status(request: Request):
         "guilds": len(bot.guilds),
         "users": len(bot.users),
         "shards": shards,
-        "latency_ms": round(bot.latency * 1000, 2),
+        "latency_ms": _ms(bot.latency),
         "uptime_seconds": uptime_seconds,
         "memory_mb": memory_mb,
     }
