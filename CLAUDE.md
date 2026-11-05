@@ -333,6 +333,7 @@ moddy/
 │   ├── tool_card.py           #   Shared tool card (ToolCard, source_line, loading/error/expired, save_state)
 │   ├── tool_views_registry.py #   Feeds every tools_*_views PERSISTENT_VIEWS / DYNAMIC_ITEM_CASES
 │   ├── tools_{text,security,web,lookup,media,inspect}_views.py # Tool cards + persistent items
+│   ├── welcome_dm_views.py    #   Moddy HQ welcome DM extras: Translate (persistent) + Website / Docs links
 │   └── music_links_views.py, translate_button_views.py         # Module replies + persistent items
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)

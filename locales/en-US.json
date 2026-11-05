@@ -1261,6 +1261,13 @@
         "empty_message": "The welcome message cannot be empty",
         "message_too_long": "The welcome message cannot exceed {max} characters",
         "invalid_color": "The accent color is invalid"
+      },
+      "extras": {
+        "translate": "Translate",
+        "website": "Website",
+        "docs": "Documentation",
+        "loading": "Translating…",
+        "card_title": "Translation"
       }
     },
     "interserver": {

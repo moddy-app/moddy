@@ -1261,6 +1261,13 @@
         "empty_message": "Die Willkommensnachricht darf nicht leer sein",
         "message_too_long": "Die Willkommensnachricht darf {max} Zeichen nicht überschreiten",
         "invalid_color": "Die Akzentfarbe ist ungültig"
+      },
+      "extras": {
+        "translate": "Übersetzen",
+        "website": "Website",
+        "docs": "Dokumentation",
+        "loading": "Wird übersetzt…",
+        "card_title": "Übersetzung"
       }
     },
     "interserver": {

@@ -1261,6 +1261,13 @@
         "empty_message": "El mensaje de bienvenida no puede estar vacío",
         "message_too_long": "El mensaje de bienvenida no puede superar los {max} caracteres",
         "invalid_color": "El color de acento no es válido"
+      },
+      "extras": {
+        "translate": "Traducir",
+        "website": "Sitio web",
+        "docs": "Documentación",
+        "loading": "Traduciendo…",
+        "card_title": "Traducción"
       }
     },
     "interserver": {

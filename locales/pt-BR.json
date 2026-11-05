@@ -1261,6 +1261,13 @@
         "empty_message": "A mensagem de boas-vindas não pode estar vazia",
         "message_too_long": "A mensagem de boas-vindas não pode exceder {max} caracteres",
         "invalid_color": "A cor de destaque é inválida"
+      },
+      "extras": {
+        "translate": "Traduzir",
+        "website": "Site",
+        "docs": "Documentação",
+        "loading": "Traduzindo…",
+        "card_title": "Tradução"
       }
     },
     "interserver": {

@@ -26,6 +26,7 @@ TOOL_VIEW_MODULES: Tuple[str, ...] = (
     "utils.tools_media_views",
     "utils.music_links_views",
     "utils.translate_button_views",
+    "utils.welcome_dm_views",
 )
 
 

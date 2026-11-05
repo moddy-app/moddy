@@ -230,3 +230,21 @@ Components V2 view holding only the guild's text — and is passed as `view=`;
 the attribution line is appended inside its container. The uniform `content` is
 still required: it is what the dashboard and the mail pipeline render, and what
 a staff reviewer sees when handling a report.
+
+## Extras for hand-picked servers (Moddy HQ)
+
+Exceptionally, the servers listed in `utils/welcome_dm_views.py::WELCOME_EXTRAS_GUILDS`
+(today only Moddy HQ, `1394001780148535387`) get one action row **under** the
+welcome card (outside the container):
+
+- a blue **Translate** button — a persistent `DynamicItem`
+  (`moddy:welcome_dm:translate:<guild_id>`) that re-reads the welcome text from
+  the DM it sits under (first text block; the `Sent by` line is never
+  translated) and shows the reader a private DeepL translation in their own
+  language. It reuses the translate button service (`bot.translate_button`):
+  same per-user click limit, DeepL quotas and error cards;
+- link buttons **Website** (`https://moddy.app`) and **Documentation**
+  (`https://docs.moddy.app`).
+
+Other servers' welcome DMs are unchanged. Adding a server means adding its id to
+the set — it is not a per-server setting.

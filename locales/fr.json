@@ -1260,6 +1260,13 @@
         "empty_message": "Le message de bienvenue ne peut pas être vide",
         "message_too_long": "Le message de bienvenue ne peut pas dépasser {max} caractères",
         "invalid_color": "La couleur du liseré est invalide"
+      },
+      "extras": {
+        "translate": "Traduire",
+        "website": "Site web",
+        "docs": "Documentation",
+        "loading": "Traduction…",
+        "card_title": "Traduction"
       }
     },
     "interserver": {
