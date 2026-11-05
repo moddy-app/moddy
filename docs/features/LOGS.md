@@ -376,11 +376,20 @@ rate-limit buckets and slow every other command down, so:
   events", never into unbounded memory. A warning is logged every 100 drops.
 * an idle worker exits after 30 s and is restarted by the next `enqueue`.
 
-**Fallbacks.** No `manage_webhooks` permission, webhook creation refused, or
-a webhook deleted behind Moddy's back → delivery falls back to a plain
-`channel.send`. A misconfigured server still gets its logs, just slower. The
-cached webhook is invalidated on `NotFound` / `HTTPException` so the next
-delivery re-resolves it.
+**Fallbacks.** `manage_webhooks` is checked **in the log channel** (Discord
+checks it there) and is **optional**: the module declares no guild-level
+permission (`REQUIRED_BOT_PERMISSIONS = []`, `SENDS_MESSAGES = False`), only
+`view_channel` + `send_messages` + `embed_links` per log channel. No
+`manage_webhooks`, webhook creation refused or the 15-webhook limit (30007)
+→ delivery falls back to a plain `channel.send`, after checking
+`send_messages` / `embed_links` there (the transcript file is dropped without
+`attach_files`; an obfuscated channel is skipped). "No webhook" is cached for
+5 minutes only (`NEGATIVE_WEBHOOK_TTL`), so a newly granted permission is
+picked up. A webhook deleted behind Moddy's back (10015) is recreated and the
+batch retried once; a 400 on a multi-embed batch is resent embed by embed.
+Only non-5xx / non-429 errors invalidate the cached webhook. Without
+`view_audit_log`, `executor()` returns at once: logs are written without
+"who", with no audit wait.
 
 **Threads** have no webhook of their own: the parent channel's webhook is
 used with `thread=`.

@@ -270,7 +270,8 @@ moddy/
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
-│   ├── bot_permissions.py     #   Bot permission checks (baseline, guild + channel level, all gaps at once)
+│   ├── bot_permissions.py     #   Bot permission checks: guild vs channel scope (where Discord checks), obfuscated channels, role hierarchy, all gaps at once
+│   ├── background.py          #   spawn(): fire-and-forget tasks kept referenced + failures logged
 │   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
 │   ├── loop_monitor.py        #   Event-loop lag monitor + watchdog stack dump + late-interaction logging (10062 diagnosis), notifies stalls > 2.5 s
 │   ├── errors.py              #   Expected errors: ModdyError family + build_error_card (one look for every non-bug error)
@@ -459,7 +460,9 @@ moddy/
     ├── test_tools_{text,security,web,lookup,media,inspect}.py # Utility tools per theme
     ├── test_announcement_verification.py # Relay detection, Manager/Dev gate, copies answered once, edits
     ├── test_music_links.py, test_translate_button.py          # Music links (default-enabled) + translate button (opt-in)
-    └── test_minibots.py       #   Mini-bots: ownership, manager, transfer, runtime, Redis contract, light imports
+    ├── test_minibots.py       #   Mini-bots: ownership, manager, transfer, runtime, Redis contract, light imports
+    └── test_hardening_*.py    #   Chaos resilience + hostile permissions (Top.gg review setups):
+                               #   core, config, modules1, modules2, commands
 ```
 
 ---
@@ -662,6 +665,27 @@ moddy/
   `channel_requirements(config)`. /config reports ALL gaps in one message
   (`utils/bot_permissions.py`); `validate_config` must use
   `channel_validation_error`, never a first-failure `if not perms.x` chain.
+- **Check a permission where Discord checks it**, never stricter: channel-scoped
+  permissions (send, webhooks, reactions, threads, pins = `pin_messages`,
+  manage messages/channels) go in `channel_requirements`; guild-scoped ones
+  (roles, kick, ban, timeout, nicknames, audit log) in
+  `REQUIRED_BOT_PERMISSIONS`. Replies need `read_message_history`; threads need
+  `send_messages_in_threads`. Use `channel_missing()` / `can_act_in()` from
+  `utils/bot_permissions.py`. Never display `channel.name` of a channel Moddy
+  cannot see (Discord obfuscates them from 2026-11-16) — use `<#id>`.
+  The rules, quoted from Discord's docs → [docs/guides/DISCORD_PERMISSIONS.md](docs/guides/DISCORD_PERMISSIONS.md)
+
+### 13. Contain every failure (chaos resilience)
+- A broken piece (Postgres, Redis, backend, an external API, a cog, one guild,
+  one channel) costs that piece only. Catch at the right boundary (per
+  iteration, per guild, per destination), log with context, keep going.
+- Every `@tasks.loop` body guards each iteration (a raised exception stops a
+  loop forever). Fire-and-forget coroutines go through `bot.spawn()` or
+  `utils.background.spawn()`, never a bare `asyncio.create_task`.
+- Automatic features degrade silently when Moddy lacks a permission
+  (pre-check + catch `Forbidden`/`NotFound`, log at debug/info); always catch
+  `Forbidden` even after a passing pre-check (2FA servers, races).
+- Never confirm an action Discord refused.
 - See → [docs/guides/COMMANDS.md](docs/guides/COMMANDS.md), [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md)
 
 ---
@@ -687,6 +711,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/guides/NOTIFICATIONS.md](docs/guides/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
 | [docs/guides/PERSISTENT_VIEWS.md](docs/guides/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
+| [docs/guides/DISCORD_PERMISSIONS.md](docs/guides/DISCORD_PERMISSIONS.md) | **Discord permission rules, quoted from the official docs** — computation, implicit denies, threads, timeouts, 2FA, per-endpoint "where is it checked", channel obfuscation (2026-11-16). Read before writing ANY permission check |
 | [docs/guides/PREMIUM.md](docs/guides/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/guides/SERVER_LANGUAGE.md](docs/guides/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
 | [docs/guides/STAFF_COMMANDS_FRAMEWORK.md](docs/guides/STAFF_COMMANDS_FRAMEWORK.md) | Staff command engine internals (message + slash from one definition) |

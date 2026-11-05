@@ -188,7 +188,12 @@ Consequences for Moddy:
 ## 6. Moddy conventions derived from the above
 
 - Use `utils/bot_permissions.py` helpers; they implement §1 (view_channel
-  implies everything, threads use SEND_MESSAGES_IN_THREADS).
+  implies everything, threads use SEND_MESSAGES_IN_THREADS):
+  `channel_missing()` / `can_act_in()` for one channel,
+  `CHANNEL_SCOPED_PERMISSIONS` / `GUILD_SCOPED_PERMISSIONS` +
+  `analyze_requirements()` / `format_gaps()` for a module (what `/config`
+  uses), `role_assignment_error()` for roles Moddy must give (hierarchy,
+  managed, @everyone), `is_obfuscated()` / `bot_is_timed_out()`.
 - Guild-level requirement only for guild-level actions (roles, kick, ban,
   timeout, nicknames, audit log, manage_guild). Channel-scoped actions
   (send, webhooks, reactions, pins, threads, delete messages, slowmode) are

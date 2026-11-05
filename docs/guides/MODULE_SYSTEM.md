@@ -692,9 +692,18 @@ Le module Welcome Channel est un exemple complet incluant :
 
 - **Bot** : jamais Administrateur. Avant d'ouvrir l'écran d'un module, `check_bot_perms`
   (`modules/configs/_common.py`) vérifie en UN seul message TOUTES les permissions
-  manquantes : base + `REQUIRED_BOT_PERMISSIONS` (`ModuleBase.required_permissions()`)
-  au niveau serveur, puis `ModuleBase.channel_requirements(config)` dans les salons
-  configurés (overwrites inclus). Le lien de réinvitation couvre tout. Les
+  manquantes, **là où Discord les vérifie** (`utils/bot_permissions.analyze_requirements`,
+  voir [DISCORD_PERMISSIONS.md](DISCORD_PERMISSIONS.md)) : les permissions « serveur »
+  (`GUILD_SCOPED_PERMISSIONS` : rôles, kick, ban, timeout, pseudos, audit log…) au
+  niveau serveur ; les permissions « salon » (`CHANNEL_SCOPED_PERMISSIONS` : envoyer,
+  webhooks, réactions, threads, épingles, gérer les messages/salons…) dans les salons
+  de `ModuleBase.channel_requirements(config)` — une permission donnée sur ce seul
+  salon suffit. Sans salon configuré, une permission « salon » ne bloque que si Moddy
+  ne l'a nulle part. Un salon supprimé, caché (obfusqué) ou incomplet n'est qu'un
+  avertissement : le panneau s'ouvre pour qu'on en choisisse un autre. Un overwrite
+  qui refuse la permission est signalé comme tel (« modifiez les permissions du
+  salon »). Un module doit donc déclarer TOUTES ses permissions de salon dans
+  `channel_requirements`. Le lien de réinvitation couvre tout. Les
   `validate_config` utilisent `utils/bot_permissions.channel_validation_error`
   (liste toutes les lacunes d'un salon d'un coup, jamais de court-circuit).
   Helpers purs, sans réseau : `utils/bot_permissions.py`.
