@@ -555,7 +555,8 @@ def make_message(content, *, bot=False, webhook=None, channel_id=10, can_send=Tr
     channel = MagicMock()
     channel.id = channel_id
     channel.parent_id = None
-    channel.permissions_for.return_value = SimpleNamespace(send_messages=can_send)
+    channel.permissions_for.return_value = SimpleNamespace(
+        send_messages=can_send, view_channel=True, read_message_history=True)
     return SimpleNamespace(
         content=content, author=SimpleNamespace(bot=bot), webhook_id=webhook,
         guild=SimpleNamespace(id=5, me=me) if guild else None, channel=channel,

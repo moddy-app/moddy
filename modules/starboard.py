@@ -11,7 +11,7 @@ import discord
 
 from cogs.error_handler import BaseView
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import can_act_in, channel_map, channel_validation_error
 from utils.emojis import STAR, is_standard_discord_emoji
 from utils.i18n import t, i18n
 from utils.safe_http import UnsafeURL, safe_get_bytes, validate_public_url
@@ -147,7 +147,13 @@ class _StarboardReactorsButton(
             )
             return
 
-        users = [user async for user in reaction.users() if not user.bot]
+        try:
+            users = [user async for user in reaction.users() if not user.bot]
+        except (discord.Forbidden, discord.NotFound):
+            await interaction.followup.send(
+                t('modules.starboard.message.reactors.not_found', locale=locale), ephemeral=True
+            )
+            return
         if not users:
             await interaction.followup.send(
                 t('modules.starboard.message.reactors.empty', locale=locale), ephemeral=True
@@ -291,6 +297,12 @@ class StarboardModule(ModuleBase):
         # Format: {original_message_id: starboard_message_id}
         self.starboard_messages: Dict[int, int] = {}
 
+        # One writer at a time: two reactions landing together on a message that
+        # just crossed the threshold would each post an entry otherwise.
+        self._write_lock = asyncio.Lock()
+        # Problems already reported in the logs (reported once, not per reaction).
+        self._reported: set = set()
+
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         """Load configuration from DB"""
         try:
@@ -311,10 +323,15 @@ class StarboardModule(ModuleBase):
             logger.error(f"Error loading starboard config: {e}")
             return False
 
+    # In the starboard channel: Send Messages, Embed Links (the entry is an
+    # embed: without it Discord strips it) and Read Message History (fetching an
+    # entry back to update or delete it). All checked in the channel.
+    CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "embed_links",
+                           "read_message_history"]
+
     @classmethod
     def channel_requirements(cls, config):
-        return channel_map((config.get("channel_id"),
-                            ["view_channel", "send_messages"]))
+        return channel_map((config.get("channel_id"), cls.CHANNEL_PERMISSIONS))
 
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """Validate configuration"""
@@ -338,7 +355,7 @@ class StarboardModule(ModuleBase):
             # Check permissions
             from utils.guild_language import guild_locale
             error = channel_validation_error(
-                channel, guild, ["view_channel", "send_messages"],
+                channel, guild, self.CHANNEL_PERMISSIONS,
                 await guild_locale(self.bot, guild))
             if error:
                 return False, error
@@ -401,11 +418,18 @@ class StarboardModule(ModuleBase):
             if payload.channel_id == self.channel_id:
                 return
 
+            # Fetching a message needs View Channel + Read Message History IN
+            # that channel; a channel the bot cannot read is not an error, it
+            # just cannot feed the starboard.
+            if guild.me is not None and not can_act_in(
+                    channel, guild.me, ["view_channel", "read_message_history"]):
+                return
+
             # Get the message
             try:
                 message = await channel.fetch_message(payload.message_id)
             except discord.NotFound:
-                logger.warning(f"Message {payload.message_id} not found")
+                logger.debug(f"Message {payload.message_id} not found")
                 return
 
             # Count reactions matching the configured emoji
@@ -416,7 +440,7 @@ class StarboardModule(ModuleBase):
                 await self._update_starboard(message, star_count)
 
         except discord.Forbidden:
-            logger.warning(f"Missing permissions for starboard in guild {self.guild_id}")
+            self._report_once("forbidden", f"Missing permissions for starboard in guild {self.guild_id}")
         except Exception as e:
             logger.error(f"Error processing starboard reaction: {e}", exc_info=True)
 
@@ -444,6 +468,9 @@ class StarboardModule(ModuleBase):
             channel = guild.get_channel(payload.channel_id)
             if not channel or not isinstance(channel, discord.TextChannel):
                 return
+            if guild.me is not None and not can_act_in(
+                    channel, guild.me, ["view_channel", "read_message_history"]):
+                return
 
             # Get the message
             try:
@@ -460,8 +487,43 @@ class StarboardModule(ModuleBase):
                 # Remove from starboard if below threshold
                 await self._remove_starboard(message)
 
+        except (discord.Forbidden, discord.NotFound) as e:
+            logger.debug(f"Starboard update skipped on reaction remove (guild {self.guild_id}): {e}")
         except Exception as e:
             logger.error(f"Error updating starboard on reaction remove: {e}", exc_info=True)
+
+    def _report_once(self, key: str, text: str) -> None:
+        """Log a configuration problem once per module load, not per reaction."""
+        if key in self._reported:
+            logger.debug(text)
+            return
+        self._reported.add(key)
+        logger.warning(text)
+
+    def _starboard_channel(self) -> Optional[discord.TextChannel]:
+        """The starboard channel when the bot can post an embed there, else None.
+
+        The channel may have been deleted, hidden from the bot (obfuscated
+        since 2026-11-16) or locked after the config was saved: nothing is
+        attempted then, and the problem is logged once.
+        """
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return None
+        channel = guild.get_channel(self.channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            self._report_once("channel", f"Starboard channel {self.channel_id} not found "
+                                         f"or not a text channel (guild {self.guild_id})")
+            return None
+        if guild.me is not None and not can_act_in(
+                channel, guild.me, ["view_channel", "send_messages", "embed_links",
+                                    "read_message_history"]):
+            self._report_once("perms", f"Starboard channel {channel.id} is locked for the "
+                                       f"bot (guild {self.guild_id})")
+            return None
+        self._reported.discard("channel")
+        self._reported.discard("perms")
+        return channel
 
     def _count_reactions(self, message: discord.Message) -> int:
         """Count how many times the configured (standard) emoji was used on this message"""
@@ -579,31 +641,30 @@ class StarboardModule(ModuleBase):
         """
         Update or create a starboard entry for a message
         """
-        guild = self.bot.get_guild(self.guild_id)
-        if not guild:
+        starboard_channel = self._starboard_channel()
+        if starboard_channel is None:
             return
 
-        starboard_channel = guild.get_channel(self.channel_id)
-        if not starboard_channel or not isinstance(starboard_channel, discord.TextChannel):
-            logger.warning(f"Starboard channel {self.channel_id} not found or not a text channel")
-            return
-
-        # Check if we already have a starboard entry for this message
-        if message.id in self.starboard_messages:
-            # Only the reactors-count button needs updating
-            try:
-                starboard_msg_id = self.starboard_messages[message.id]
-                starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
-                view = await self._build_view(message, star_count)
-                await starboard_msg.edit(view=view)
-                logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
-            except discord.NotFound:
-                # Entry was deleted, recreate it
-                del self.starboard_messages[message.id]
+        async with self._write_lock:
+            # Check if we already have a starboard entry for this message
+            if message.id in self.starboard_messages:
+                # Only the reactors-count button needs updating
+                try:
+                    starboard_msg_id = self.starboard_messages[message.id]
+                    starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
+                    view = await self._build_view(message, star_count)
+                    await starboard_msg.edit(view=view)
+                    logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
+                except discord.NotFound:
+                    # Entry was deleted, recreate it
+                    self.starboard_messages.pop(message.id, None)
+                    await self._create_starboard_message(starboard_channel, message, star_count)
+                except discord.Forbidden:
+                    self._report_once("forbidden", f"Missing permissions to update the starboard "
+                                                   f"in guild {self.guild_id}")
+            else:
+                # Create new starboard entry
                 await self._create_starboard_message(starboard_channel, message, star_count)
-        else:
-            # Create new starboard entry
-            await self._create_starboard_message(starboard_channel, message, star_count)
 
     async def _create_starboard_message(self, channel: discord.TextChannel,
                                          original_message: discord.Message, star_count: int):
@@ -630,7 +691,12 @@ class StarboardModule(ModuleBase):
 
             logger.info(f"Created starboard entry for {original_message.id}")
         except discord.Forbidden:
-            logger.warning(f"Missing permissions to send starboard message in guild {self.guild_id}")
+            self._report_once("forbidden", f"Missing permissions to send starboard message "
+                                           f"in guild {self.guild_id}")
+        except discord.NotFound:
+            # Channel deleted between the cache read and the send.
+            self._report_once("channel", f"Starboard channel {channel.id} vanished "
+                                         f"(guild {self.guild_id})")
         except discord.HTTPException as e:
             logger.error(f"Error sending starboard message for {original_message.id}: {e}")
         except Exception as e:
@@ -641,22 +707,26 @@ class StarboardModule(ModuleBase):
         if message.id not in self.starboard_messages:
             return
 
-        guild = self.bot.get_guild(self.guild_id)
-        if not guild:
+        starboard_channel = self._starboard_channel()
+        if starboard_channel is None:
             return
 
-        starboard_channel = guild.get_channel(self.channel_id)
-        if not starboard_channel or not isinstance(starboard_channel, discord.TextChannel):
-            return
+        async with self._write_lock:
+            msg_id = self.starboard_messages.get(message.id)
+            if msg_id is None:
+                return
+            try:
+                starboard_msg = await starboard_channel.fetch_message(msg_id)
+                await starboard_msg.delete()
+            except discord.NotFound:
+                pass
+            except discord.Forbidden:
+                # The entry stays tracked: we may be allowed to delete it later.
+                self._report_once("forbidden", f"Missing permissions to delete a starboard "
+                                               f"entry in guild {self.guild_id}")
+                return
+            except Exception as e:
+                logger.error(f"Error removing starboard message {msg_id}: {e}", exc_info=True)
 
-        msg_id = self.starboard_messages[message.id]
-        try:
-            starboard_msg = await starboard_channel.fetch_message(msg_id)
-            await starboard_msg.delete()
-        except discord.NotFound:
-            pass
-        except Exception as e:
-            logger.error(f"Error removing starboard message {msg_id}: {e}", exc_info=True)
-
-        del self.starboard_messages[message.id]
-        logger.info(f"Removed starboard entry for {message.id}")
+            self.starboard_messages.pop(message.id, None)
+            logger.info(f"Removed starboard entry for {message.id}")

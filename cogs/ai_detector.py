@@ -25,6 +25,7 @@ from discord.ext import commands
 
 from aidetector import analysis as an
 from aidetector import formats
+from utils.bot_permissions import can_act_in
 from utils.ai_detector_views import (
     NO_MENTIONS, build_check_view, render_error_card, render_loading_card,
 )
@@ -116,6 +117,12 @@ class AiDetector(commands.Cog):
         channel = guild.get_channel_or_thread(int(match["channel_id"]))
         member = interaction.user if isinstance(interaction.user, discord.Member) else None
         if channel is None or member is None:
+            return None, "gone"
+        # The bot must be able to read the channel itself (a channel hidden from
+        # it is obfuscated since 2026-11-16: its overwrites are fake, so the
+        # requester's permissions there cannot be computed). Then the requester.
+        if guild.me is None or not can_act_in(
+                channel, guild.me, ["view_channel", "read_message_history"]):
             return None, "gone"
         perms = channel.permissions_for(member)
         if not (perms.view_channel and perms.read_message_history):

@@ -722,7 +722,8 @@ def foreign_message(content=GOOD, *, bot=False, webhook=None, channel_id=10, can
     channel = MagicMock()
     channel.id = channel_id
     channel.parent_id = None
-    channel.permissions_for.return_value = SimpleNamespace(send_messages=can_send)
+    channel.permissions_for.return_value = SimpleNamespace(
+        send_messages=can_send, view_channel=True, read_message_history=True)
     return SimpleNamespace(
         author=SimpleNamespace(bot=bot, id=2), webhook_id=webhook, content=content,
         guild=SimpleNamespace(id=5, me=me), channel=channel, id=77, type=message_type)

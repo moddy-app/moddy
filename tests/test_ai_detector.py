@@ -646,7 +646,8 @@ class TestModule:
         channel = MagicMock()
         channel.id = channel_id
         channel.parent_id = None
-        channel.permissions_for.return_value = SimpleNamespace(send_messages=True)
+        channel.permissions_for.return_value = SimpleNamespace(
+            send_messages=True, view_channel=True, read_message_history=True)
         attachment = SimpleNamespace(id=99, filename="a.png", content_type="image/png", size=10)
         return SimpleNamespace(author=SimpleNamespace(bot=bot), guild=SimpleNamespace(id=5, me=me),
                                channel=channel, id=77, attachments=[attachment],

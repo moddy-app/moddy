@@ -15,13 +15,14 @@ This module only decides *when* Moddy offers a transcription in a server.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
 import discord
 
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import can_act_in, channel_map, channel_validation_error
 from utils.emojis import VOICE_CHAT
 from utils.transcription_views import (
     NO_MENTIONS,
@@ -69,10 +70,15 @@ class VoiceTranscriptionModule(ModuleBase):
     MODULE_EMOJI = VOICE_CHAT
     MODULE_ORDER = 110
 
+    # Replying under a voice message needs Send Messages AND Read Message
+    # History in the channel (error 160002 otherwise). Attach Files only matters
+    # for a very long transcript sent as a file and degrades without it.
+    CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "read_message_history"]
+
     @classmethod
     def channel_requirements(cls, config):
         return channel_map(*(
-            (channel_id, ["view_channel", "send_messages"])
+            (channel_id, cls.CHANNEL_PERMISSIONS)
             for channel_id in (config.get("channel_ids") or [])
         ))
 
@@ -123,12 +129,14 @@ class VoiceTranscriptionModule(ModuleBase):
             return True, None
 
         for channel_id in channel_ids:
+            if not str(channel_id).isdigit():
+                return False, "La liste des salons est invalide"
             channel = guild.get_channel(int(channel_id))
             if channel is None:
                 return False, "Salon introuvable"
             from utils.guild_language import guild_locale
             error = channel_validation_error(
-                channel, guild, ["view_channel", "send_messages"],
+                channel, guild, self.CHANNEL_PERMISSIONS,
                 await guild_locale(self.bot, guild))
             if error:
                 return False, error
@@ -163,7 +171,8 @@ class VoiceTranscriptionModule(ModuleBase):
         # Never reply where Moddy cannot speak — a Forbidden here would just be
         # noise in the logs on every voice message of a locked channel.
         me = message.guild.me if message.guild else None
-        if me is not None and not message.channel.permissions_for(me).send_messages:
+        if me is not None and not can_act_in(
+                message.channel, me, ["send_messages", "read_message_history"]):
             return
 
         locale = await self._locale()
@@ -187,13 +196,17 @@ class VoiceTranscriptionModule(ModuleBase):
             logger.debug(f"No permission to reply to a voice message in guild {self.guild_id}")
             return
         except discord.HTTPException as e:
-            logger.warning(f"Could not reply to a voice message in guild {self.guild_id}: {e}")
+            # Includes the voice message being deleted meanwhile: automatic
+            # feature, nothing worth a warning.
+            logger.debug(f"Could not reply to a voice message in guild {self.guild_id}: {e}")
             return
 
         try:
             result = await service.transcribe_message(
                 message, requester_id=message.author.id
             )
+        except asyncio.CancelledError:
+            raise
         except TranscriptionError as exc:
             # An automatic transcription that fails should not shout about it in
             # the channel: drop the placeholder and stay quiet, except when the
@@ -204,6 +217,11 @@ class VoiceTranscriptionModule(ModuleBase):
             if exc.code != ErrorCode.IN_PROGRESS:
                 await self._delete_quietly(placeholder)
             return
+        except Exception as exc:  # noqa: BLE001 - never leave a spinner in the channel
+            logger.error(f"Auto transcription crashed in guild {self.guild_id}: {exc}",
+                         exc_info=True)
+            await self._delete_quietly(placeholder)
+            return
 
         # requester_id stays None — nobody asked, it is automatic.
         view, files = build_transcription_message(result, locale=locale)
@@ -213,6 +231,8 @@ class VoiceTranscriptionModule(ModuleBase):
             )
         except discord.HTTPException as e:
             logger.warning(f"Could not post transcription in guild {self.guild_id}: {e}")
+            # Do not leave the loading card up forever.
+            await self._delete_quietly(placeholder)
 
     # ----------------------------------------------------------------- #
     # Helpers

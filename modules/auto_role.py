@@ -67,7 +67,7 @@ class AutoRoleModule(ModuleBase):
 
         # Vérifie que les rôles existent
         guild = self.bot.get_guild(self.guild_id)
-        if not guild:
+        if not guild or guild.me is None:
             return False, "Serveur introuvable"
 
         # Listes pour collecter tous les problèmes
@@ -187,58 +187,103 @@ class AutoRoleModule(ModuleBase):
 
         try:
             guild = self.bot.get_guild(self.guild_id)
-            if not guild:
+            if not guild or guild.me is None:
                 return
 
-            # Détermine quels rôles attribuer selon le type de membre
-            roles_to_add = []
-
+            # Détermine quels rôles attribuer selon le type de membre.
+            # Every role goes through _assignable(): one role that Discord
+            # refuses (deleted, above the bot, managed, @everyone) would
+            # otherwise make the whole request fail and the member would get
+            # none of the others.
             if member.bot:
                 # C'est un bot, on attribue les rôles bots
-                if self.bot_roles:
-                    for role_id in self.bot_roles:
-                        role = guild.get_role(role_id)
-                        if role and role < guild.me.top_role:
-                            roles_to_add.append(role)
+                roles_to_add = self._assignable(guild, self.bot_roles)
             else:
                 # C'est un utilisateur normal, on attribue les rôles membres
-                if self.member_roles:
-                    for role_id in self.member_roles:
-                        role = guild.get_role(role_id)
-                        if role and role < guild.me.top_role:
-                            roles_to_add.append(role)
+                roles_to_add = self._assignable(guild, self.member_roles)
                 # Il rejoint en portant déjà le tag du serveur
                 if wears_tag(member, self.guild_id):
                     for role in self._assignable(guild, self.tag_roles):
                         if role not in roles_to_add:
                             roles_to_add.append(role)
 
+            if roles_to_add and not self._can_manage_roles(guild):
+                logger.info(
+                    f"Auto roles skipped in guild {self.guild_id}: Manage Roles is missing "
+                    f"(or the bot is timed out)"
+                )
+                return
+
             # Attribue les rôles si il y en a
             if roles_to_add:
-                await member.add_roles(*roles_to_add, reason="Auto Role")
-                self.count("roles_added", len(roles_to_add))
-                role_names = ", ".join([role.name for role in roles_to_add])
-                logger.info(
-                    f"✅ Added {len(roles_to_add)} auto role(s) to {member.name} ({'bot' if member.bot else 'member'}) "
-                    f"in guild {self.guild_id}: {role_names}"
-                )
+                granted = await self._grant(member, roles_to_add, "Auto Role")
+                if granted:
+                    self.count("roles_added", len(granted))
+                    role_names = ", ".join([role.name for role in granted])
+                    logger.info(
+                        f"Added {len(granted)} auto role(s) to {member.id} ({'bot' if member.bot else 'member'}) "
+                        f"in guild {self.guild_id}: {role_names}"
+                    )
 
         except discord.Forbidden:
             logger.warning(
-                f"Missing permissions to add auto roles to {member.name} in guild {self.guild_id}"
+                f"Missing permissions to add auto roles to {member.id} in guild {self.guild_id}"
             )
+        except discord.NotFound:
+            # The member left (10007) before we got to them.
+            logger.debug(f"Member {member.id} left guild {self.guild_id} before auto roles")
         except Exception as e:
             logger.error(
-                f"Error adding auto roles to {member.name} in guild {self.guild_id}: {e}",
+                f"Error adding auto roles to {member.id} in guild {self.guild_id}: {e}",
                 exc_info=True
             )
 
     @staticmethod
+    def _can_manage_roles(guild: discord.Guild) -> bool:
+        """Manage Roles is checked at GUILD level (docs: Add Guild Member Role).
+
+        ``guild_permissions`` already applies the timeout mask, so a timed-out
+        bot reports False here instead of earning a 403.
+        """
+        me = guild.me
+        return me is not None and me.guild_permissions.manage_roles
+
+    async def _grant(self, member: discord.Member, roles: List[discord.Role],
+                     reason: str) -> List[discord.Role]:
+        """Add ``roles`` one request at a time (``atomic=False``).
+
+        Unlike the atomic edit, the per-role endpoint never rewrites the
+        member's whole role list from a possibly stale cache, and a role Discord
+        rejects (hierarchy changed meanwhile, deleted) does not cost the others.
+        Returns the roles actually granted.
+        """
+        granted: List[discord.Role] = []
+        for role in roles:
+            try:
+                await member.add_roles(role, reason=reason, atomic=False)
+                granted.append(role)
+            except discord.NotFound as e:
+                if getattr(e, "code", None) == 10011:  # unknown role: deleted meanwhile
+                    logger.debug(f"Auto role {role.id} deleted (guild {self.guild_id})")
+                    continue
+                raise  # unknown member: they left, nothing more to do
+            except discord.Forbidden:
+                logger.info(
+                    f"Auto role {role.id} refused for {member.id} "
+                    f"(guild {self.guild_id}): hierarchy, 2FA or permissions"
+                )
+        return granted
+
+    @staticmethod
     def _assignable(guild: discord.Guild, role_ids: List[int]) -> List[discord.Role]:
         roles = []
-        for role_id in role_ids:
+        me = guild.me
+        if me is None:
+            return roles
+        for role_id in role_ids or []:
             role = guild.get_role(role_id)
-            if role and role < guild.me.top_role and not role.managed:
+            if (role and role.id != guild.id and not role.managed
+                    and role < me.top_role and role not in roles):
                 roles.append(role)
         return roles
 
@@ -258,7 +303,7 @@ class AutoRoleModule(ModuleBase):
             return
 
         tag_roles = self._assignable(guild, self.tag_roles)
-        if not tag_roles:
+        if not tag_roles or not self._can_manage_roles(guild):
             return
 
         try:
@@ -269,16 +314,18 @@ class AutoRoleModule(ModuleBase):
                 # Same AltGuard rule as the join roles: nothing before the gate opens.
                 if await self._altguard_holds_back(member):
                     return
-                await member.add_roles(*missing, reason="Auto Role (server tag)")
-                self.count("roles_added", len(missing))
-                logger.info(
-                    f"Added {len(missing)} tag role(s) to {member.id} in guild {self.guild_id}"
-                )
+                granted = await self._grant(member, missing, "Auto Role (server tag)")
+                if granted:
+                    self.count("roles_added", len(granted))
+                    logger.info(
+                        f"Added {len(granted)} tag role(s) to {member.id} in guild {self.guild_id}"
+                    )
             else:
                 extra = [r for r in tag_roles if r in member.roles]
                 if not extra:
                     return
-                await member.remove_roles(*extra, reason="Auto Role (server tag removed)")
+                await member.remove_roles(*extra, reason="Auto Role (server tag removed)",
+                                          atomic=False)
                 logger.info(
                     f"Removed {len(extra)} tag role(s) from {member.id} in guild {self.guild_id}"
                 )
@@ -286,6 +333,8 @@ class AutoRoleModule(ModuleBase):
             logger.warning(
                 f"Missing permissions to sync tag roles for {member.id} in guild {self.guild_id}"
             )
+        except discord.NotFound:
+            logger.debug(f"Member {member.id} left guild {self.guild_id} during a tag sync")
         except discord.HTTPException as e:
             logger.error(
                 f"Error syncing tag roles for {member.id} in guild {self.guild_id}: {e}"

@@ -27,6 +27,7 @@ import discord
 from modules.module_manager import ModuleBase
 from services.translate_button_service import DEFAULT_DELETE_AFTER, DELETE_AFTER_OPTIONS
 from tools import langdetect as ld
+from utils.bot_permissions import can_act_in
 from utils.emojis import TRANSLATE
 
 logger = logging.getLogger("moddy.modules.translate_button")
@@ -155,8 +156,11 @@ class TranslateButtonModule(ModuleBase):
         if detection.language in known:
             return
 
+        # A reply needs Send Messages (Send Messages in Threads in a thread) and
+        # Read Message History IN the channel; elsewhere stay silent.
         me = message.guild.me
-        if me is not None and not message.channel.permissions_for(me).send_messages:
+        if me is not None and not can_act_in(
+                message.channel, me, ["send_messages", "read_message_history"]):
             return
 
         if await service.offer(message, detection.language, locale, self.delete_after):

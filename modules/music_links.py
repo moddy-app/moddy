@@ -32,6 +32,7 @@ import discord
 
 from modules.module_manager import ModuleBase
 from tools import music as mu
+from utils.bot_permissions import can_act_in
 from utils.emojis import MUSIC_NOTE
 
 logger = logging.getLogger("moddy.modules.music_links")
@@ -132,8 +133,12 @@ class MusicLinksModule(ModuleBase):
             return
         if not self.handles_channel(message.channel):
             return
+        # Default-enabled: degrade silently. A reply needs View Channel, Send
+        # Messages (Send Messages in Threads inside a thread) and Read Message
+        # History IN the channel (error 160002 otherwise).
         me = message.guild.me
-        if me is not None and not message.channel.permissions_for(me).send_messages:
+        if me is not None and not can_act_in(
+                message.channel, me, ["send_messages", "read_message_history"]):
             return
         service = getattr(self.bot, "music_links", None)
         if service is None:

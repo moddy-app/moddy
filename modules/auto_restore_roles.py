@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 from modules.module_manager import ModuleBase
-from utils.bot_permissions import channel_map, channel_validation_error
+from utils.bot_permissions import can_act_in, channel_map, channel_validation_error
 from utils.emojis import REFRESH, HISTORY, DONE
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles')
@@ -28,8 +28,12 @@ class AutoRestoreRolesModule(ModuleBase):
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
     MODULE_EMOJI = REFRESH
     MODULE_ORDER = 60
-    # embed_links: the optional log messages are embeds.
-    REQUIRED_BOT_PERMISSIONS = ["manage_roles", "embed_links"]
+    # Manage Roles is checked at GUILD level (Add Guild Member Role). The
+    # optional log messages are embeds: Embed Links is checked in the log
+    # channel only (channel_requirements), so it is not a guild requirement.
+    # Nothing is written in any channel when no log channel is configured.
+    REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
+    SENDS_MESSAGES = False
 
     @classmethod
     def channel_requirements(cls, config):
@@ -193,21 +197,50 @@ class AutoRestoreRolesModule(ModuleBase):
                 return
 
             roles_to_restore = []
+            me = guild.me
             for role_id in role_ids:
                 role = guild.get_role(role_id)
-                if role and role < guild.me.top_role:  # Vérifie que le bot peut attribuer ce rôle
+                # The bot can only grant roles below its own top role; managed
+                # roles and @everyone can never be granted (a deleted role is
+                # simply gone). One refused role fails a whole atomic request.
+                if (role and me is not None and role.id != guild.id and not role.managed
+                        and role < me.top_role):
                     roles_to_restore.append(role)
 
             if not roles_to_restore:
-                logger.info(f"No roles to restore for {member.name} (guild {self.guild_id})")
+                logger.info(f"No roles to restore for {member.id} (guild {self.guild_id})")
                 # Supprime les données sauvegardées
                 await self.bot.db.delete_saved_roles(self.guild_id, member.id)
                 return
 
-            # Restaure les rôles
-            await member.add_roles(*roles_to_restore, reason="Auto Restore Roles")
+            if not guild.me.guild_permissions.manage_roles:
+                # Missing Manage Roles (or the bot is timed out): keep the
+                # saved roles, they may be restorable once it is fixed.
+                logger.info(
+                    f"Cannot restore roles in guild {self.guild_id}: Manage Roles is missing")
+                return
 
-            logger.info(f"✅ Restored {len(roles_to_restore)} roles for {member.name} (guild {self.guild_id})")
+            # Restaure les rôles, un par un (atomic=False): pas de réécriture
+            # complète de la liste de rôles depuis un cache possiblement périmé,
+            # et un rôle refusé ne bloque pas les autres.
+            restored = []
+            for role in roles_to_restore:
+                try:
+                    await member.add_roles(role, reason="Auto Restore Roles", atomic=False)
+                    restored.append(role)
+                except discord.NotFound as e:
+                    if getattr(e, "code", None) == 10011:  # role deleted meanwhile
+                        continue
+                    raise  # the member left again
+                except discord.Forbidden:
+                    logger.info(
+                        f"Role {role.id} refused for {member.id} (guild {self.guild_id})")
+
+            if not restored:
+                return
+            roles_to_restore = restored
+
+            logger.info(f"Restored {len(roles_to_restore)} roles for {member.id} (guild {self.guild_id})")
 
             # Supprime les données sauvegardées
             await self.bot.db.delete_saved_roles(self.guild_id, member.id)
@@ -217,9 +250,11 @@ class AutoRestoreRolesModule(ModuleBase):
                 await self._send_log_restored(member, roles_to_restore)
 
         except discord.Forbidden:
-            logger.warning(f"Missing permissions to restore roles for {member.name} (guild {self.guild_id})")
+            logger.warning(f"Missing permissions to restore roles for {member.id} (guild {self.guild_id})")
+        except discord.NotFound:
+            logger.debug(f"Member {member.id} left guild {self.guild_id} before roles were restored")
         except Exception as e:
-            logger.error(f"Error restoring roles for {member.name}: {e}", exc_info=True)
+            logger.error(f"Error restoring roles for {member.id}: {e}", exc_info=True)
 
     def _get_roles_to_save(self, member: discord.Member) -> List[discord.Role]:
         """
@@ -241,15 +276,29 @@ class AutoRestoreRolesModule(ModuleBase):
 
         return []
 
+    def _log_channel(self) -> Optional[discord.TextChannel]:
+        """The log channel when the bot can actually post an embed there.
+
+        The log is optional: a deleted, hidden or locked channel (or an
+        obfuscated one) is skipped quietly instead of raising on every member
+        that leaves or joins.
+        """
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild or guild.me is None or not self.log_channel_id:
+            return None
+        channel = guild.get_channel(self.log_channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            return None
+        if not can_act_in(channel, guild.me, ["view_channel", "send_messages", "embed_links"]):
+            logger.debug(f"Auto restore log channel {channel.id} unusable (guild {self.guild_id})")
+            return None
+        return channel
+
     async def _send_log_saved(self, member: discord.Member, roles: List[discord.Role]):
         """Envoie un log quand des rôles sont sauvegardés"""
         try:
-            guild = self.bot.get_guild(self.guild_id)
-            if not guild:
-                return
-
-            channel = guild.get_channel(self.log_channel_id)
-            if not channel or not isinstance(channel, discord.TextChannel):
+            channel = self._log_channel()
+            if channel is None:
                 return
 
             embed = discord.Embed(
@@ -265,25 +314,23 @@ class AutoRestoreRolesModule(ModuleBase):
             )
             embed.add_field(
                 name=f"Rôles sauvegardés ({len(roles)})",
-                value=", ".join([role.mention for role in roles]),
+                value=(", ".join([role.mention for role in roles]))[:1024],  # embed field cap
                 inline=False
             )
             embed.set_thumbnail(url=member.display_avatar.url)
 
             await channel.send(embed=embed)
 
+        except (discord.Forbidden, discord.NotFound) as e:
+            logger.debug(f"Auto restore log not posted (guild {self.guild_id}): {e}")
         except Exception as e:
             logger.error(f"Error sending saved log: {e}", exc_info=True)
 
     async def _send_log_restored(self, member: discord.Member, roles: List[discord.Role]):
         """Envoie un log quand des rôles sont restaurés"""
         try:
-            guild = self.bot.get_guild(self.guild_id)
-            if not guild:
-                return
-
-            channel = guild.get_channel(self.log_channel_id)
-            if not channel or not isinstance(channel, discord.TextChannel):
+            channel = self._log_channel()
+            if channel is None:
                 return
 
             embed = discord.Embed(
@@ -299,13 +346,15 @@ class AutoRestoreRolesModule(ModuleBase):
             )
             embed.add_field(
                 name=f"Rôles restaurés ({len(roles)})",
-                value=", ".join([role.mention for role in roles]),
+                value=(", ".join([role.mention for role in roles]))[:1024],  # embed field cap
                 inline=False
             )
             embed.set_thumbnail(url=member.display_avatar.url)
 
             await channel.send(embed=embed)
 
+        except (discord.Forbidden, discord.NotFound) as e:
+            logger.debug(f"Auto restore log not posted (guild {self.guild_id}): {e}")
         except Exception as e:
             logger.error(f"Error sending restored log: {e}", exc_info=True)
 
