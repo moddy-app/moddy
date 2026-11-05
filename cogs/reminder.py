@@ -802,11 +802,16 @@ class RemindersManageView(BaseView):
         bot.add_dynamic_items(ReminderManageButton)
 
 
+MAX_SEND_ATTEMPTS = 5
+
+
 class Reminder(commands.Cog):
     """Reminder system for Moddy"""
 
     def __init__(self, bot):
         self.bot = bot
+        self._failures: Dict = {}
+        self._restart_task = None
         self.check_reminders.start()
 
     def cog_unload(self):
@@ -820,11 +825,43 @@ class Reminder(commands.Cog):
 
         try:
             pending = await self.bot.db.get_pending_reminders()
-
-            for reminder in pending:
-                await self.send_reminder(reminder)
         except Exception as e:
             logger.error(f"Error checking reminders: {e}")
+            return
+
+        # One reminder failing (Discord 5xx, bad row...) must not starve the
+        # ones behind it, nor stop the loop.
+        for reminder in pending:
+            await self._send_guarded(reminder)
+
+    async def _send_guarded(self, reminder: Dict, is_late: bool = False) -> None:
+        key = reminder.get('id')
+        try:
+            await self.send_reminder(reminder, is_late=is_late)
+            self._failures.pop(key, None)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            count = self._failures.get(key, 0) + 1
+            self._failures[key] = count
+            logger.error(f"Reminder {key} failed to send (attempt {count}): {e}", exc_info=count == 1)
+            if count >= MAX_SEND_ATTEMPTS:
+                # A poison reminder must not be retried (and logged) forever.
+                self._failures.pop(key, None)
+                try:
+                    await self.bot.db.mark_reminder_sent(key, failed=True)
+                except Exception as mark_error:
+                    logger.error(f"Could not mark reminder {key} as failed: {mark_error}")
+
+    @check_reminders.error
+    async def check_reminders_error(self, error):
+        logger.error(f"check_reminders loop error (restarting): {error}", exc_info=error)
+
+        async def _restart():
+            await asyncio.sleep(30)
+            if not self.check_reminders.is_running():
+                self.check_reminders.restart()
+        self._restart_task = asyncio.create_task(_restart())
 
     @check_reminders.before_loop
     async def before_check_reminders(self):
@@ -841,7 +878,7 @@ class Reminder(commands.Cog):
                 logger.info(f"Found {len(pending)} missed reminders to send")
 
                 for reminder in pending:
-                    await self.send_reminder(reminder, is_late=True)
+                    await self._send_guarded(reminder, is_late=True)
             except Exception as e:
                 logger.error(f"Error sending missed reminders: {e}")
 

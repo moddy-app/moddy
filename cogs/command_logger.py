@@ -62,15 +62,20 @@ class CommandLogger(commands.Cog):
             kind = "context-menu"
             name = command.name
 
-        await tech.log_command(
-            name=f"/{name}" if kind == "slash" else name,
-            kind=kind,
-            user=interaction.user,
-            guild=interaction.guild,
-            channel=interaction.channel,
-            success=True,
-            args=_format_options(interaction),
-        )
+        # Usage logging is best-effort: a dead webhook must never surface as
+        # an event-listener error on every single command.
+        try:
+            await tech.log_command(
+                name=f"/{name}" if kind == "slash" else name,
+                kind=kind,
+                user=interaction.user,
+                guild=interaction.guild,
+                channel=interaction.channel,
+                success=True,
+                args=_format_options(interaction),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Command usage log failed: %s", exc)
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: commands.Context):
@@ -85,15 +90,18 @@ class CommandLogger(commands.Cog):
         if ctx.kwargs:
             args = ", ".join(f"{k}={v}" for k, v in list(ctx.kwargs.items())[:8])
 
-        await tech.log_command(
-            name=f"{ctx.prefix}{ctx.command.qualified_name}" if ctx.command else "unknown",
-            kind="prefix",
-            user=ctx.author,
-            guild=ctx.guild,
-            channel=ctx.channel,
-            success=True,
-            args=args,
-        )
+        try:
+            await tech.log_command(
+                name=f"{ctx.prefix}{ctx.command.qualified_name}" if ctx.command else "unknown",
+                kind="prefix",
+                user=ctx.author,
+                guild=ctx.guild,
+                channel=ctx.channel,
+                success=True,
+                args=args,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Command usage log failed: %s", exc)
 
 
 async def setup(bot):

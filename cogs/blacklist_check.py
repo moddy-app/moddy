@@ -12,6 +12,8 @@ for maximum efficiency. This cog only covers the prefix-command path, through a
 ``process_commands`` override.
 """
 
+import logging
+
 import discord
 from discord.ext import commands
 
@@ -19,6 +21,8 @@ from utils import global_sanctions
 from utils.guild_language import guild_locale
 from utils.components_v2 import create_suspension_message
 from utils.emojis import DONE
+
+logger = logging.getLogger('moddy.blacklist_check')
 
 
 class BlacklistCheck(commands.Cog):
@@ -42,7 +46,11 @@ class BlacklistCheck(commands.Cog):
                 return await original_process_commands(message)
 
             # Vérifie si le message commence par un préfixe (commande ou mention)
-            prefixes = await self.bot.get_prefix(message)
+            try:
+                prefixes = await self.bot.get_prefix(message)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("get_prefix failed, passing the message on: %s", exc)
+                return await original_process_commands(message)
             if isinstance(prefixes, str):
                 prefixes = [prefixes]
 
@@ -54,12 +62,19 @@ class BlacklistCheck(commands.Cog):
                 return await original_process_commands(message)
 
             # C'est une commande : l'auteur ou son serveur est-il suspendu ?
-            user_suspended = await self.is_suspended(message.author.id)
-            guild_suspended = (
-                not user_suspended
-                and message.guild is not None
-                and await global_sanctions.is_suspended(self.bot, guild_id=message.guild.id)
-            )
+            # Fail OPEN: if the suspension lookup itself breaks (database or
+            # Redis down), commands keep working instead of every prefix command
+            # (staff ones included) raising until the dependency is back.
+            try:
+                user_suspended = await self.is_suspended(message.author.id)
+                guild_suspended = (
+                    not user_suspended
+                    and message.guild is not None
+                    and await global_sanctions.is_suspended(self.bot, guild_id=message.guild.id)
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Suspension check failed, letting the command through: %s", exc)
+                return await original_process_commands(message)
 
             if user_suspended or guild_suspended:
                 locale = await guild_locale(self.bot, message.guild) \

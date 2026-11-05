@@ -120,10 +120,25 @@ class I18n:
 
     def reload_translations(self):
         """Recharge toutes les traductions (utile pour le développement)"""
+        # Keep the previous translations until the new ones parsed: a file
+        # saved half-written must not leave the bot with no text at all.
+        previous = (dict(self._translations), set(self._supported_locales))
         self._translations.clear()
         self._supported_locales.clear()
         self.__class__._loaded = False
         self.load_translations(force=True)
+        if not self._translations:
+            self._translations.update(previous[0])
+            self._supported_locales.update(previous[1])
+            self.__class__._loaded = True
+            logger.error("❌ Rechargement échoué: anciennes traductions conservées")
+            return
+        # A locale that failed to parse this time keeps its previous content.
+        for locale_code, content in previous[0].items():
+            if locale_code not in self._translations:
+                self._translations[locale_code] = content
+                self._supported_locales.add(locale_code)
+                logger.error(f"❌ {locale_code} non rechargé: ancienne version conservée")
         logger.info("🔄 Traductions rechargées")
 
     def get_user_locale(self, interaction: discord.Interaction) -> str:
@@ -209,11 +224,15 @@ class I18n:
             return f"[{key}]"
 
         # Remplacer les variables si nécessaires
-        if kwargs:
+        if kwargs and isinstance(text, str):
             try:
                 text = text.format(**kwargs)
             except KeyError as e:
                 logger.error(f"❌ Variable manquante dans la traduction {key}: {e}")
+            except (IndexError, ValueError, AttributeError, TypeError) as e:
+                # A translator's stray "{" or positional "{0}" must cost one
+                # unformatted string, never an exception in the caller.
+                logger.error(f"❌ Traduction invalide {key} ({target_locale}): {e}")
 
         return text
 

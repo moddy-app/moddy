@@ -147,7 +147,11 @@ async def _check_infraction(payload: dict, guild_id: int):
     if bot.get_guild(guild_id) is None:
         return _error(404, "unknown_guild", f"Unknown guild: {guild_id}")
 
-    safe, reason = await validate_custom_infraction(bot, guild_id, infraction)
+    try:
+        safe, reason = await validate_custom_infraction(bot, guild_id, infraction)
+    except Exception as exc:  # noqa: BLE001 - fail closed, never a bare 500
+        logger.error("automod rules_check crashed (guild %s): %s", guild_id, exc, exc_info=True)
+        return _error(503, "unavailable", strings["unavailable"])
     if safe:
         return {"ok": True}
 

@@ -362,6 +362,45 @@ async def start_api_server():
     await server.serve()
 
 
+async def supervised_api_server():
+    """Run the internal API without ever taking the bot down with it.
+
+    A port already in use or an uvicorn crash used to propagate through
+    ``asyncio.gather`` into ``main()``'s ``sys.exit(1)``, killing the Discord
+    bot over a side service. The API is restarted with backoff instead.
+    """
+    logger = logging.getLogger('moddy')
+    delay = 5.0
+    while True:
+        try:
+            await start_api_server()
+            return  # clean stop (shutdown requested)
+        except asyncio.CancelledError:
+            raise
+        except SystemExit:
+            # uvicorn calls sys.exit(1) when it cannot bind its port
+            logger.error("[FAIL] API server exited (port busy?); the bot keeps running, retrying in %.0fs", delay)
+        except Exception as e:
+            logger.error("[FAIL] API server crashed: %s; the bot keeps running, retrying in %.0fs",
+                         e, delay, exc_info=True)
+        await asyncio.sleep(delay)
+        delay = min(delay * 2, 120.0)
+
+
+def _is_transient_login_error(exc: BaseException) -> bool:
+    """Errors worth retrying while still BEFORE the bot's setup_hook ran:
+    network trouble reaching Discord and 5xx answers from it."""
+    import aiohttp
+    import discord
+    if isinstance(exc, (asyncio.TimeoutError, aiohttp.ClientError, OSError)):
+        return True
+    if isinstance(exc, discord.GatewayNotFound):
+        return True
+    if isinstance(exc, discord.HTTPException) and (exc.status >= 500 or exc.status == 429):
+        return True
+    return False
+
+
 async def main():
     """Launches the bot and all services."""
 
@@ -429,62 +468,49 @@ async def main():
         logger.info("Starting API server and Discord bot...")
 
         async def start_bot_with_retry():
-            """Starts the bot with retry logic for network issues."""
-            max_retries = 5
+            """Starts the bot with retry logic for network issues.
+
+            Only the login phase is retried: once ``setup_hook`` has run, a
+            second ``bot.start()`` would run it again (duplicate loops, cogs
+            already loaded), and discord.py already reconnects the gateway by
+            itself after that point.
+            """
+            import discord
+            max_retries = 8
             retry_delay = 2  # seconds
 
             for attempt in range(1, max_retries + 1):
                 try:
                     await bot.start(TOKEN)
                     break  # Success, exit retry loop
-                except asyncio.TimeoutError:
-                    if attempt < max_retries:
-                        logger.warning(f"[WARN] Connection timeout (attempt {attempt}/{max_retries})")
-                        logger.info(f"Retrying in {retry_delay} seconds...")
-                        await asyncio.sleep(retry_delay)
-                        retry_delay *= 2  # Exponential backoff
-                    else:
-                        logger.error(f"[FAIL] Failed to connect after {max_retries} attempts")
-                        raise
-                except discord.HTTPException as e:
-                    # Handle Discord rate limits (429) with longer delay
-                    if e.status == 429:
-                        if attempt < max_retries:
-                            # Check if Discord provided a Retry-After header
-                            retry_after = None
-                            if hasattr(e.response, 'headers') and 'Retry-After' in e.response.headers:
-                                try:
-                                    retry_after = int(e.response.headers['Retry-After'])
-                                except (ValueError, TypeError):
-                                    pass
-
-                            # Use Discord's suggested delay or default to 60 seconds
-                            rate_limit_delay = retry_after if retry_after else 60
-
-                            logger.warning(f"[WARN] Discord rate limit hit (429) - attempt {attempt}/{max_retries}")
-                            if retry_after:
-                                logger.info(f"Discord requests waiting {rate_limit_delay} seconds (Retry-After header)")
-                            else:
-                                logger.info(f"Waiting {rate_limit_delay} seconds before retry...")
-                            logger.info("Tip: Too many restarts can trigger rate limits. The timer does NOT reset on retries.")
-                            await asyncio.sleep(rate_limit_delay)
-                        else:
-                            logger.error(f"[FAIL] Failed to connect after {max_retries} attempts (rate limited)")
-                            logger.error("Discord is blocking the bot due to too many requests.")
-                            logger.error("Wait 5-10 minutes before trying again, or check for multiple instances.")
-                            raise
-                    else:
-                        # Other HTTP errors should not be retried
-                        logger.error(f"[FAIL] Discord HTTP error: {e}")
-                        raise
-                except Exception as e:
-                    # Other exceptions should not be retried
-                    logger.error(f"[FAIL] Connection error: {e}")
+                except asyncio.CancelledError:
                     raise
+                except Exception as e:
+                    if getattr(bot, "_setup_hook_ran", False) or not _is_transient_login_error(e):
+                        # Bad token, privileged intents, failure after boot...
+                        logger.error(f"[FAIL] Connection error (not retried): {e}")
+                        raise
+                    if attempt >= max_retries:
+                        logger.error(f"[FAIL] Failed to connect after {max_retries} attempts: {e}")
+                        raise
+                    wait = retry_delay
+                    if isinstance(e, discord.HTTPException) and e.status == 429:
+                        # Discord rate limit: honour Retry-After, default 60 s
+                        wait = 60
+                        headers = getattr(getattr(e, "response", None), "headers", None) or {}
+                        try:
+                            wait = int(headers.get("Retry-After", 60))
+                        except (ValueError, TypeError):
+                            wait = 60
+                        logger.warning(f"[WARN] Discord rate limit hit (429) - attempt {attempt}/{max_retries}, waiting {wait}s")
+                    else:
+                        logger.warning(f"[WARN] Connection problem ({type(e).__name__}: {e}) - attempt {attempt}/{max_retries}, retrying in {wait}s")
+                        retry_delay = min(retry_delay * 2, 120)
+                    await asyncio.sleep(wait)
 
         # Run both API server and bot concurrently
         await asyncio.gather(
-            start_api_server(),
+            supervised_api_server(),
             start_bot_with_retry()
         )
 

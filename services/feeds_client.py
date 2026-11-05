@@ -46,6 +46,7 @@ class FeedsClient:
         self._pending: Dict[str, asyncio.Future] = {}
         self._reply_task: Optional[asyncio.Task] = None
         self._queue_task: Optional[asyncio.Task] = None
+        self._waiter_task: Optional[asyncio.Task] = None
         self._consumer_name = f"bot-{socket.gethostname()}-{os.getpid()}"
         self._started = False
 
@@ -64,17 +65,35 @@ class FeedsClient:
         if self._started:
             return
         if not self.redis:
-            logger.warning("[Feeds] Redis unavailable — feeds client disabled")
+            logger.warning("[Feeds] Redis unavailable — will start once it is back")
+            if self._waiter_task is None or self._waiter_task.done():
+                self._waiter_task = asyncio.create_task(
+                    self._wait_for_redis(queue_handler), name="feeds-wait-redis")
             return
 
         self._started = True
-        self._reply_task = asyncio.create_task(self._reply_reader())
-        self._queue_task = asyncio.create_task(self._queue_consumer(queue_handler))
+        self._reply_task = asyncio.create_task(self._reply_reader(), name="feeds-replies")
+        self._queue_task = asyncio.create_task(
+            self._queue_consumer(queue_handler), name="feeds-queue")
+        for task in (self._reply_task, self._queue_task):
+            task.add_done_callback(self._log_task_end)
         logger.info("[Feeds] Feeds client started")
+
+    @staticmethod
+    def _log_task_end(task: "asyncio.Task") -> None:
+        if not task.cancelled() and task.exception() is not None:
+            logger.error("[Feeds] background task %s died: %r", task.get_name(), task.exception())
+
+    async def _wait_for_redis(self, queue_handler: QueueHandler) -> None:
+        """Redis was down when the cog loaded: start as soon as it is back."""
+        while not self._started:
+            await asyncio.sleep(15)
+            if self.redis:
+                await self.start(queue_handler)
 
     async def stop(self) -> None:
         """Cancel background tasks (called on bot shutdown)."""
-        for task in (self._reply_task, self._queue_task):
+        for task in (self._reply_task, self._queue_task, self._waiter_task):
             if task and not task.done():
                 task.cancel()
         self._started = False
@@ -141,9 +160,11 @@ class FeedsClient:
     async def _reply_reader(self) -> None:
         """Continuously read ``feeds:replies`` and resolve correlated futures."""
         last_id = "$"  # only replies produced after we start listening
+        delay = 2.0
         while True:
             try:
                 messages = await self.redis.xread({REPLIES_STREAM: last_id}, block=30000, count=20)
+                delay = 2.0
                 if not messages:
                     continue
                 for _stream, entries in messages:
@@ -154,7 +175,8 @@ class FeedsClient:
                 raise
             except Exception as e:
                 logger.error(f"[Feeds] Reply reader error: {e}")
-                await asyncio.sleep(2)
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 60.0)
 
     def _resolve_reply(self, fields: Dict[str, Any]) -> None:
         try:
@@ -173,16 +195,21 @@ class FeedsClient:
     # ------------------------------------------------------------------ #
     async def _queue_consumer(self, handler: QueueHandler) -> None:
         """Consume ``notifications:queue`` via a consumer group and dispatch."""
-        # Ensure the consumer group exists (idempotent).
-        try:
-            await self.redis.xgroup_create(QUEUE_STREAM, QUEUE_GROUP, id="0", mkstream=True)
-        except Exception as e:
-            # BUSYGROUP means the group already exists — fine.
-            if "BUSYGROUP" not in str(e):
-                logger.error(f"[Feeds] Could not create consumer group: {e}")
-
+        delay = 2.0
+        group_ready = False
         while True:
             try:
+                if not group_ready:
+                    # Ensure the consumer group exists (idempotent). Re-done after
+                    # a Redis restart that lost the group (NOGROUP).
+                    try:
+                        await self.redis.xgroup_create(
+                            QUEUE_STREAM, QUEUE_GROUP, id="0", mkstream=True)
+                    except Exception as e:
+                        # BUSYGROUP means the group already exists — fine.
+                        if "BUSYGROUP" not in str(e):
+                            raise
+                    group_ready = True
                 resp = await self.redis.xreadgroup(
                     QUEUE_GROUP,
                     self._consumer_name,
@@ -190,6 +217,7 @@ class FeedsClient:
                     count=50,
                     block=30000,
                 )
+                delay = 2.0
                 for _stream, messages in resp or []:
                     for msg_id, fields in messages:
                         try:
@@ -208,7 +236,9 @@ class FeedsClient:
                 raise
             except Exception as e:
                 logger.error(f"[Feeds] Queue consumer error: {e}")
-                await asyncio.sleep(2)
+                group_ready = False  # NOGROUP / reconnect: verify the group again
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 60.0)
 
     # ------------------------------------------------------------------ #
     # Healthcheck

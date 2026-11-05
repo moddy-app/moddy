@@ -117,7 +117,9 @@ class TechLogger:
     def _get_session(self) -> aiohttp.ClientSession:
         root = self._parent or self
         if root._session is None or root._session.closed:
-            root._session = aiohttp.ClientSession()
+            # Bounded: a hung webhook must not hold every caller (command
+            # logging awaits it) for aiohttp's default 5 minutes.
+            root._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20))
         return root._session
 
     def _username(self, category: str) -> str:
@@ -165,7 +167,7 @@ class TechLogger:
             # mini-bot is the one logging (minibots/emojis.py).
             from minibots.emojis import suspend
             with suspend():
-                await webhook.send(**kwargs)
+                await asyncio.wait_for(webhook.send(**kwargs), timeout=30)
         except Exception as exc:  # never let logging break the caller
             logger.warning("Tech log dispatch failed (%s): %s", category, exc)
 

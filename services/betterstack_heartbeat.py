@@ -52,7 +52,7 @@ class BetterStackHeartbeat:
     def start(self) -> None:
         """Start the background ping loop. Safe to call once; a no-op
         (with a warning) when no heartbeat URL is configured."""
-        if self._task is not None:
+        if self._task is not None and not self._task.done():
             return
         if not self.url:
             logger.warning("BETTERSTACK_HEARTBEAT_URL missing: Better Stack heartbeat disabled")
@@ -73,7 +73,8 @@ class BetterStackHeartbeat:
 
     async def _loop(self) -> None:
         timeout = aiohttp.ClientTimeout(total=5)
-        self._session = aiohttp.ClientSession(timeout=timeout)
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(timeout=timeout)
         while True:
             try:
                 healthy = await self._healthy() if self._healthy else True

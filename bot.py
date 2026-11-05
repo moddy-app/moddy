@@ -254,6 +254,16 @@ class ModdyBot(ModdyFrameworkBot):
         self._guild_module_commands: Dict[int, frozenset] = {}
         self._module_sync_locks: Dict[int, asyncio.Lock] = {}
 
+        # Chaos resilience: strong references to fire-and-forget tasks (asyncio
+        # only keeps weak ones), and the once-per-process flags that make
+        # on_ready() idempotent (it fires again after every full re-IDENTIFY).
+        self._bg_tasks: Set[asyncio.Task] = set()
+        self._ready_lock = asyncio.Lock()
+        self._db_dependent_init_done = False
+        self._guild_commands_synced = False
+        self._boot_stage_failures: list = []
+        self._last_loop_exc_report = 0.0
+
 
         # Configure global error handler
         self.setup_error_handler()
@@ -270,9 +280,14 @@ class ModdyBot(ModdyFrameworkBot):
             if exception:
                 logger.error(f"Uncaught error: {exception}", exc_info=exception)
 
-                # Try to send to Discord if the bot is connected
-                if self.is_ready():
-                    asyncio.create_task(self.log_fatal_error(exception, context))
+                # Try to send to Discord if the bot is connected. Throttled: a
+                # failing task that reports itself must not become a storm of
+                # error-channel posts (which could fail and report themselves).
+                import time as _t
+                now = _t.monotonic()
+                if self.is_ready() and now - self._last_loop_exc_report >= 30.0:
+                    self._last_loop_exc_report = now
+                    self.spawn(self.log_fatal_error(exception, context), name="log-fatal-error")
 
         # Configure the handler
         asyncio.get_event_loop().set_exception_handler(handle_exception)
@@ -296,6 +311,56 @@ class ModdyBot(ModdyFrameworkBot):
                 await error_cog.send_error_log(error_code, error_details, is_fatal=True)
         except Exception as e:
             logger.error(f"Could not log fatal error: {e}")
+
+    def spawn(self, coro, *, name: Optional[str] = None) -> asyncio.Task:
+        """Run ``coro`` in the background without ever losing it.
+
+        asyncio keeps only a weak reference to tasks, so a bare
+        ``create_task()`` can be garbage-collected mid-flight, and an exception
+        nobody awaits is only reported at interpreter exit. This keeps a strong
+        reference until the task ends and logs how it ended (once, with the
+        task name).
+        """
+        task = asyncio.create_task(coro, name=name)
+        self._bg_tasks.add(task)
+
+        def _done(t: asyncio.Task) -> None:
+            self._bg_tasks.discard(t)
+            if t.cancelled():
+                return
+            exc = t.exception()
+            if exc is not None:
+                logger.error("Background task %s crashed: %r", t.get_name(), exc,
+                             exc_info=(type(exc), exc, exc.__traceback__))
+
+        task.add_done_callback(_done)
+        return task
+
+    async def _boot_stage(self, name: str, awaitable) -> bool:
+        """Run one startup stage; a failure is logged and booting goes on.
+
+        The bot must come online with whatever works: a broken optional piece
+        (translations, a logger, the gateway...) costs that piece, not the bot.
+        """
+        try:
+            await awaitable
+            return True
+        except Exception as e:
+            logger.error("[FAIL] Boot stage '%s' failed, continuing without it: %s",
+                         name, e, exc_info=True)
+            self._boot_stage_failures.append(name)
+            return False
+
+    def _boot_stage_sync(self, name: str, fn, *args) -> bool:
+        """Synchronous twin of :meth:`_boot_stage`."""
+        try:
+            fn(*args)
+            return True
+        except Exception as e:
+            logger.error("[FAIL] Boot stage '%s' failed, continuing without it: %s",
+                         name, e, exc_info=True)
+            self._boot_stage_failures.append(name)
+            return False
 
     async def fetch_version(self):
         """Resolve the bot version from the deployed commit.
@@ -324,28 +389,85 @@ class ModdyBot(ModdyFrameworkBot):
         logger.info("Internal API wired to the bot instance")
 
     async def _setup_redis(self):
-        """Initialize Redis connection and start background listeners."""
+        """Initialize Redis connection and start background listeners.
+
+        Redis down at boot: the bot starts without it (``self.redis`` stays
+        None, every Redis-backed feature already degrades) and
+        :meth:`_redis_recovery_loop` reconnects with backoff.
+        """
+        if await self._connect_redis():
+            return
+        self._start_redis_recovery()
+
+    async def _connect_redis(self) -> bool:
         import redis.asyncio as aioredis
+        client = None
         try:
-            self.redis = aioredis.from_url(
+            client = aioredis.from_url(
                 REDIS_URL,
                 password=REDIS_PASSWORD,
                 decode_responses=True,
+                health_check_interval=30,
+                socket_connect_timeout=10,
             )
-            await self.redis.ping()
-            logger.info("Redis connected")
-            # Start background tasks
-            asyncio.create_task(self._listen_pubsub())
-            asyncio.create_task(self._consume_task_stream())
+            await asyncio.wait_for(client.ping(), timeout=15)
         except Exception as e:
             logger.error(f"[FAIL] Redis connection error: {e}")
             self.redis = None
+            if client is not None:
+                try:
+                    await client.aclose()
+                except Exception:
+                    pass
+            return False
+        self.redis = client
+        logger.info("Redis connected")
+        # Anything that captured the previous (None) client gets the new one.
+        try:
+            self.gateway.rebind(redis=self.redis)
+        except Exception as e:
+            logger.debug("Gateway redis rebind skipped: %s", e)
+        # Start background listeners (once: each one reconnects by itself)
+        for attr, coro_fn, name in (
+            ("_pubsub_task", self._listen_pubsub, "redis-pubsub"),
+            ("_task_stream_task", self._consume_task_stream, "redis-task-stream"),
+        ):
+            task = getattr(self, attr, None)
+            if task is None or task.done():
+                setattr(self, attr, self.spawn(coro_fn(), name=name))
+        return True
+
+    def _start_redis_recovery(self) -> None:
+        task = getattr(self, "_redis_recovery_task", None)
+        if task is not None and not task.done():
+            return
+        self._redis_recovery_task = self.spawn(self._redis_recovery_loop(), name="redis-recovery")
+
+    async def _redis_recovery_loop(self) -> None:
+        delay = 5.0
+        attempt = 0
+        while not self.is_closed():
+            await asyncio.sleep(delay)
+            attempt += 1
+            if await self._connect_redis():
+                logger.info("[RECOVERED] Redis reachable again after %d attempt(s)", attempt)
+                return
+            delay = min(delay * 2, 60.0)
 
     async def _listen_pubsub(self):
-        """Listen to Redis Pub/Sub channels (non-critical backend notifications)."""
+        """Listen to Redis Pub/Sub channels (non-critical backend notifications).
+
+        Never dies: any connection error re-subscribes with exponential
+        backoff (reset once messages flow again), and a poisoned message only
+        costs that message.
+        """
         import json
-        while True:
+        delay = 1.0
+        while not self.is_closed():
+            pubsub = None
             try:
+                if self.redis is None:
+                    return  # the recovery loop restarts this listener
                 pubsub = self.redis.pubsub()
                 await pubsub.subscribe(
                     "moddy:bot", "moddy:subscription:updates", "moddy:blacklist:updates",
@@ -355,6 +477,7 @@ class ModdyBot(ModdyFrameworkBot):
                     "Pub/Sub subscribed to moddy:bot, moddy:subscription:updates, "
                     "moddy:blacklist:updates and altguard:verdict"
                 )
+                delay = 1.0
                 async for message in pubsub.listen():
                     if message["type"] != "message":
                         continue
@@ -371,9 +494,20 @@ class ModdyBot(ModdyFrameworkBot):
                             await self._handle_bot_event(data)
                     except Exception as e:
                         logger.error(f"[PubSub] Error handling message: {e}")
+                # listen() returned: the connection closed under us
+                logger.warning("[PubSub] Stream ended, resubscribing")
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 logger.error(f"[PubSub] Connection error: {e}")
-                await asyncio.sleep(5)
+            finally:
+                if pubsub is not None:
+                    try:
+                        await pubsub.aclose()
+                    except Exception:
+                        pass
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 60.0)
 
     async def _handle_subscription_event(self, data: dict):
         """Handle events from the moddy:subscription:updates channel."""
@@ -826,9 +960,13 @@ class ModdyBot(ModdyFrameworkBot):
         TASK_STREAM = "moddy:tasks"
         LAST_ID_KEY = "moddy:tasks:last_id"
 
-        while True:
+        delay = 1.0
+        while not self.is_closed():
             try:
+                if self.redis is None:
+                    return  # the recovery loop restarts this consumer
                 last_id = await self.redis.get(LAST_ID_KEY) or "0"
+                delay = 1.0
                 while True:
                     # A blocking XREAD returns as soon as an entry lands, so a
                     # longer block does not add latency -- it only stops the
@@ -840,6 +978,7 @@ class ModdyBot(ModdyFrameworkBot):
                         block=30000,
                         count=10,
                     )
+                    delay = 1.0
                     if not messages:
                         continue
                     for _stream, entries in messages:
@@ -873,9 +1012,12 @@ class ModdyBot(ModdyFrameworkBot):
                             # failing entry must not be replayed forever.
                             last_id = entry_id
                             await self.redis.set(LAST_ID_KEY, last_id)
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 logger.error(f"[Stream] Connection error: {e}")
-                await asyncio.sleep(5)
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 60.0)
 
     async def _process_task(self, fields: dict):
         """Process a task from the moddy:tasks stream.
@@ -1025,81 +1167,101 @@ class ModdyBot(ModdyFrameworkBot):
                 logger.error(f"[Stream] Could not publish case task result: {e}")
 
     async def setup_hook(self):
-        """Called once on bot startup"""
+        """Called once on bot startup.
+
+        Every stage is isolated (:meth:`_boot_stage`): the bot must come online
+        and serve everything that does not depend on the piece that is broken.
+        Postgres / Redis that are down at boot are retried in the background
+        (:meth:`_db_recovery_loop`, :meth:`_redis_recovery_loop`).
+        """
         logger.info("Initial setup...")
+        self._setup_hook_ran = True
 
-        # Event-loop lag monitor: a blocked loop ages every pending interaction
-        # (10062 Unknown interaction), so make stalls visible in the logs.
-        from utils import loop_monitor
-        loop_monitor.start()
-        loop_monitor.set_notifier(self._notify_ops)
+        def _monitors():
+            # Event-loop lag monitor: a blocked loop ages every pending interaction
+            # (10062 Unknown interaction), so make stalls visible in the logs.
+            from utils import loop_monitor
+            loop_monitor.start()
+            loop_monitor.set_notifier(self._notify_ops)
 
-        # Interaction guard: acknowledge any interaction nobody answered within
-        # ~2 s so Discord never shows "This interaction failed" (patches
-        # discord.py once, before the gateway connects).
-        from utils import interaction_guard
-        interaction_guard.install()
+            # Interaction guard: acknowledge any interaction nobody answered within
+            # ~2 s so Discord never shows "This interaction failed" (patches
+            # discord.py once, before the gateway connects).
+            from utils import interaction_guard
+            interaction_guard.install()
+        self._boot_stage_sync("monitors", _monitors)
 
-        # Fetch bot version from GitHub
-        await self.fetch_version()
+        # Fetch bot version (local env var, no network)
+        await self._boot_stage("version", self.fetch_version())
         self.heartbeat.version = self.version or "0.0.0"
 
         # Configure error handler for slash commands
         self.tree.on_error = self.on_app_command_error
 
-        # Connect the database
+        # Connect the database. Down or slow at boot: the bot still starts and
+        # the connection is retried in the background.
         if DATABASE_URL:
             await self.setup_database()
 
-        # Initialize i18n system
-        logger.info("Loading i18n system...")
-        i18n.load_translations()
-        logger.info(f"i18n loaded with {len(i18n.supported_locales)} languages")
+        # Initialize i18n system (a malformed file must not stop the boot:
+        # load_translations skips the broken locale and keeps the others)
+        def _i18n():
+            logger.info("Loading i18n system...")
+            i18n.load_translations()
+            logger.info(f"i18n loaded with {len(i18n.supported_locales)} languages")
+        self._boot_stage_sync("i18n", _i18n)
 
         # Attach the command translator: Discord then shows every slash command
         # name/description in the user's own language. Translations are only
         # applied when the tree is synced, so this must run before sync_commands().
-        logger.info("Loading slash command localizations...")
-        self.command_translator = ModdyCommandTranslator()
-        await self.tree.set_translator(self.command_translator)
-        logger.info(
-            f"Command localizations ready ({len(self.command_translator.supported_locales)} locales)"
-        )
+        async def _translator():
+            logger.info("Loading slash command localizations...")
+            self.command_translator = ModdyCommandTranslator()
+            await self.tree.set_translator(self.command_translator)
+            logger.info(
+                f"Command localizations ready ({len(self.command_translator.supported_locales)} locales)"
+            )
+        await self._boot_stage("command translator", _translator())
 
         # Initialize staff permissions system
-        logger.info("Initializing staff permissions system...")
-        setup_staff_permissions(self)
-        logger.info("Staff permissions system ready")
+        def _staff_perms():
+            logger.info("Initializing staff permissions system...")
+            setup_staff_permissions(self)
+            logger.info("Staff permissions system ready")
+        self._boot_stage_sync("staff permissions", _staff_perms)
 
         # Initialize staff logger
-        logger.info("Initializing staff logger...")
-        init_staff_logger(self)
-        logger.info("Staff logger ready")
+        def _staff_logger():
+            logger.info("Initializing staff logger...")
+            init_staff_logger(self)
+            logger.info("Staff logger ready")
+        self._boot_stage_sync("staff logger", _staff_logger)
 
         # Initialize technical logger (webhook-based internal staff logs)
-        logger.info("Initializing technical logger...")
-        from utils.tech_logger import init_tech_logger
-        init_tech_logger(self)
-        # Wire DB write hooks so important writes are logged to the webhooks.
-        if self.db:
-            self.db.on_attribute_change = self.tech_logger.log_attribute_change
-            self.db.on_data_change = self.tech_logger.log_data_change
-        logger.info("Technical logger ready")
+        def _tech_logger():
+            logger.info("Initializing technical logger...")
+            from utils.tech_logger import init_tech_logger
+            init_tech_logger(self)
+            self._wire_db_hooks()
+            logger.info("Technical logger ready")
+        self._boot_stage_sync("technical logger", _tech_logger)
 
         # Initialize module manager
-        logger.info("Initializing module manager...")
-        self.module_manager = ModuleManager(self)
-        self.module_manager.discover_modules()
-        logger.info("Module manager ready")
+        def _modules():
+            logger.info("Initializing module manager...")
+            self.module_manager = ModuleManager(self)
+            self.module_manager.discover_modules()
+            logger.info("Module manager ready")
+        self._boot_stage_sync("module manager", _modules)
 
         # Hand the bot instance to the internal API (server started in main.py)
-        self.wire_internal_api()
+        self._boot_stage_sync("internal api wiring", self.wire_internal_api)
 
         # Set start time for /status uptime metric
         import time as _time
         self._start_time = _time.time()
 
-        # Connect to Redis
+        # Connect to Redis (down at boot: retried in the background)
         if REDIS_URL:
             await self._setup_redis()
         else:
@@ -1107,11 +1269,11 @@ class ModdyBot(ModdyFrameworkBot):
 
         # Start the statistics flush loop (needs the DB pool; Redis is
         # optional — without it only the distinct-people counts are lost).
-        self.stats.start()
+        self._boot_stage_sync("stats", self.stats.start)
 
         # Initialize API gateway (requires Redis + DB pool)
-        logger.info("Starting API gateway...")
-        try:
+        async def _gateway():
+            logger.info("Starting API gateway...")
             await self.gateway.start(
                 redis=self.redis,
                 pool=self.db.pool if self.db else None,
@@ -1119,21 +1281,20 @@ class ModdyBot(ModdyFrameworkBot):
                 stats=self.stats,
             )
             logger.info("API gateway ready")
-        except Exception as e:
-            logger.error(f"[FAIL] API gateway startup error: {e}")
+        await self._boot_stage("api gateway", _gateway())
 
         # AI image detector: the official C2PA trust list (Redis-cached, 24 h).
         # Background — never delays startup; until it is loaded only unsigned
         # PNG generation metadata can be detected.
-        self.ai_detector.start()
+        self._boot_stage_sync("ai detector", self.ai_detector.start)
 
         # Translate button: flushes the learnt-language counters to Redis.
-        self.translate_button.start()
+        self._boot_stage_sync("translate button", self.translate_button.start)
 
         # Automod: what the Moddy team taught the bot (learned references,
         # blocklist terms, image hashes). Background — never delays startup.
         if self.db:
-            asyncio.create_task(self.automod_labels.load_learned())
+            self.spawn(self.automod_labels.load_learned(), name="automod-load-learned")
 
         # Add before_invoke check for prefix commands cog disable
         @self.before_invoke
@@ -1158,30 +1319,27 @@ class ModdyBot(ModdyFrameworkBot):
                     await ctx.send(view=_view)
                     raise commands.CheckFailure("Cog is disabled")
 
-        # Load extensions
-        await self.load_extensions()
+        # Load extensions (each cog is isolated inside load_extensions)
+        await self._boot_stage("extensions", self.load_extensions())
 
         # Register persistent views (must run AFTER cogs are loaded so that
         # every view class is importable). See docs/guides/PERSISTENT_VIEWS.md.
-        from utils.persistent_views import register_all_persistent_views
-        register_all_persistent_views(self)
+        def _persistent():
+            from utils.persistent_views import register_all_persistent_views
+            register_all_persistent_views(self)
+        self._boot_stage_sync("persistent views", _persistent)
 
-        # Start background tasks
-        self.status_update.start()
-        self.case_expiry.start()
-        self.enforcement_sweep.start()
+        # Start background tasks (a loop that is already running is left alone)
+        for loop_task in (self.status_update, self.case_expiry, self.enforcement_sweep):
+            self._boot_stage_sync(
+                f"loop {loop_task.coro.__name__}",
+                lambda t=loop_task: None if t.is_running() else t.start())
 
-        # Sync slash commands
-        if DEBUG:
-            # In debug mode, sync commands the same way as production
-            # This ensures global commands work in DMs even in debug mode
-            await self.sync_commands()
-            logger.info("Commands synced (debug mode)")
-            logger.info("Guild-only commands will be synced in on_ready()")
-        else:
-            # In production, sync commands properly
-            await self.sync_commands()
-            logger.info("Commands synced")
+        # Sync slash commands (failure is logged inside, and retried in the
+        # background: the bot is fully usable with the commands Discord holds)
+        await self.sync_commands()
+        logger.info("Commands synced" + (" (debug mode)" if DEBUG else ""))
+        logger.info("Guild-only commands will be synced in on_ready()")
 
         # Everything loaded above (cogs, modules, staff commands, persistent views,
         # translations) lives for the whole process. Moving it out of the
@@ -1190,6 +1348,16 @@ class ModdyBot(ModdyFrameworkBot):
         # being dirtied by refcount writes during each sweep.
         gc.freeze()
         logger.info("GC: startup objects frozen into the permanent generation")
+        if self._boot_stage_failures:
+            logger.warning("[WARN] Booted DEGRADED, failed stages: %s",
+                           ", ".join(self._boot_stage_failures))
+
+    def _wire_db_hooks(self) -> None:
+        """Point the technical-log write hooks at the live database object."""
+        tech = getattr(self, "tech_logger", None)
+        if self.db and tech:
+            self.db.on_attribute_change = tech.log_attribute_change
+            self.db.on_data_change = tech.log_data_change
 
     async def sync_commands(self):
         """
@@ -1231,20 +1399,48 @@ class ModdyBot(ModdyFrameworkBot):
 
         except Exception as e:
             logger.error(f"[FAIL] Error syncing commands: {e}")
+            # 429 / 5xx / network: Discord keeps serving the commands it already
+            # has, so the bot runs; the sync is retried with growing delays.
+            self.spawn(self._retry_global_sync(), name="retry-global-sync")
 
-    async def get_official_guild_ids(self) -> set:
+    async def _retry_global_sync(self, delays=(30, 120, 600, 1800)) -> bool:
+        """Retry the global command sync in the background (never raises)."""
+        for delay in delays:
+            await asyncio.sleep(delay)
+            try:
+                await self.tree.sync()
+                logger.info("Global commands synced (background retry)")
+                return True
+            except Exception as e:
+                retry_after = getattr(e, "retry_after", None)
+                logger.warning("Global command sync retry failed: %s", e)
+                if retry_after:
+                    await asyncio.sleep(min(float(retry_after), 300.0))
+        logger.error("[FAIL] Global command sync gave up after %d retries", len(delays))
+        return False
+
+    async def get_official_guild_ids(self, strict: bool = False) -> set:
         """Return the set of guild ids flagged with the OFFICIAL attribute.
 
         Staff slash commands (/dev, /team, ...) are synced to these guilds only.
         Toggle a guild's status with the ``official`` staff command.
+
+        ``strict=True`` is for command SYNCS: an unreadable answer must abort
+        the sync (it raises) instead of reading as "no official guild", which
+        would publish a tree without the staff commands and wipe them from the
+        official servers until the next successful sync.
         """
         if not self.db:
+            if strict and DATABASE_URL:
+                raise RuntimeError("database unavailable: OFFICIAL guilds unknown")
             return set()
         try:
             ids = await self.db.get_guilds_with_attribute("OFFICIAL")
             return set(ids)
         except Exception as e:
             logger.error(f"[FAIL] Could not fetch OFFICIAL guilds: {e}")
+            if strict:
+                raise
             return set()
 
     def register_module_commands(self, module_id: str, commands_list: list) -> None:
@@ -1269,12 +1465,13 @@ class ModdyBot(ModdyFrameworkBot):
         logger.info(f"Module commands registered for '{module_id}': "
                     f"{[c.name for c in commands_list]}")
 
-    async def get_enabled_module_ids(self, guild_id: int) -> Set[str]:
+    async def get_enabled_module_ids(self, guild_id: int, strict: bool = False) -> Set[str]:
         """Modules currently enabled in a guild, restricted to those with commands.
 
         Only modules that actually own commands are looked at: the answer feeds
         the command tree and nothing else, so there is no reason to pay for the
-        rest.
+        rest. ``strict=True`` (command syncs) raises when a module cannot be
+        read, instead of publishing a set without its commands.
         """
         if not self.module_manager or not self.module_slash_commands:
             return set()
@@ -1286,6 +1483,8 @@ class ModdyBot(ModdyFrameworkBot):
             except Exception as e:
                 logger.error(f"[FAIL] Could not read module {module_id} for guild "
                              f"{guild_id}: {e}")
+                if strict:
+                    raise
                 continue
             if module and module.enabled:
                 enabled.add(module_id)
@@ -1347,14 +1546,18 @@ class ModdyBot(ModdyFrameworkBot):
             return await self._resync_module_commands_locked(guild, guild_id)
 
     async def _resync_module_commands_locked(self, guild: discord.Guild, guild_id: int) -> bool:
-        module_ids = await self.get_enabled_module_ids(guild_id)
+        try:
+            module_ids = await self.get_enabled_module_ids(guild_id, strict=True)
+        except Exception as e:
+            logger.error(f"[FAIL] Not re-syncing commands for guild {guild_id}: {e}")
+            return False
         if self._guild_module_commands.get(guild_id) == frozenset(module_ids):
             logger.debug(f"Module commands unchanged for guild {guild_id} "
                          f"({sorted(module_ids) or 'none'}) — no sync sent")
             return False
 
         try:
-            official_ids = await self.get_official_guild_ids()
+            official_ids = await self.get_official_guild_ids(strict=True)
             self._register_guild_command_set(guild, official_ids, module_ids)
             await self.tree.sync(guild=guild)
             self._guild_module_commands[guild_id] = frozenset(module_ids)
@@ -1380,7 +1583,7 @@ class ModdyBot(ModdyFrameworkBot):
         Les commandes globales sont déjà synchronisées globalement et disponibles partout.
         """
         try:
-            official_ids = await self.get_official_guild_ids()
+            official_ids = await self.get_official_guild_ids(strict=True)
 
             # One greppable line saying which modules can publish commands at
             # all. Empty when a cog failed to load, which otherwise shows up
@@ -1398,32 +1601,77 @@ class ModdyBot(ModdyFrameworkBot):
 
             # Synchroniser les commandes guild-only dans chaque serveur
             guild_count = 0
-            for guild in self.guilds:
-                try:
-                    # IMPORTANT: Clear d'abord toutes les commandes de ce serveur
-                    # puis ajoute guild-only (+ commandes des modules activés,
-                    # + staff groups si serveur officiel).
-                    module_ids = await self.get_enabled_module_ids(guild.id)
-                    self._register_guild_command_set(guild, official_ids, module_ids)
-
-                    # Sync les commandes de ce serveur (ou sync vide si rien)
-                    await self.tree.sync(guild=guild)
-                    self._guild_module_commands[guild.id] = frozenset(module_ids)
-
+            failed: list = []
+            for guild in list(self.guilds):
+                if await self._sync_one_guild(guild, official_ids):
                     guild_count += 1
-                    logger.info(f"Guild commands synced for {guild.name} "
-                                f"({guild.id}) — modules: "
-                                f"{sorted(module_ids) or 'none'}")
-                except Exception as e:
-                    logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
+                else:
+                    failed.append(guild.id)
+
+            if failed:
+                logger.warning(f"[WARN] Guild command sync failed for {len(failed)} server(s); "
+                               f"retrying in the background")
+                self.spawn(self._retry_failed_guild_syncs(failed), name="retry-guild-sync")
 
             if self._guild_only_commands:
                 logger.info(f"Guild-specific commands synced for {guild_count} servers")
             else:
                 logger.info(f"Cleared guild commands for {guild_count} servers (no guild-only commands)")
+            return not failed
 
         except Exception as e:
             logger.error(f"[FAIL] Error syncing guild commands: {e}")
+            self.spawn(self._retry_failed_guild_syncs(None), name="retry-guild-sync")
+            return False
+
+    async def _sync_one_guild(self, guild: discord.Guild, official_ids: set) -> bool:
+        """Sync one guild's command set. Never raises: one guild failing (403,
+        429, 5xx, a module unreadable) must not stop the others."""
+        try:
+            # IMPORTANT: Clear d'abord toutes les commandes de ce serveur
+            # puis ajoute guild-only (+ commandes des modules activés,
+            # + staff groups si serveur officiel).
+            module_ids = await self.get_enabled_module_ids(guild.id, strict=True)
+            self._register_guild_command_set(guild, official_ids, module_ids)
+
+            # Sync les commandes de ce serveur (ou sync vide si rien)
+            await self.tree.sync(guild=guild)
+            self._guild_module_commands[guild.id] = frozenset(module_ids)
+            logger.info(f"Guild commands synced for {guild.name} "
+                        f"({guild.id}) — modules: "
+                        f"{sorted(module_ids) or 'none'}")
+            return True
+        except discord.Forbidden:
+            # Kicked mid-sync or applications.commands scope missing: nothing
+            # to retry, the guild simply cannot have slash commands.
+            logger.warning(f"[WARN] Cannot sync commands for guild {guild.id} "
+                           f"(missing applications.commands scope)")
+            return True
+        except Exception as e:
+            logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
+            return False
+
+    async def _retry_failed_guild_syncs(self, guild_ids, delays=(60, 300, 1800)) -> None:
+        """Retry guild syncs that failed at boot. ``None`` = everything (the
+        whole pass could not even start, e.g. the database was down)."""
+        pending = None if guild_ids is None else list(guild_ids)
+        for delay in delays:
+            await asyncio.sleep(delay)
+            try:
+                official_ids = await self.get_official_guild_ids(strict=True)
+            except Exception:
+                continue
+            targets = (list(self.guilds) if pending is None
+                       else [g for g in (self.get_guild(i) for i in pending) if g])
+            still = []
+            for guild in targets:
+                if not await self._sync_one_guild(guild, official_ids):
+                    still.append(guild.id)
+            if not still:
+                logger.info("Guild command sync recovered (background retry)")
+                return
+            pending = still
+        logger.error(f"[FAIL] Guild command sync gave up for {len(pending or [])} server(s)")
 
     async def sync_guild_commands(self, guild: discord.Guild):
         """
@@ -1440,8 +1688,8 @@ class ModdyBot(ModdyFrameworkBot):
         try:
             # Clear puis ajoute guild-only (+ commandes des modules activés,
             # + staff groups si serveur officiel).
-            official_ids = await self.get_official_guild_ids()
-            module_ids = await self.get_enabled_module_ids(guild.id)
+            official_ids = await self.get_official_guild_ids(strict=True)
+            module_ids = await self.get_enabled_module_ids(guild.id, strict=True)
             self._register_guild_command_set(guild, official_ids, module_ids)
 
             # Synchroniser les commandes pour ce serveur (ou sync vide si rien)
@@ -1449,11 +1697,28 @@ class ModdyBot(ModdyFrameworkBot):
             self._guild_module_commands[guild.id] = frozenset(module_ids)
 
             logger.info(f"Commands synced for {guild.name} ({guild.id})")
+            return True
+        except discord.Forbidden:
+            logger.warning(f"[WARN] Cannot sync commands for guild {guild.id} "
+                           f"(missing applications.commands scope)")
+            return False
         except Exception as e:
             logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
+            # Database down / 429 / 5xx: the new server must not stay without
+            # its commands until the next restart.
+            self.spawn(self._retry_failed_guild_syncs([guild.id]), name="retry-guild-sync")
+            return False
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         """Slash command error handling - delegates to ErrorTracker cog"""
+        try:
+            await self._dispatch_app_command_error(interaction, error)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # the error hook must never raise
+            logger.error("App command error hook failed on %r: %s", error, exc, exc_info=True)
+
+    async def _dispatch_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         # Use the ErrorTracker cog if it's loaded
         error_cog = self.get_cog("ErrorTracker")
         if error_cog and hasattr(error_cog, 'on_app_command_error'):
@@ -1534,41 +1799,91 @@ class ModdyBot(ModdyFrameworkBot):
             return None
 
     async def setup_database(self):
-        """Initialize the database connection"""
+        """Initialize the database connection.
+
+        Postgres down or slow at boot must not keep the bot offline: after
+        ``DB_BOOT_TIMEOUT`` seconds the bot starts without it and
+        :meth:`_db_recovery_loop` keeps trying (backoff) until it connects, then
+        wires everything that needed the database.
+        """
+        if await self._connect_database(boot=True):
+            return
+        self.db = None
+        self.db_pool = None
+        self._start_db_recovery()
+
+    async def _connect_database(self, boot: bool = False) -> bool:
+        """One connection attempt. Returns True when ``self.db`` is usable."""
+        timeout = float(os.getenv("DB_BOOT_TIMEOUT", "45")) if boot else 120.0
         try:
-            self.db = await setup_database(DATABASE_URL)
-            logger.info("Database connected (ModdyDatabase)")
-
-            # Property for compatibility with old code
-            self.db_pool = self.db.pool
-
-            # User preferences cache (icon theme + language override) and the
-            # icon theme engine (written separately; boot either way).
-            try:
-                from utils import user_preferences
-                await user_preferences.load_all(self)
-            except Exception as e:
-                logger.error(f"[FAIL] User preferences load error: {e}")
-            try:
-                from utils import icon_theme
-                icon_theme.install()
-            except ImportError:
-                logger.warning("utils.icon_theme not available; icon theme disabled")
-            except Exception as e:
-                logger.error(f"[FAIL] Icon theme install error: {e}")
-
-            # Global sanctions live in the cases system now. Convert whatever
-            # is left of the legacy BLACKLISTED attribute into a global ban
-            # case, then drop the attribute (idempotent, no-op once done).
-            try:
-                await self.db.migrate_legacy_blacklist_attributes()
-            except Exception as e:
-                logger.error(f"[FAIL] Legacy blacklist migration error: {e}")
-
-        except Exception as e:
-            logger.error(f"[FAIL] DB connection error: {e}")
+            self.db = await asyncio.wait_for(setup_database(DATABASE_URL), timeout=timeout)
+        except Exception as e:  # includes asyncio.TimeoutError
+            logger.error(f"[FAIL] DB connection error ({type(e).__name__}): {e}")
             self.db = None
             self.db_pool = None
+            return False
+        logger.info("Database connected (ModdyDatabase)")
+        # Property for compatibility with old code
+        self.db_pool = self.db.pool
+        await self._after_db_connected()
+        return True
+
+    async def _after_db_connected(self) -> None:
+        """Everything that needs the database object. Each step is isolated."""
+        # User preferences cache (icon theme + language override) and the
+        # icon theme engine (written separately; boot either way).
+        try:
+            from utils import user_preferences
+            await user_preferences.load_all(self)
+        except Exception as e:
+            logger.error(f"[FAIL] User preferences load error: {e}")
+        try:
+            from utils import icon_theme
+            icon_theme.install()
+        except ImportError:
+            logger.warning("utils.icon_theme not available; icon theme disabled")
+        except Exception as e:
+            logger.error(f"[FAIL] Icon theme install error: {e}")
+
+        # Global sanctions live in the cases system now. Convert whatever
+        # is left of the legacy BLACKLISTED attribute into a global ban
+        # case, then drop the attribute (idempotent, no-op once done).
+        try:
+            await self.db.migrate_legacy_blacklist_attributes()
+        except Exception as e:
+            logger.error(f"[FAIL] Legacy blacklist migration error: {e}")
+
+        # Technical-log write hooks (no-op until the tech logger exists).
+        self._wire_db_hooks()
+        # The gateway captured the pool at start; rebind it when the database
+        # came up after it.
+        try:
+            self.gateway.rebind(pool=self.db.pool)
+        except Exception as e:
+            logger.debug("Gateway pool rebind skipped: %s", e)
+
+    def _start_db_recovery(self) -> None:
+        task = getattr(self, "_db_recovery_task", None)
+        if task is not None and not task.done():
+            return
+        self._db_recovery_task = self.spawn(self._db_recovery_loop(), name="db-recovery")
+
+    async def _db_recovery_loop(self) -> None:
+        """Reconnect to Postgres with backoff, forever, then finish the boot
+        work that was skipped (module loading, guild commands, ...)."""
+        delay = 5.0
+        attempt = 0
+        while not self.is_closed():
+            await asyncio.sleep(delay)
+            attempt += 1
+            if await self._connect_database():
+                logger.info("[RECOVERED] Database reachable again after %d attempt(s)", attempt)
+                if self.is_ready():
+                    await self._run_ready_phases()
+                return
+            logger.warning("Database still unreachable (attempt %d), retrying in %.0fs",
+                           attempt, min(delay * 2, 60.0))
+            delay = min(delay * 2, 60.0)
 
     async def load_extensions(self):
         """Load all cogs and staff commands"""
@@ -1653,29 +1968,84 @@ class ModdyBot(ModdyFrameworkBot):
                         await error_cog.send_error_log(error_code, error_details, is_fatal=False)
 
     async def on_ready(self):
-        """Called when the bot is ready"""
+        """Called when the bot is ready.
 
-        # Fetch development team (moved from setup_hook to avoid blocking during connection)
-        await self.fetch_dev_team()
+        Discord fires this again after every full re-IDENTIFY (not only the
+        first connect), so everything heavy lives behind once-flags: a flapping
+        gateway must not re-sync every guild's commands, re-load every module or
+        stack a second set of background loops.
+        """
+        async with self._ready_lock:
+            # Fetch development team (moved from setup_hook to avoid blocking during connection)
+            if not self._dev_team_ids or not self._db_dependent_init_done:
+                await self.fetch_dev_team()
 
-        logger.info(f"Bot connected: {self.user} (mode: {ENV_MODE})")
-        logger.info(f"Servers: {len(self.guilds)} | Users: {len(self.users)}")
-        logger.info(f"Latency: {round(self.latency * 1000)}ms")
-        logger.info(f"i18n: {len(i18n.supported_locales)} languages loaded")
+            logger.info(f"Bot connected: {self.user} (mode: {ENV_MODE})")
+            logger.info(f"Servers: {len(self.guilds)} | Users: {len(self.users)}")
+            logger.info(f"Latency: {round(self.latency * 1000)}ms")
+            logger.info(f"i18n: {len(i18n.supported_locales)} languages loaded")
+
+            await self._run_ready_phases()
+
+            # Run startup health checks (once: the report is a boot report)
+            if not getattr(self, "_startup_checks_done", False):
+                self._startup_checks_done = True
+                try:
+                    await self.run_startup_checks()
+                except Exception as e:
+                    logger.error(f"[FAIL] Startup checks error: {e}", exc_info=True)
+
+            # Start the Health Monitor heartbeat. Only from here on: an event
+            # loop with a dead gateway connection has nothing worth reporting.
+            # (start() is a no-op when the loop is already running.)
+            for name, svc in (("heartbeat", self.heartbeat),
+                              ("betterstack heartbeat", self.betterstack_heartbeat),
+                              # Daily statistics pass: snapshots, rollup, partition
+                              # maintenance. Here rather than in setup_hook because
+                              # it photographs self.guilds.
+                              ("stats rollup", self.stats_rollup)):
+                try:
+                    svc.start()
+                except Exception as e:
+                    logger.error(f"[FAIL] Could not start {name}: {e}")
+
+    async def _run_ready_phases(self) -> None:
+        """The post-ready work that depends on the database. Idempotent, every
+        step isolated, safe to call again once Postgres comes back."""
+        if self.db and not self._db_dependent_init_done:
+            await self._db_dependent_init()
+
+        # Synchronize guild-only commands for all guilds. Done here (not in
+        # setup_hook) because self.guilds is only available after connection;
+        # needs the database (OFFICIAL guilds, enabled modules), so it waits
+        # for it instead of publishing a wrong tree.
+        if not self._guild_commands_synced and (self.db or not DATABASE_URL):
+            self._guild_commands_synced = True
+            logger.info("Synchronizing guild-only commands...")
+            try:
+                await self.sync_all_guild_commands()
+            except Exception as e:
+                logger.error(f"[FAIL] Guild command sync crashed: {e}", exc_info=True)
+
+    async def _db_dependent_init(self) -> None:
+        """Once per process: the work on_ready does with the database."""
+        self._db_dependent_init_done = True
 
         # Which servers Moddy is in, next to the mini-bots (app_guilds): joins
         # and leaves missed while offline are caught here, in two statements.
-        if self.db:
-            try:
-                from minibots.ownership import MODDY_APP
-                await self.db.reconcile_app_guilds(MODDY_APP, [g.id for g in self.guilds])
-            except Exception as e:
-                logger.error(f"[FAIL] app_guilds reconcile error: {e}")
+        try:
+            from minibots.ownership import MODDY_APP
+            await self.db.reconcile_app_guilds(MODDY_APP, [g.id for g in self.guilds])
+        except Exception as e:
+            logger.error(f"[FAIL] app_guilds reconcile error: {e}")
 
         # Which channels are open tickets, so the closure detector can ignore
         # every other message without touching the database.
-        if self.db and getattr(self, 'tickets', None):
-            await self.tickets.hydrate_open_tickets()
+        if getattr(self, 'tickets', None):
+            try:
+                await self.tickets.hydrate_open_tickets()
+            except Exception as e:
+                logger.error(f"[FAIL] Ticket hydration error: {e}")
 
         # Update DEVELOPER attributes now that self.user is available
         if self.db and self._dev_team_ids:
@@ -1727,37 +2097,19 @@ class ModdyBot(ModdyFrameworkBot):
                     logger.error(f"[FAIL] Error setting DEVELOPER attribute for {dev_id}: {e}")
 
         # DB stats if connected
-        if self.db:
-            try:
-                stats = await self.db.get_stats()
-                logger.info(f"DB: {stats['users']} users, {stats['guilds']} guilds, {stats['errors']} errors")
-            except:
-                pass
+        try:
+            stats = await self.db.get_stats()
+            logger.info(f"DB: {stats['users']} users, {stats['guilds']} guilds, {stats['errors']} errors")
+        except Exception:
+            pass
 
         # Load modules for all guilds
-        if self.module_manager and self.db:
+        if self.module_manager:
             try:
                 await self.module_manager.load_all_modules()
                 logger.info("All guild modules loaded successfully")
             except Exception as e:
                 logger.error(f"[FAIL] Error loading guild modules: {e}", exc_info=True)
-
-        # Synchronize guild-only commands for all guilds
-        # This is done here (not in setup_hook) because self.guilds is only available after connection
-        logger.info("Synchronizing guild-only commands...")
-        await self.sync_all_guild_commands()
-
-        # Run startup health checks
-        await self.run_startup_checks()
-
-        # Start the Health Monitor heartbeat. Only from here on: an event
-        # loop with a dead gateway connection has nothing worth reporting.
-        self.heartbeat.start()
-        self.betterstack_heartbeat.start()
-
-        # Daily statistics pass: snapshots, rollup, partition maintenance.
-        # Here rather than in setup_hook because it photographs self.guilds.
-        self.stats_rollup.start()
 
     async def _is_bot_healthy(self) -> bool:
         """Whether the bot is healthy enough to ping the Better Stack
@@ -2406,11 +2758,49 @@ class ModdyBot(ModdyFrameworkBot):
         # Process commands
         await self.process_commands(message)
 
+    async def on_error(self, event_method: str, *args, **kwargs):
+        """An event listener raised (discord.py runs each one in its own task,
+        so dispatch of other listeners and events is never affected).
+
+        Log it once with its context, and tell the ops channel through the
+        throttled notice (one per event+exception type per 5 min). This handler
+        must itself never raise.
+        """
+        try:
+            exc = sys.exc_info()[1]
+            if exc is None or isinstance(exc, asyncio.CancelledError):
+                return
+            logger.error("Event listener '%s' raised %s: %s", event_method,
+                         type(exc).__name__, exc,
+                         exc_info=(type(exc), exc, exc.__traceback__))
+            tracker = self.get_cog("ErrorTracker")
+            if tracker is not None:
+                await tracker.send_ops_notice(
+                    key=f"event:{event_method}:{type(exc).__name__}",
+                    kind=type(exc).__name__,
+                    title=f"Event listener {event_method}",
+                    message=str(exc)[:400],
+                )
+        except Exception as e:  # noqa: BLE001 - never cascade
+            logger.error("on_error handler failed: %s", e)
+
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         """Global error handling"""
         # The ErrorTracker cog handles everything now
         # This method is kept for compatibility but delegates to the cog
         pass
+
+    def _restart_loop_later(self, loop: "tasks.Loop", delay: float = 30.0) -> None:
+        """Restart a tasks.loop that died (discord.ext.tasks never does)."""
+        async def _restart():
+            await asyncio.sleep(delay)
+            if not loop.is_running() and not self.is_closed():
+                try:
+                    loop.restart()
+                    logger.info("Loop %s restarted", getattr(loop.coro, "__name__", loop))
+                except Exception as e:
+                    logger.error("Could not restart loop %s: %s", loop, e)
+        self.spawn(_restart(), name="loop-restart")
 
     @tasks.loop(minutes=10)
     async def status_update(self):
@@ -2430,6 +2820,11 @@ class ModdyBot(ModdyFrameworkBot):
             pass
         except Exception as e:
             logger.error(f"Error changing status: {e}")
+
+    @status_update.error
+    async def status_update_error(self, error):
+        logger.error(f"status_update loop error (restarting): {error}", exc_info=error)
+        self._restart_loop_later(self.status_update)
 
     @status_update.before_loop
     async def before_status_update(self):
@@ -2457,7 +2852,17 @@ class ModdyBot(ModdyFrameworkBot):
         # to be lifted explicitly; a timeout is auto-cleared by Discord) and DM
         # the subject that it is over — with an invite back when it was a ban.
         # See services/expiration_notifier.py.
-        await self.expirations.process(expired)
+        # A tasks.loop stops FOREVER on an unhandled exception: contain it here
+        # so one bad row / Discord outage costs one iteration, not the loop.
+        try:
+            await self.expirations.process(expired)
+        except Exception as e:
+            logger.error(f"Error processing expired sanctions: {e}", exc_info=True)
+
+    @case_expiry.error
+    async def case_expiry_error(self, error):
+        logger.error(f"case_expiry loop error (restarting): {error}", exc_info=error)
+        self._restart_loop_later(self.case_expiry)
 
     @case_expiry.before_loop
     async def before_case_expiry(self):
@@ -2482,79 +2887,86 @@ class ModdyBot(ModdyFrameworkBot):
         except Exception as e:
             logger.error(f"Error sweeping global sanction enforcements: {e}", exc_info=True)
 
+    @enforcement_sweep.error
+    async def enforcement_sweep_error(self, error):
+        logger.error(f"enforcement_sweep loop error (restarting): {error}", exc_info=error)
+        self._restart_loop_later(self.enforcement_sweep)
+
     @enforcement_sweep.before_loop
     async def before_enforcement_sweep(self):
         await self.wait_until_ready()
 
     async def close(self):
-        """Cleanly closing the bot"""
+        """Cleanly closing the bot.
+
+        Every step is isolated: one component failing to stop (a dead Redis, a
+        pool already closed...) must not skip the rest, in particular the final
+        ``super().close()`` that actually disconnects from Discord.
+        """
         logger.info("Shutting down...")
+
+        async def _step(label: str, fn):
+            try:
+                result = fn()
+                if asyncio.iscoroutine(result) or isinstance(result, asyncio.Future):
+                    await asyncio.wait_for(result, timeout=15)
+            except Exception as e:
+                logger.error(f"[FAIL] Error during shutdown ({label}): {e}")
 
         # Technical log: bot shutting down (best-effort, before sessions close)
         if getattr(self, "tech_logger", None):
-            try:
-                await self.tech_logger.log_shutdown()
-                await self.tech_logger.close()
-            except Exception as e:
-                logger.error(f"[FAIL] Error sending shutdown log: {e}")
+            await _step("tech log shutdown", self.tech_logger.log_shutdown)
+            await _step("tech logger close", self.tech_logger.close)
 
         # Stop tasks BEFORE closing
-        if self.status_update.is_running():
-            self.status_update.cancel()
-        if self.case_expiry.is_running():
-            self.case_expiry.cancel()
-        if self.enforcement_sweep.is_running():
-            self.enforcement_sweep.cancel()
+        for loop_task in (self.status_update, self.case_expiry, self.enforcement_sweep):
+            try:
+                if loop_task.is_running():
+                    loop_task.cancel()
+            except Exception as e:
+                logger.error(f"[FAIL] Error stopping loop: {e}")
+
+        # Stop the recovery / listener tasks
+        for task in list(self._bg_tasks):
+            task.cancel()
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)
 
         # Stop the statistics service (flushes the pending aggregate)
-        try:
-            await self.stats_rollup.stop()
-            await self.stats.stop()
-        except Exception as e:
-            logger.error(f"[FAIL] Error stopping the stats service: {e}")
+        await _step("stats rollup", self.stats_rollup.stop)
+        await _step("stats", self.stats.stop)
 
         # Stop API gateway (flushes log buffer)
-        await self.gateway.stop()
+        await _step("gateway", self.gateway.stop)
 
         # Stop the Health Monitor heartbeat
-        await self.heartbeat.stop()
-        await self.betterstack_heartbeat.stop()
+        await _step("heartbeat", self.heartbeat.stop)
+        await _step("betterstack heartbeat", self.betterstack_heartbeat.stop)
 
-        await self.ai_detector.stop()
-        await self.music_links.stop()
-        await self.translate_button.stop()
-
-        try:
-            await self.public_api.close()
-        except Exception as e:
-            logger.error(f"[FAIL] Error closing the public API client: {e}")
+        await _step("ai detector", self.ai_detector.stop)
+        await _step("music links", self.music_links.stop)
+        await _step("translate button", self.translate_button.stop)
+        await _step("public api", self.public_api.close)
 
         # Close the AltGuard HTTP session
-        try:
-            await self.altguard.close()
-        except Exception as e:
-            logger.error(f"[FAIL] Error closing AltGuard client: {e}")
+        await _step("altguard", self.altguard.close)
 
         # Close Redis connection
         if self.redis:
-            try:
-                await self.redis.aclose()
-                logger.info("Redis closed")
-            except Exception as e:
-                logger.error(f"[FAIL] Error closing Redis: {e}")
+            await _step("redis", self.redis.aclose)
 
         # Close DB connection
         if self.db:
-            await self.db.close()
+            await _step("database", self.db.close)
 
         # Close the HTTP client cleanly
-        if hasattr(self, 'http') and self.http and hasattr(self.http, '_HTTPClient__session'):
-            await self.http._HTTPClient__session.close()
+        try:
+            if hasattr(self, 'http') and self.http and hasattr(self.http, '_HTTPClient__session'):
+                await self.http._HTTPClient__session.close()
+        except Exception as e:
+            logger.error(f"[FAIL] Error closing the HTTP session: {e}")
 
-        # Note: Le serveur HTTP interne s'arrête automatiquement car il est daemon=True
         logger.info("Internal API server will stop automatically")
 
         # Close the bot

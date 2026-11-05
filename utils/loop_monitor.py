@@ -130,21 +130,33 @@ def observe_interaction_age(interaction) -> Optional[float]:
     return age
 
 
+_notify_tasks: set = set()
+
+
 async def _heartbeat() -> None:
     loop = asyncio.get_running_loop()
     while True:
-        before = loop.time()
-        await asyncio.sleep(HEARTBEAT_INTERVAL)
-        lag = loop.time() - before - HEARTBEAT_INTERVAL
-        _state["last_beat"] = time.monotonic()
-        if lag > _state["max_lag"]:
-            _state["max_lag"] = lag
-        if lag >= 0.1:
-            _recent_lags.append((time.monotonic(), lag))
-        if lag >= LAG_WARN_SECONDS:
-            logger.warning("Event loop lag: %.2fs (tasks=%d)", lag, len(asyncio.all_tasks()))
-        if lag >= NOTIFY_STALL_SECONDS:
-            asyncio.get_running_loop().create_task(_notify_stall(lag))
+        try:
+            before = loop.time()
+            await asyncio.sleep(HEARTBEAT_INTERVAL)
+            lag = loop.time() - before - HEARTBEAT_INTERVAL
+            _state["last_beat"] = time.monotonic()
+            if lag > _state["max_lag"]:
+                _state["max_lag"] = lag
+            if lag >= 0.1:
+                _recent_lags.append((time.monotonic(), lag))
+            if lag >= LAG_WARN_SECONDS:
+                logger.warning("Event loop lag: %.2fs (tasks=%d)", lag, len(asyncio.all_tasks()))
+            if lag >= NOTIFY_STALL_SECONDS:
+                # Keep a reference: asyncio only holds tasks weakly.
+                task = asyncio.get_running_loop().create_task(_notify_stall(lag))
+                _notify_tasks.add(task)
+                task.add_done_callback(_notify_tasks.discard)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001 - the monitor must outlive its own bugs
+            logger.warning("Loop monitor iteration failed", exc_info=True)
+            await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 
 def _watchdog(main_thread_id: int) -> None:

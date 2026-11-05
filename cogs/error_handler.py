@@ -604,7 +604,47 @@ async def report_expected_error(interaction: discord.Interaction, error, *, comm
 _FATAL_TYPES = (RuntimeError, AttributeError, ImportError, MemoryError, SystemError, ModuleNotFoundError)
 
 
-async def report_interaction_error(
+_BG_TASKS: set = set()
+
+
+def _fire(coro, name: str = "error-handler-bg") -> None:
+    """Fire-and-forget with a strong reference and logged failure."""
+    try:
+        task = asyncio.get_running_loop().create_task(coro, name=name)
+    except RuntimeError:  # no running loop: nothing to schedule on
+        coro.close()
+        return
+    _BG_TASKS.add(task)
+
+    def _done(t: "asyncio.Task") -> None:
+        _BG_TASKS.discard(t)
+        if not t.cancelled() and t.exception() is not None:
+            logger.warning("Background error-handler task %s failed: %r", name, t.exception())
+
+    task.add_done_callback(_done)
+
+
+async def report_interaction_error(interaction: discord.Interaction, error: BaseException,
+                                   **kwargs) -> Optional[str]:
+    """Full error path for an interaction failure (see ``_report_interaction_error``).
+
+    The error handler is the last line of defence: whatever goes wrong while
+    reporting (the card cannot be delivered, the database is down, the error
+    channel is gone, a broken interaction object...) is logged here and
+    swallowed, so a failing handler can never raise out of a view / modal /
+    command error hook and cascade into a second error.
+    """
+    try:
+        return await _report_interaction_error(interaction, error, **kwargs)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Error handler failed while reporting %r: %s: %s",
+                     error, type(exc).__name__, exc, exc_info=True)
+        return None
+
+
+async def _report_interaction_error(
     interaction: discord.Interaction,
     error: BaseException,
     *,
@@ -682,7 +722,12 @@ async def report_interaction_error(
         logger.error("ERROR TRACKER NOT AVAILABLE - error %s only reached Sentry/logs", error_code)
         return error_code
 
-    error_details = tracker.format_error_details(error)
+    try:
+        error_details = tracker.format_error_details(error)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("format_error_details failed for %s: %s", error_code, exc)
+        error_details = {"type": type(error).__name__, "message": str(error)[:500],
+                         "file": "unknown", "line": "N/A"}
     error_details.update({
         "command": command,
         "user": who["user"], "guild": who["guild"], "channel": who["channel"],
@@ -697,9 +742,12 @@ async def report_interaction_error(
     tracker.store_error(error_code, error_details)
     await tracker.store_error_db(error_code, error_details)
     if sentry_event_id and getattr(bot, "db", None):
-        asyncio.create_task(tracker._update_sentry_issue_id(error_code, sentry_event_id))
-    await tracker.send_error_log(
-        error_code, error_details, is_fatal=isinstance(error, _FATAL_TYPES))
+        _fire(tracker._update_sentry_issue_id(error_code, sentry_event_id), "sentry-issue-id")
+    try:
+        await tracker.send_error_log(
+            error_code, error_details, is_fatal=isinstance(error, _FATAL_TYPES))
+    except Exception as exc:  # noqa: BLE001 - the user already has their card
+        logger.warning("Could not post error %s to the error channel: %s", error_code, exc)
     return error_code
 
 
@@ -964,12 +1012,18 @@ class ErrorTracker(commands.Cog):
         # Ping for fatal errors
         content = f"<@{self.dev_user_id}> Fatal error detected!" if is_fatal else None
 
-        await channel.send(content=content, embed=embed)
+        try:
+            await channel.send(content=content, embed=embed)
+        except Exception as exc:  # noqa: BLE001 - channel deleted / perms / 5xx / 429
+            logger.warning("Could not post error %s to the error channel: %s", error_code, exc)
 
         # Technical log (webhook-based, dedicated error feed)
         tech = getattr(self.bot, "tech_logger", None)
         if tech:
-            await tech.log_error(error_code, error_details, is_fatal=is_fatal)
+            try:
+                await tech.log_error(error_code, error_details, is_fatal=is_fatal)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Technical error log failed for %s: %s", error_code, exc)
 
     async def send_ops_notice(
         self,
@@ -1021,7 +1075,15 @@ class ErrorTracker(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        """Handles command errors"""
+        """Handles command errors (never raises: it is the last line of defence)."""
+        try:
+            await self._on_command_error(ctx, error)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Error handler failed on command error %r: %s", error, exc, exc_info=True)
+
+    async def _on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         # Silent by design (unknown command, owner-only, disabled)
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner, commands.DisabledCommand)):
             return
@@ -1065,7 +1127,7 @@ class ErrorTracker(commands.Cog):
 
         # Fetch Sentry issue ID asynchronously (don't wait for it)
         if sentry_event_id and self.bot.db:
-            asyncio.create_task(self._update_sentry_issue_id(error_code, sentry_event_id))
+            _fire(self._update_sentry_issue_id(error_code, sentry_event_id), "sentry-issue-id")
 
         # Determine if it's fatal
         is_fatal = isinstance(error.original if hasattr(error, 'original') else error, (
@@ -1149,7 +1211,7 @@ class ErrorTracker(commands.Cog):
 
         # Fetch Sentry issue ID asynchronously (don't wait for it)
         if sentry_event_id and self.bot.db:
-            asyncio.create_task(self._update_sentry_issue_id(error_code, sentry_event_id))
+            _fire(self._update_sentry_issue_id(error_code, sentry_event_id), "sentry-issue-id")
 
         await self.send_error_log(error_code, error_details, is_fatal=True)
 
@@ -1162,7 +1224,15 @@ class ErrorTracker(commands.Cog):
 
     @commands.Cog.listener()
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
-        """Handles slash command (app command) errors"""
+        """Handles slash command (app command) errors (never raises)."""
+        try:
+            await self._on_app_command_error(interaction, error)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Error handler failed on app command error %r: %s", error, exc, exc_info=True)
+
+    async def _on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         # Check if the error was already handled
         if hasattr(error, '__error_handled__'):
             return

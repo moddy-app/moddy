@@ -311,6 +311,31 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     ]
 
 
+def _discover_loaded_persistent_classes() -> list:
+    """Every already-imported class that declares ``__persistent__ = True`` and
+    knows how to register itself (fallback when the explicit registry is broken)."""
+    import sys
+
+    found, seen = [], set()
+    for module in list(sys.modules.values()):
+        name = getattr(module, "__name__", "") or ""
+        if not name.startswith(("cogs.", "modules.", "utils.", "staff.", "services.")):
+            continue
+        try:
+            members = list(vars(module).values())
+        except Exception:
+            continue
+        for obj in members:
+            try:
+                if (isinstance(obj, type) and obj.__dict__.get("__persistent__") is True
+                        and "register_persistent" in dir(obj) and obj not in seen):
+                    seen.add(obj)
+                    found.append(obj)
+            except Exception:
+                continue
+    return found
+
+
 def register_all_persistent_views(bot: "ModdyBot") -> None:
     """
     Instantiate and register every persistent view class.
@@ -323,7 +348,19 @@ def register_all_persistent_views(bot: "ModdyBot") -> None:
     Failures are logged but do not abort bot startup — a broken persistent
     view should never take the entire bot down.
     """
-    classes = _collect_persistent_view_classes()
+    try:
+        classes = _collect_persistent_view_classes()
+    except Exception as e:
+        # One module of the explicit registry failing to import (a cog with a
+        # syntax error, a missing dependency) used to leave EVERY persistent
+        # button dead after the restart. Fall back to whatever persistent
+        # classes did import, so the broken piece only costs its own views.
+        logger.error(
+            f"Persistent view registry could not be built ({type(e).__name__}: {e}); "
+            f"falling back to the already-imported persistent classes",
+            exc_info=True,
+        )
+        classes = _discover_loaded_persistent_classes()
     logger.info(f"Registering {len(classes)} persistent view classes...")
 
     registered = 0

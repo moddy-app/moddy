@@ -1,4 +1,5 @@
 import asyncio
+from db.repositories._utils import fire_and_forget
 import json
 import logging
 from typing import Any, Optional, Union
@@ -82,9 +83,9 @@ class AttributeRepository:
         hook = getattr(self, "on_attribute_change", None)
         if hook:
             try:
-                asyncio.create_task(
-                    hook(entity_type, entity_id, attribute, old_value, value, changed_by, reason)
-                )
+                fire_and_forget(
+                    hook(entity_type, entity_id, attribute, old_value, value, changed_by, reason),
+                    name="on_attribute_change")
             except Exception as exc:
                 logger.debug(f"on_attribute_change hook failed: {exc}")
 

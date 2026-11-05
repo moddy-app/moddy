@@ -259,8 +259,26 @@ class ConsoleLogger(commands.Cog):
         try:
             await channel.send(embeds=embeds[:10])
         except Exception as e:
-            # In case of an error, we only log locally
-            print(f"Error sending Discord logs: {e}")
+            # In case of an error, we only log locally. Write to the REAL stderr:
+            # print() goes through ConsoleCapture, which would queue this very
+            # line for the channel that just failed (a feedback loop).
+            try:
+                sys.__stderr__.write(f"Error sending Discord logs: {e}\n")
+            except Exception:
+                pass
+
+    @send_logs_task.error
+    async def send_logs_task_error(self, error):
+        try:
+            sys.__stderr__.write(f"console logger loop error (restarting): {error!r}\n")
+        except Exception:
+            pass
+
+        async def _restart():
+            await asyncio.sleep(30)
+            if not self.send_logs_task.is_running():
+                self.send_logs_task.restart()
+        self._restart_task = asyncio.create_task(_restart())
 
     @send_logs_task.before_loop
     async def before_send_logs(self):

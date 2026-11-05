@@ -227,7 +227,7 @@ class InvoiceNotifier:
 
         try:
             user = self.bot.get_user(user_id) or await self.bot.fetch_user(user_id)
-        except discord.HTTPException as exc:
+        except Exception as exc:  # noqa: BLE001 - never raises into the pub/sub loop
             logger.warning("[Invoice] Could not fetch user %s: %s", user_id, exc)
             return False
         if user is None:
@@ -251,7 +251,7 @@ class InvoiceNotifier:
                 variables=variables,
                 locale=locale,
             )
-        except discord.HTTPException as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("[Invoice] DM to %s failed: %s", user_id, exc)
             return False
 

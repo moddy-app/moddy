@@ -11,7 +11,7 @@ import logging
 from typing import Optional, Dict, Any, List
 
 from config import DB_POOL_MIN_SIZE, DB_POOL_MAX_SIZE
-from db.repositories._utils import set_nested_value
+from db.repositories._utils import set_nested_value, fire_and_forget
 from db.repositories.errors import ErrorRepository
 from db.repositories.users import UserRepository
 from db.repositories.guilds import GuildRepository
@@ -59,6 +59,89 @@ logger = logging.getLogger('moddy.database')
 POOL_MIN_SIZE = DB_POOL_MIN_SIZE
 POOL_MAX_SIZE = DB_POOL_MAX_SIZE
 COMMAND_TIMEOUT = 60
+
+# Errors raised while ACQUIRING a connection that mean "Postgres is restarting /
+# saturated right now" rather than "this query is wrong". Retried briefly so a
+# database restart costs a short delay instead of a failed command.
+_ACQUIRE_RETRY_DELAYS = (0.5, 1.5)
+
+
+def _acquire_errors() -> tuple:
+    return (
+        OSError,  # ConnectionRefusedError, ConnectionResetError...
+        asyncpg.CannotConnectNowError,
+        asyncpg.TooManyConnectionsError,
+        asyncpg.ConnectionDoesNotExistError,
+        asyncpg.InterfaceError,
+    )
+
+
+class _ResilientAcquire:
+    """Async context manager / awaitable around ``pool.acquire()`` that retries
+    transient connection-establishment errors a couple of times."""
+
+    def __init__(self, acquire, timeout):
+        self._acquire = acquire
+        self._timeout = timeout
+        self._ctx = None
+
+    async def _enter(self):
+        errors = _acquire_errors()
+        for delay in _ACQUIRE_RETRY_DELAYS + (None,):
+            ctx = self._acquire(timeout=self._timeout)
+            try:
+                conn = await ctx.__aenter__()
+                self._ctx = ctx
+                return conn
+            except errors as exc:
+                if delay is None:
+                    raise
+                logger.warning("[DB] acquire failed (%s: %s), retrying in %.1fs",
+                               type(exc).__name__, exc, delay)
+                await asyncio.sleep(delay)
+
+    async def __aenter__(self):
+        return await self._enter()
+
+    async def __aexit__(self, *exc):
+        ctx, self._ctx = self._ctx, None
+        if ctx is not None:
+            return await ctx.__aexit__(*exc)
+
+    def __await__(self):
+        # ``conn = await pool.acquire()`` form (released with pool.release()).
+        errors = _acquire_errors()
+
+        async def _plain():
+            for delay in _ACQUIRE_RETRY_DELAYS + (None,):
+                try:
+                    return await self._acquire(timeout=self._timeout)
+                except errors:
+                    if delay is None:
+                        raise
+                    await asyncio.sleep(delay)
+        return _plain().__await__()
+
+
+class _ResilientPool(asyncpg.pool.Pool):
+    """asyncpg Pool whose ``acquire()`` retries transient connect errors.
+
+    Same slots as Pool, so an existing instance can be re-classed in place.
+    """
+
+    __slots__ = ()
+
+    def acquire(self, *, timeout=None):
+        return _ResilientAcquire(super().acquire, timeout)
+
+
+def _install_resilient_acquire(pool) -> None:
+    """Make ``pool.acquire()`` retry transient connect errors (every
+    ``pool.acquire()`` / ``pool.fetch()`` caller benefits)."""
+    try:
+        pool.__class__ = _ResilientPool
+    except TypeError as exc:  # layout change in a future asyncpg: keep the stock pool
+        logger.warning("[DB] resilient acquire not installed: %s", exc)
 
 
 class ModdyDatabase(
@@ -159,14 +242,38 @@ class ModdyDatabase(
                     'jit': 'off'
                 }
             )
+            _install_resilient_acquire(self.pool)
             logger.info("[OK] PostgreSQL database connected")
 
             # Initialize tables
             await self._init_tables()
 
-        except Exception as e:
-            logger.error(f"[ERROR] PostgreSQL connection error: {e}")
+        except BaseException as e:
+            # Never leave a half-initialised pool behind: the caller retries with
+            # a fresh ModdyDatabase, and each leaked pool would hold connections.
+            # (BaseException: a timeout from the caller cancels us mid-init.)
+            if self.pool is not None:
+                try:
+                    self.pool.terminate()
+                except Exception:
+                    pass
+                self.pool = None
+            if isinstance(e, Exception):
+                logger.error(f"[ERROR] PostgreSQL connection error: {e}")
             raise
+
+    async def ping(self, timeout: float = 2.0) -> bool:
+        """Cheap liveness probe (``SELECT 1``); never raises."""
+        pool = self.pool
+        if pool is None:
+            return False
+        try:
+            async def _probe():
+                async with pool.acquire() as conn:
+                    return await conn.fetchval("SELECT 1")
+            return (await asyncio.wait_for(_probe(), timeout=timeout)) == 1
+        except Exception:
+            return False
 
     async def close(self):
         """Closes the connection"""
@@ -255,7 +362,7 @@ class ModdyDatabase(
         # Technical-log hook (best-effort, never blocks the write)
         if self.on_data_change:
             try:
-                asyncio.create_task(self.on_data_change(table, entity_id, path, value))
+                fire_and_forget(self.on_data_change(table, entity_id, path, value), name="on_data_change")
             except Exception as exc:
                 logger.debug(f"[DB] on_data_change hook failed: {exc}")
 
