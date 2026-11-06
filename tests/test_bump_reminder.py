@@ -1012,3 +1012,166 @@ class TestSuggestion:
         item = BumpSuggestChannelSelect(0, "frenchgg")
         assert BumpSuggestChannelSelect.__discord_ui_compiled_template__.fullmatch(
             item.item.custom_id)
+
+
+# --------------------------------------------------------------------------- #
+# Later captures of a directory that changed its reply
+# --------------------------------------------------------------------------- #
+#: Real replies captured after a directory changed its format. Kept apart from
+#: ``bump_payloads.json`` (one capture per directory, keyed by directory) so a
+#: directory can have several generations of its reply under test at once.
+EXTRA_PAYLOADS = json.loads(
+    (ROOT / "tests" / "data" / "bump_payloads_extra.json").read_text(encoding="utf-8"))
+
+
+def _without_media(payload):
+    """The same reply with every image and link stripped: text markers only."""
+    payload = json.loads(json.dumps(payload))
+
+    def strip(nodes):
+        kept = []
+        for node in nodes:
+            if node.get("type") in (12, 1):  # media gallery, button row
+                continue
+            if node.get("components"):
+                node["components"] = strip(node["components"])
+            kept.append(node)
+        return kept
+    payload["components"] = strip(payload["components"])
+    return payload
+
+
+def _without_text(payload):
+    """The same reply with only its banner left: media marker only."""
+    payload = json.loads(json.dumps(payload))
+    for container in payload["components"]:
+        container["components"] = [c for c in container["components"] if c.get("type") == 12]
+    return payload
+
+
+class TestLaterCaptures:
+
+    @pytest.mark.parametrize("name", sorted(EXTRA_PAYLOADS), ids=sorted(EXTRA_PAYLOADS))
+    def test_the_captured_reply_is_a_bump(self, name):
+        payload = EXTRA_PAYLOADS[name]
+        spec = bot_by_key(payload["bot"])
+        hit = detect(message(payload), spec.default_interval, now=sent_at(payload))
+        assert hit is not None and hit.bot is spec
+        assert hit.bumper_id == int(payload["interactionMetadata"]["user"])
+
+    @pytest.mark.parametrize("name", sorted(EXTRA_PAYLOADS), ids=sorted(EXTRA_PAYLOADS))
+    def test_its_text_alone_is_enough(self, name):
+        """The banner is one marker; the wording must stand on its own too."""
+        payload = _without_media(EXTRA_PAYLOADS[name])
+        spec = bot_by_key(payload["bot"])
+        assert detect(message(payload), spec.default_interval, now=sent_at(payload)) is not None
+
+    @pytest.mark.parametrize("name", sorted(EXTRA_PAYLOADS), ids=sorted(EXTRA_PAYLOADS))
+    def test_its_banner_alone_is_enough(self, name):
+        payload = _without_text(EXTRA_PAYLOADS[name])
+        spec = bot_by_key(payload["bot"])
+        assert detect(message(payload), spec.default_interval, now=sent_at(payload)) is not None
+
+    @pytest.mark.parametrize("name", sorted(EXTRA_PAYLOADS), ids=sorted(EXTRA_PAYLOADS))
+    def test_no_other_directory_claims_it(self, name):
+        payload = EXTRA_PAYLOADS[name]
+        for spec in TestCrossTalk.MARKER_BASED:
+            if spec.key == payload["bot"]:
+                continue
+            assert evaluate(message(payload), spec, spec.default_interval,
+                            now=sent_at(payload)) is None, f"{spec.key} matched {name}"
+
+    def test_the_deferred_placeholder_is_not_a_bump(self):
+        """What on_message receives from a deferring directory: nothing to read."""
+        payload = json.loads(json.dumps(EXTRA_PAYLOADS["dl_2026_11"]))
+        payload["components"] = []
+        spec = bot_by_key("dl")
+        assert detect(message(payload), spec.default_interval, now=sent_at(payload)) is None
+
+
+# --------------------------------------------------------------------------- #
+# The listener: deferred replies arrive as an edit
+# --------------------------------------------------------------------------- #
+class TestDeferredReplies:
+    """DiscordL creates an empty "is thinking…" message, then edits the result in."""
+
+    def _cog(self):
+        from cogs.bump_reminder import BumpReminder
+        cog = BumpReminder.__new__(BumpReminder)
+        cog.bot = SimpleNamespace(module_manager=object())
+        seen = []
+
+        async def handle(message, spec):
+            seen.append((message.id, spec.key))
+        cog._handle_directory_message = handle
+        return cog, seen
+
+    def _msg(self, *, loading=False, age=timedelta(seconds=3), author_id=None, bot=True):
+        import discord
+        created = datetime.now(timezone.utc) - age
+        return SimpleNamespace(
+            id=discord.utils.time_snowflake(created),
+            guild=SimpleNamespace(id=7),
+            channel=SimpleNamespace(id=42),
+            flags=SimpleNamespace(loading=loading),
+            author=SimpleNamespace(id=author_id or bot_by_key("dl").app_id, bot=bot),
+        )
+
+    async def test_the_placeholder_is_skipped_on_create(self):
+        cog, seen = self._cog()
+        await cog.on_message(self._msg(loading=True))
+        assert seen == []
+
+    async def test_the_finished_reply_is_read_from_the_edit(self):
+        cog, seen = self._cog()
+        message = self._msg()
+        await cog.on_raw_message_edit(SimpleNamespace(message=message, guild_id=7))
+        assert seen == [(message.id, "dl")]
+
+    async def test_an_edit_still_loading_is_skipped(self):
+        cog, seen = self._cog()
+        await cog.on_raw_message_edit(SimpleNamespace(message=self._msg(loading=True), guild_id=7))
+        assert seen == []
+
+    async def test_an_edit_to_an_old_message_is_never_a_bump(self):
+        cog, seen = self._cog()
+        old = self._msg(age=timedelta(hours=2))
+        await cog.on_raw_message_edit(SimpleNamespace(message=old, guild_id=7))
+        assert seen == []
+
+    async def test_edits_outside_a_server_or_by_other_authors_are_ignored(self):
+        cog, seen = self._cog()
+        await cog.on_raw_message_edit(SimpleNamespace(message=self._msg(), guild_id=None))
+        await cog.on_raw_message_edit(SimpleNamespace(
+            message=self._msg(author_id=999999999999999999), guild_id=7))
+        await cog.on_raw_message_edit(SimpleNamespace(message=self._msg(bot=False), guild_id=7))
+        assert seen == []
+
+    def test_a_message_is_claimed_once(self):
+        """The result edit, then the image-unfurl edit: one thank-you, not two."""
+        from cogs import bump_reminder as cog_module
+        cog, _ = self._cog()
+        assert cog._claim_message(1)
+        assert not cog._claim_message(1)
+        for i in range(2, cog_module.HANDLED_MEMORY + 3):
+            cog._claim_message(i)
+        assert len(cog._handled) == cog_module.HANDLED_MEMORY
+        assert cog._claim_message(1)  # forgotten long after: memory stays bounded
+
+    async def test_a_claimed_message_posts_nothing(self):
+        from unittest.mock import AsyncMock
+        cog, _ = self._cog()
+        cog.bot = SimpleNamespace(notifications=SimpleNamespace(send_channel=AsyncMock()),
+                                  db=SimpleNamespace(record_bump=AsyncMock()))
+        cog._claim_message(5)
+        await cog._on_bump(SimpleNamespace(id=5), None, None, {})
+        cog.bot.notifications.send_channel.assert_not_awaited()
+        cog.bot.db.record_bump.assert_not_awaited()
+
+    def test_the_minibot_reads_edits_through_the_same_path(self):
+        """Zero-setup has to see a deferred bump too: no listener of its own."""
+        import minibots.bots.bump_reminder as mb
+        assert "on_message" not in mb.BumpReminderBotCog.__dict__
+        assert "_handle_directory_message" in mb.BumpReminderBotCog.__dict__
+        names = {name for name, _ in mb.BumpReminderBotCog.__cog_listeners__}
+        assert {"on_message", "on_raw_message_edit"} <= names

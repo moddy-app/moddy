@@ -55,7 +55,7 @@ Ordered as every menu shows them, largest audience first.
 | 1 | `disboard` | DISBOARD | `/bump` | 2 h | Anything visible (refuses privately) |
 | 2 | `dsmonitoring` | DSMonitoring | `/bump` | 4 h | "successfully liked" wording; embed timestamp = next like |
 | 3 | `dinvites` | D-INVITES | `/bump` | 2 h | An image named `bump.png` — and nothing else |
-| 4 | `dl` | DiscordL | `/bump` | 1 h | Banner URL under `/v2/bump/`, or "a été bump par" |
+| 4 | `dl` | DiscordL | `/bump` | 1 h | Banner URL under `/v2/bump/`, or "a été bump par" / "Ton Bump a été effectué" / "vient d'être propulsé par" — **deferred reply, read from the edit** |
 | 5 | `beemp` | Beemp | `/bump` | 1 h | "Beemp done successfully" wording |
 | 6 | `dtop` | DiscordTop | `/boost` | 1 h | Asset named `boost-success`; states its next boost |
 | 7 | `frenchgg` | French.gg | `/bump` | 2 h | Anything visible (refuses privately); its own "remind me" button |
@@ -197,6 +197,30 @@ interval still gets a correct reminder.
 A stated time is only believed if it lands **between 5 minutes and 24 hours out**.
 That window is not decoration: DiscordL's footer carries a `<t:…>` that is the
 *current* time, and believing it would schedule a reminder three seconds out.
+
+### Deferred replies are read from the edit
+
+DiscordL does not answer `/bump` with its result: it **defers**, so the message
+is first created as Discord's empty "is thinking…" placeholder (flag `LOADING`,
+no components) and the result is edited into it a second or two later. The
+tell is in the captures: the `<t:…>` footer stamp is ~2 s *after* the message's
+own creation time. `on_message` only ever sees the empty placeholder — which is
+why DiscordL bumps were never armed until 2026-11-06.
+
+So the cog listens to **`on_raw_message_edit`** too, through the same handler:
+
+- raw, not `on_message_edit`, because the latter needs the message in cache and
+  a mini-bot keeps none; since API v10 a MESSAGE_UPDATE carries the whole message
+- a placeholder (`message.flags.loading`) is skipped on both paths
+- only a message **under 15 minutes old** is read — an interaction token cannot
+  complete a deferred reply later, so an older edit is never a bump just made
+- a message turned into a bump is **claimed once** (`_claim_message`, a bounded
+  in-memory set, taken synchronously at the top of `_on_bump`): Discord sends
+  another MESSAGE_UPDATE when it finishes unfurling the banner image, and that
+  one must not post a second thank-you
+
+The mini-bot inherits both listeners and only overrides
+`_handle_directory_message` (zero-setup), so a deferred bump sets it up too.
 
 ---
 

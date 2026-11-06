@@ -1,0 +1,113 @@
+{
+  "dl_2026_11": {
+    "bot": "dl",
+    "note": "DiscordL's reply since November 2026: banner first, '## 🚀 Ton Bump a été effectué'. The final state of the message, as copied from the client.",
+    "id": "1568341852543787158",
+    "createdTimestamp": 1793992236029,
+    "content": "",
+    "authorId": "528557940811104258",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "spoiler": false,
+        "id": 1,
+        "components": [
+          {
+            "type": 12,
+            "items": [
+              {
+                "spoiler": false,
+                "media": {
+                  "width": 800,
+                  "url": "https://shr.discordl.org/v2/bump/2/223070469148901376/1164597199594852395.jpg?373",
+                  "proxy_url": "https://images-ext-1.discordapp.net/external/x/%3F373/https/shr.discordl.org/v2/bump/2/223070469148901376/1164597199594852395.jpg",
+                  "height": 300,
+                  "content_type": "image/jpeg",
+                  "loading_state": 2,
+                  "id": "1568341866171211988"
+                },
+                "description": "Bannière du bump de Creators Area"
+              }
+            ],
+            "id": 2
+          },
+          {
+            "type": 14,
+            "spacing": 2,
+            "id": 3,
+            "divider": true
+          },
+          {
+            "type": 10,
+            "id": 4,
+            "content": "## 🚀 Ton Bump a été effectué"
+          },
+          {
+            "type": 10,
+            "id": 5,
+            "content": "**Creators Area** vient d'être propulsé par <@1164597199594852395>\n\n**Il remonte sur :**\n- La Catégorie **[Développeur](https://www.discordl.org/serveurs/developpeur?source=bump)**"
+          },
+          {
+            "type": 14,
+            "spacing": 2,
+            "id": 6,
+            "divider": true
+          },
+          {
+            "type": 10,
+            "id": 7,
+            "content": "Nouveaux Chapeaux tous les mois avec le **__[Super Bump](https://www.discordl.org/power?source=bump)__** 🎩"
+          },
+          {
+            "type": 14,
+            "spacing": 2,
+            "id": 8,
+            "divider": true
+          },
+          {
+            "type": 1,
+            "id": 9,
+            "components": [
+              {
+                "url": "https://www.discordl.org/serveurs/223070469148901376?source=bump_btn",
+                "type": 2,
+                "style": 5,
+                "label": "🌐 Page du serveur",
+                "id": 10
+              },
+              {
+                "url": "https://www.discordl.org/roue-fortune?source=bump_btn",
+                "type": 2,
+                "style": 5,
+                "label": "🎰 Tourner la Roue",
+                "id": 11
+              },
+              {
+                "url": "https://aiguild.me/fr?source=dlbot",
+                "type": 2,
+                "style": 5,
+                "label": "🤖 Crée ton serveur par IA",
+                "id": 12
+              }
+            ]
+          }
+        ],
+        "accent_color": 5531135
+      }
+    ],
+    "attachments": [],
+    "applicationId": "528557940811104258",
+    "interactionMetadata": {
+      "id": "1568341851348664441",
+      "type": 2,
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "id": "1568341851348664441",
+      "type": 2,
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  }
+}

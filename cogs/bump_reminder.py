@@ -24,7 +24,8 @@ See docs/features/BUMP_REMINDER.md.
 """
 
 import logging
-from datetime import datetime, timezone
+from collections import OrderedDict
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import discord
@@ -54,6 +55,21 @@ MODULE_ID = "bump_reminder"
 # thirty-second window produces; it exists so a backlog after a long outage
 # drains over several passes instead of one enormous burst of API calls.
 SWEEP_BATCH = 50
+
+# How long after its creation an edited directory message is still read. An
+# interaction token lives fifteen minutes, so a deferred reply cannot be
+# completed later than that; past it, an edit is never a bump just made.
+EDIT_WINDOW = timedelta(minutes=15)
+
+# Message ids already turned into a bump, oldest dropped first. Only has to
+# outlive the few seconds between a reply and its follow-up edits.
+HANDLED_MEMORY = 512
+
+
+def _is_loading(message) -> bool:
+    """Discord's "is thinking…" placeholder: nothing to read in it yet."""
+    flags = getattr(message, "flags", None)
+    return bool(getattr(flags, "loading", False))
 
 
 def _thanks_content(spec, guild_name: str) -> NotificationContent:
@@ -86,6 +102,7 @@ class BumpReminder(commands.Cog):
         self.bot = bot
         from services.bump_suggestion_service import BumpSuggestionService
         self.suggestions = BumpSuggestionService(bot)
+        self._handled: "OrderedDict[int, None]" = OrderedDict()
         self.sweep_bump_reminders.start()
 
     def cog_unload(self):
@@ -101,9 +118,48 @@ class BumpReminder(commands.Cog):
             return
 
         spec = bot_by_app_id(author.id)
-        if spec is None or not self.bot.module_manager:
+        if spec is None or _is_loading(message):
             return
 
+        await self._handle_directory_message(message, spec)
+
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        """A directory that *defers* its reply only says what happened in an edit.
+
+        DiscordL answers ``/bump`` with Discord's "is thinking…" placeholder —
+        an empty message flagged ``LOADING`` — and writes the result into it a
+        second or two later (its footer stamp postdates the message itself,
+        which is how this showed up). ``on_message`` only ever sees the empty
+        placeholder, so without this listener such a bump is never read.
+
+        Raw rather than ``on_message_edit``: the latter needs the message in
+        the cache, which a mini-bot does not keep at all. Since API v10 a
+        MESSAGE_UPDATE carries the whole message, so ``payload.message`` is
+        complete. Only fresh messages are read — an edit to an old message is
+        never a bump that just happened — and a message already turned into a
+        reminder is skipped in :meth:`_on_bump` (Discord also sends an update
+        when it finishes unfurling the banner image).
+        """
+        message = getattr(payload, "message", None)
+        if message is None or payload.guild_id is None or message.guild is None:
+            return
+        author = message.author
+        if author is None or not author.bot:
+            return
+
+        spec = bot_by_app_id(author.id)
+        if spec is None or _is_loading(message):
+            return
+        if datetime.now(timezone.utc) - discord.utils.snowflake_time(message.id) > EDIT_WINDOW:
+            return
+
+        await self._handle_directory_message(message, spec)
+
+    async def _handle_directory_message(self, message: discord.Message, spec) -> None:
+        """A directory posted (or finished) a message in a server: was it a bump?"""
+        if not self.bot.module_manager:
+            return
         try:
             module = await self.bot.module_manager.get_module_instance(
                 message.guild.id, MODULE_ID)
@@ -129,6 +185,18 @@ class BumpReminder(commands.Cog):
             return
         await self.suggestions.on_member_join(member)
 
+    def _claim_message(self, message_id: int) -> bool:
+        """``True`` the first time a message is turned into a bump, then ``False``."""
+        handled = getattr(self, "_handled", None)
+        if handled is None:  # a cog built without __init__ (tests)
+            handled = self._handled = OrderedDict()
+        if message_id in handled:
+            return False
+        handled[message_id] = None
+        while len(handled) > HANDLED_MEMORY:
+            handled.popitem(last=False)
+        return True
+
     @property
     def app(self) -> str:
         """The application this cog runs for: Moddy, or a mini-bot reusing it."""
@@ -140,6 +208,11 @@ class BumpReminder(commands.Cog):
 
         ``note``: an extra discreet line on the thank-you card (the mini-bot
         uses it the first time it sets itself up from a bump)."""
+        # One message, one reminder. A deferred reply reaches us as an edit,
+        # and Discord sends further edits (image unfurl) after that: claimed
+        # synchronously, before any await, so two events cannot both pass.
+        if not self._claim_message(message.id):
+            return
         guild = message.guild
         from utils.guild_language import guild_locale
         locale = await guild_locale(self.bot, guild)

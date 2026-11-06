@@ -215,6 +215,10 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
     # Components V2. Its banner URL carries the bump path, and its footer
     # carries a ``<t:…>`` that is *now* rather than the next bump — which is
     # exactly what the freshness window in the detector is there to reject.
+    # It *defers* its reply: the message is created as an empty "is thinking…"
+    # placeholder and the result arrives as an edit (the footer stamp is ~2 s
+    # after the message's own creation), which cogs/bump_reminder.py reads in
+    # on_raw_message_edit.
     BumpBot(
         key="dl",
         app_id=528557940811104258,
@@ -232,10 +236,17 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         # until a captured refusal showed it firing there — harmless only
         # because "attendre" tripped the shared blocklist first, which is to
         # say harmless by luck.
+        #
+        # The second pair is the reply DiscordL switched to in November 2026
+        # ("## 🚀 Ton Bump a été effectué" / "… vient d'être propulsé par
+        # @user"), banner first. Only its French wording has been seen; the
+        # banner path below is what carries it in every language.
         success_text=_rx(
             r"a\s+[ée]t[ée]\s+bump\s+par",
             r"has\s+been\s+bumped\s+by",
             r"fue\s+bumpeado\s+por",
+            r"ton\s+bump\s+a\s+[ée]t[ée]\s+effectu[ée]",
+            r"vient\s+d.[êe]tre\s+propuls[ée]\s+par",
         ),
         success_media=("/v2/bump/",),
         failure_text=_rx(
