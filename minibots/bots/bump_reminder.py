@@ -105,14 +105,10 @@ class BumpReminderBotCog(BumpReminder):
         super().__init__(bot)
         self._setup_locks: Dict[int, asyncio.Lock] = {}
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        author = message.author
-        if not author.bot or message.guild is None:
-            return
-        spec = bot_by_app_id(author.id)
-        if spec is None:
-            return
+    async def _handle_directory_message(self, message: discord.Message, spec) -> None:
+        # Fed by the inherited on_message *and* on_raw_message_edit listeners:
+        # a directory that defers its reply (DiscordL) only shows its result in
+        # the edit, and zero-setup has to see that one too.
         try:
             module = await self.bot.module_manager.get_module_instance(message.guild.id, MODULE_ID)
             if module is not None and module.enabled and module.entry_for(message.channel.id, spec.key):
