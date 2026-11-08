@@ -391,6 +391,15 @@ Limits:
 7. Set `MINIBOT_..._TOKEN` on the **mini-bots** Railway service. On first
    start the emojis are copied and the commands published; nothing manual.
 
+**No configuration in a DM.** A mini-bot's DMs (welcome, offers) carry no
+channel or role select. A select lists 25 options at most, so on most servers
+the channel or role the admin is looking for is missing, and a picker that
+does not show it frustrates more than it helps. The DM says what the bot does
+on its own and points to `/config`, whose channel and role selects search the
+whole server. Link buttons (Get Moddy, Support) are fine.
+`tests/test_minibots.py` guards it for Bump Reminder (welcome + offer);
+AltGuard's welcome has no view at all.
+
 ## 9. Deployment (Railway)
 
 - A second service from the same repository: start command
@@ -415,9 +424,9 @@ detection, cards, `/config` panel and table as Moddy. What it adds is aimed at
 
 | Moment | What happens |
 |---|---|
-| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual". It also offers an optional channel picker per directory (the same `BumpSuggestChannelSelect` as Moddy's offer: one pick = activated). If Moddy already runs the module there, it says so and stays out of the way. | Past 25 text channels it can post in, no picker: a select holds 25 options and the right channel might be missing, so the DM points to `/config` instead (a real channel picker).
+| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual", and points to `/config` for a role or the delay. **No channel picker** (rule in §8). If Moddy already runs the module there, it says so and stays out of the way. |
 | First successful bump | No reminder for that directory yet → it **sets itself up in that channel**: directory cooldown, no role, `button` ping mode. It arms the reminder and says so in one `-#` line on the thank-you card. This happens once per (server, directory): marker `guilds.data.minibots.<app>.bump_autosetup.<directory>`, so a reminder the admin deletes stays deleted. A paused module, a failed bump (refusal), or a module Moddy runs → nothing. |
-| A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → the same one-pick DM as Moddy's offer (`services/bump_suggestion_service.py`). It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
+| A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → Moddy's offer (`services/bump_suggestion_service.py`) **without its picker** (`picker=False`, template `bump_reminder.suggest.<bot>.auto`): "nothing to do, bump as usual — I set myself up on the first bump; other choices in `/config`". It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
 | Every bump after | Exactly Moddy's behaviour: thank-you, "remind me" button, reminder at the end of the cooldown. |
 
 Other points:

@@ -519,6 +519,10 @@ useful. `cogs/bump_reminder.py::on_member_join` hands that join to
   usual validation applies. The card then turns into an "activated" card.
   Roles / ping mode / delay stay in `/config`. With no usable channel, the card
   only points at `/config`.
+- **Sent by the Bump Reminder mini-bot:** no picker (`picker=False`). The DM
+  says there is nothing to do (the bot sets itself up on the first bump) and
+  points to `/config` — mini-bots never configure from a DM
+  ([MINIBOTS.md §8](MINIBOTS.md)).
 - **Not offered when:** that directory already has a reminder (enabled or
   paused), the module is paused server-wide, or the same (server, directory)
   was offered in the last 30 days (`SUGGEST_COOLDOWN`, Redis key

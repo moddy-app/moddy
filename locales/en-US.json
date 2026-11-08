@@ -1797,7 +1797,9 @@
         "done_title": "Bump reminder activated",
         "done_body": "Moddy now watches {channel} for {emoji} **{name}** bumps on **{server}**. Fine-tune it any time with {config}.",
         "guild_gone": "Moddy is no longer in this server.",
-        "channel_gone": "That channel no longer exists."
+        "channel_gone": "That channel no longer exists.",
+        "auto_title": "Nothing to do, bump as usual",
+        "auto": "From the first successful bump, I set the reminder up myself in the channel where you bump. To pick another channel, ping a role or change the delay: {config} in the server."
       }
     },
     "automod_ai": {
@@ -6929,9 +6931,7 @@
           "title": "{name} is ready",
           "present": "Thanks for adding **{name}** to **{server}**!\n\nI can see {directories} on your server. **There is nothing to do**: bump as usual, and from the first successful bump I thank whoever did it and call the channel back when the next one is possible.\n\nTo ping a role or change the delay: {config}.",
           "none": "Thanks for adding **{name}** to **{server}**!\n\nAdd a bump site (DISBOARD, DiscordL, French.gg…), then bump as usual: from the first successful bump I thank whoever did it and call the channel back when the next one is possible. Nothing to set up.\n\nTo ping a role or change the delay: {config}.",
-          "elsewhere": "Thanks for adding **{name}** to **{server}**!\n\nOn this server, bump reminders are already handled by **Moddy**: I stay out of the way so reminders are never doubled. You can remove me without losing anything.",
-          "pick": "Rather pick the channel right now? Optional:",
-          "pick_config": "Rather pick the channel yourself? Run {config} on the server."
+          "elsewhere": "Thanks for adding **{name}** to **{server}**!\n\nOn this server, bump reminders are already handled by **Moddy**: I stay out of the way so reminders are never doubled. You can remove me without losing anything."
         }
       },
       "altguard": {

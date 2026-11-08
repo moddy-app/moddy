@@ -1797,7 +1797,9 @@
         "done_title": "Recordatorio de bump activado",
         "done_body": "Moddy vigila ahora los bumps de {emoji} **{name}** en {channel} en **{server}**. Ajústalo cuando quieras con {config}.",
         "guild_gone": "Moddy ya no está en este servidor.",
-        "channel_gone": "Ese canal ya no existe."
+        "channel_gone": "Ese canal ya no existe.",
+        "auto_title": "Nada que hacer, haz bump como siempre",
+        "auto": "Desde el primer bump con éxito, configuro el recordatorio yo solo en el canal donde hacéis bump. Para elegir otro canal, mencionar un rol o cambiar el intervalo: {config} en el servidor."
       }
     },
     "automod_ai": {
@@ -6843,9 +6845,7 @@
           "title": "{name} está listo",
           "present": "¡Gracias por añadir **{name}** a **{server}**!\n\nVeo {directories} en tu servidor. **No tienes que hacer nada**: haz bump como siempre y, desde el primer bump correcto, agradezco a quien lo hizo y aviso al canal cuando el siguiente sea posible.\n\nPara mencionar un rol o cambiar el retraso: {config}.",
           "none": "¡Gracias por añadir **{name}** a **{server}**!\n\nAñade un sitio de bump (DISBOARD, DiscordL, French.gg…) y haz bump como siempre: desde el primer bump correcto, agradezco a quien lo hizo y aviso al canal cuando el siguiente sea posible. Nada que configurar.\n\nPara mencionar un rol o cambiar el retraso: {config}.",
-          "elsewhere": "¡Gracias por añadir **{name}** a **{server}**!\n\nEn este servidor, los recordatorios de bump ya los gestiona **Moddy**: me mantengo al margen para no duplicarlos. Puedes quitarme sin perder nada.",
-          "pick": "¿Prefieres elegir el canal ahora? Opcional:",
-          "pick_config": "¿Prefieres elegir el canal tú mismo? Usa {config} en el servidor."
+          "elsewhere": "¡Gracias por añadir **{name}** a **{server}**!\n\nEn este servidor, los recordatorios de bump ya los gestiona **Moddy**: me mantengo al margen para no duplicarlos. Puedes quitarme sin perder nada."
         }
       },
       "altguard": {

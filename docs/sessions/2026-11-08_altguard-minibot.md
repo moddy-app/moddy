@@ -62,3 +62,18 @@
 - Before 100 servers: justify the Server Members intent to Discord.
 - `tests/test_translate_button.py::TestDefaultEnabled::test_runs_where_nothing_is_stored_and_can_be_paused`
   still fails, as before this change (unrelated).
+
+## Follow-up (same session): no configuration in a mini-bot DM
+- Rule (MINIBOTS.md §8): a mini-bot's DMs carry no channel/role select — a
+  select lists 25 options at most, so the right one is often missing; the DM
+  points to `/config` instead.
+- Bump Reminder welcome: channel pickers removed (`too_many_channels`,
+  `MAX_WELCOME_PICKERS` and the `welcome.pick*` texts gone).
+- "Directory added later" offer: `build_suggestion_card(..., picker=False)` /
+  `suggestion_content(..., picker=False)` when the sender is a mini-bot
+  (`services/bump_suggestion_service.py`), new texts
+  `modules.bump_reminder.suggest.auto_title` / `.auto` (5 locales). Moddy keeps
+  its picker (Moddy has no zero setup).
+- Tests: `test_bump_welcome_never_carries_a_picker`, `TestOfferUnderAMinibot`.
+- Open question: Moddy's own offer DM still lists 25 channels at most.
+

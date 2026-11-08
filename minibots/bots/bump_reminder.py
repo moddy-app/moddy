@@ -13,12 +13,13 @@ removing friction, because a single-feature bot is judged in its first minute:
 2. **A welcome that knows the server.** Added to a server, it looks for the
    seven directories already there (a gateway lookup by id, no privileged
    intent) and DMs the person who added it: "I see DISBOARD here, nothing to
-   do — bump as usual", with an optional channel picker per directory to
-   activate it right now.
+   do — bump as usual". No picker in the DM: a select lists 25 channels at
+   most, so the right one is often missing; choices are made in /config.
 3. **A directory added later** (``integrations`` intent: the bot has no
-   member events) gets the same one-pick offer as on Moddy
-   (services/bump_suggestion_service.py) — deduplicated with Moddy's through
-   the same Redis key, so a server with both bots gets one DM, not two.
+   member events) gets the same offer as on Moddy
+   (services/bump_suggestion_service.py), minus the picker: zero setup arms
+   it on the first bump. Deduplicated with Moddy's through the same Redis
+   key, so a server with both bots gets one DM, not two.
 
 The reminder rows belong to this app (``bump_reminders.app``), so Moddy's
 sweeper never claims them; a transfer to Moddy reassigns them.
@@ -38,10 +39,6 @@ from bumpreminder import BUMP_BOTS, bot_by_app_id, detect
 from cogs.bump_reminder import MODULE_ID, BumpReminder
 
 logger = logging.getLogger("moddy.minibots.bump_reminder")
-
-#: Directories offered a channel picker in the welcome DM (a DM stays short).
-MAX_WELCOME_PICKERS = 3
-
 
 def autosetup_path(app: str, bot_key: str) -> str:
     """Where the "already set up once" marker lives in ``guilds.data``."""
@@ -80,22 +77,6 @@ async def directories_present(guild: discord.Guild) -> List:
         return []
     found = {m.id for m in members}
     return [spec for spec in BUMP_BOTS if spec.app_id in found]
-
-
-def too_many_channels(guild: discord.Guild) -> bool:
-    """More postable text channels than a select can list (25)."""
-    from services.bump_suggestion_service import MAX_CHANNEL_OPTIONS
-    me = getattr(guild, "me", None)
-    if me is None:
-        return False
-    count = 0
-    for channel in getattr(guild, "text_channels", ()):
-        perms = channel.permissions_for(me)
-        if perms.view_channel and perms.send_messages:
-            count += 1
-            if count > MAX_CHANNEL_OPTIONS:
-                return True
-    return False
 
 
 class BumpReminderBotCog(BumpReminder):
@@ -199,8 +180,6 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
     from discord import ui
     from minibots.builtin import client_accent
     from notifications.models import NotificationContent
-    from services.bump_suggestion_service import candidate_channels, should_suggest
-    from utils.bump_views import BumpSuggestChannelSelect
     from utils.emojis import ROCKET_LAUNCH
     from utils.i18n import t
 
@@ -230,24 +209,9 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
     container.add_item(ui.TextDisplay(f"### {ROCKET_LAUNCH} {rendered.title}"))
     container.add_item(ui.TextDisplay(rendered.body))
 
-    channels = candidate_channels(guild) if owned else []
-    pickers = [s for s in present if should_suggest(stored, s.key)][:MAX_WELCOME_PICKERS]
-    if pickers and too_many_channels(guild):
-        # A select holds 25 options: with more channels the right one may not
-        # be in the list. /config has a real channel picker (search included).
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(t(
-            "minibots.bots.bump_reminder.welcome.pick_config", locale=locale,
-            config=command_label("config"))))
-    elif channels and pickers:
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            t("minibots.bots.bump_reminder.welcome.pick", locale=locale)))
-        options = [discord.SelectOption(label=f"#{c.name}"[:100], value=str(c.id)) for c in channels]
-        for spec in pickers:
-            container.add_item(ui.TextDisplay(f"{spec.emoji} **{spec.name}**"))
-            container.add_item(ui.ActionRow(BumpSuggestChannelSelect(
-                guild.id, spec.key, locale=locale, options=options)))
+    # No channel picker here (docs/features/MINIBOTS.md §8): a select holds
+    # 25 options, so on most servers the right channel would be missing.
+    # Zero setup arms the reminder on the first bump; choices go to /config.
     view.add_item(container)
     row = ui.ActionRow()
     row.add_item(ui.Button(label=t("minibots.links.get_moddy", locale=locale),
