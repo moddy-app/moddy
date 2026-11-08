@@ -20,7 +20,16 @@ would move personal data into the bot is a compliance regression.
 | Cog (verdicts, events, `/altguard`) | [cogs/altguard.py](../../cogs/altguard.py) |
 | Staff commands | [staff/commands/mod/altguard/](../../staff/commands/mod/altguard/) |
 | Repository | [db/repositories/altguard.py](../../db/repositories/altguard.py) |
-| Tests | [tests/test_altguard.py](../../tests/test_altguard.py) |
+| Tests | [tests/test_altguard.py](../../tests/test_altguard.py), [tests/test_altguard_minibot.py](../../tests/test_altguard_minibot.py) |
+| Own bot (mini-bot) | [minibots/bots/altguard.py](../../minibots/bots/altguard.py) — see [MINIBOTS.md §11](MINIBOTS.md) |
+
+The gate also runs as its own Discord bot, **AltGuard** (app id
+`altguard_bot`): the same module, under another name. A server runs it on one
+of the two, never both (`guilds.data.modules.altguard.app`). Both processes
+receive every verdict and each applies only the ones of the gates it runs. On
+a server where the AltGuard bot runs the gate and Moddy runs Auto Role, Moddy
+holds its roles back until the member passes, then hands them out when the
+bot reports it (`altguard_gate_opened` on `minibots:moddy`).
 
 ---
 

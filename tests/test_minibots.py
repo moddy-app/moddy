@@ -140,6 +140,12 @@ class TestSpec:
                         intents=frozenset({"members"}))
         with pytest.raises(ValueError):
             MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
+                        intents=frozenset({"presences"}))
+        with pytest.raises(ValueError):
+            MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
+                        extra_permissions=("administrator",))
+        with pytest.raises(ValueError):
+            MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
                         web_surfaces=frozenset({"dashboard"}))
 
     def test_only_functional_web_surfaces(self):
@@ -427,6 +433,17 @@ class TestClient:
         assert client._connection.member_cache_flags.value == 0
         assert client._connection._chunk_guilds is False
         assert client.module_manager.app == "bump"
+
+    def test_members_intent_is_an_altguard_only_exception(self):
+        """``members`` is refused to every mini-bot except AltGuard."""
+        assert spec_mod.INTENT_EXCEPTIONS == {"members": frozenset({"altguard_bot"})}
+        assert "members" not in spec_mod.ALLOWED_INTENTS
+        MiniBotSpec(id="altguard_bot", name="AltGuard", token_env="X", modules=("altguard",),
+                    intents=frozenset({"members"}))
+        for app in ("bump_reminder_bot", "tickets_bot"):
+            with pytest.raises(ValueError):
+                MiniBotSpec(id=app, name="x", token_env="X", modules=("a",),
+                            intents=frozenset({"members"}))
 
 
 class TestRuntime:
@@ -1101,9 +1118,6 @@ class TestBumpReminderBot:
         import minibots.bots.bump_reminder as mb
         spec = mb.BUMP_BOTS[0]
         monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=[spec]))
-        import services.bump_suggestion_service as sugg
-        channel = SimpleNamespace(id=777777777777777777, name="bump", position=0)
-        monkeypatch.setattr(sugg, "candidate_channels", lambda g: [channel])
         manager, bot = make_manager(FakeDB({}), app="bump_reminder_bot")
         bot.spec = SPEC
         bot.module_manager = manager
@@ -1112,15 +1126,14 @@ class TestBumpReminderBot:
         assert "{directories}" in content.body and spec.name in variables["directories"]
         texts = [getattr(i, "content", "") for i in view.children[0].children]
         assert any("rien à faire" in x.lower() for x in texts)
-        import discord as _d
-        rows = [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
-        assert len(rows) == 1  # one picker for the one directory present
+        assert "{config}" in content.body  # choices are made in /config
+        assert not _selects(view)  # never a picker in a DM (MINIBOTS.md §8)
 
         # Moddy already runs the module there: no picker, says so.
         manager.bot.db.modules["bump_reminder"] = {"reminders": []}
         content, variables, view = await mb.build_welcome(bot, guild, "en-US")
         assert "Moddy" in content.body
-        assert not [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+        assert not _selects(view)
 
     async def test_transfer_reassigns_pending_rows(self):
         from modules.bump_reminder import BumpReminderModule
@@ -1155,8 +1168,13 @@ class TestBumpReminderBot:
 def test_bump_bot_i18n(locale):
     data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
     for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
-                "welcome.elsewhere", "welcome.pick", "welcome.pick_config"):
+                "welcome.elsewhere"):
         assert _get(data, f"minibots.bots.bump_reminder.{key}"), key
+    # No picker in the welcome DM any more: its texts are gone too.
+    assert not {"pick", "pick_config"} & set(_get(data, "minibots.bots.bump_reminder.welcome"))
+    for key in ("auto_title", "auto"):
+        assert _get(data, f"modules.bump_reminder.suggest.{key}"), key
+    assert "{config}" in _get(data, "modules.bump_reminder.suggest.auto")
 
 
 def test_bump_reminder_minibot_accent():
@@ -1304,29 +1322,91 @@ def test_users_never_read_the_word_minibot(locale):
     assert leaks == []
 
 
-async def test_welcome_points_to_config_past_25_channels(monkeypatch):
+def _selects(view):
+    """Every select anywhere in a view (containers, rows, dynamic items)."""
     import discord as _d
+    found = []
+
+    def walk(item):
+        inner = getattr(item, "item", None)  # DynamicItem
+        if isinstance(item, _d.ui.Select) or isinstance(inner, _d.ui.Select):
+            found.append(item)
+        for child in getattr(item, "children", []) or []:
+            walk(child)
+    for child in getattr(view, "children", []) or []:
+        walk(child)
+    return found
+
+
+@pytest.mark.parametrize("channel_count", [1, 25, 26, 200])
+async def test_bump_welcome_never_carries_a_picker(monkeypatch, channel_count):
+    """A select lists 25 channels at most: whatever the server, the welcome DM
+    points to /config instead of offering an incomplete list."""
     import minibots.bots.bump_reminder as mb
-    spec = mb.BUMP_BOTS[0]
-    monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=[spec]))
+    monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=list(mb.BUMP_BOTS[:3])))
     me = SimpleNamespace(id=42)
     ok = SimpleNamespace(view_channel=True, send_messages=True)
-
-    def guild_with(n):
-        channels = [SimpleNamespace(id=700000000000000000 + i, name=f"c{i}", position=i,
-                                    permissions_for=lambda m: ok) for i in range(n)]
-        return SimpleNamespace(id=GUILD, name="S", me=me, text_channels=channels)
-
+    channels = [SimpleNamespace(id=700000000000000000 + i, name=f"c{i}", position=i,
+                                permissions_for=lambda m: ok) for i in range(channel_count)]
+    guild = SimpleNamespace(id=GUILD, name="S", me=me, text_channels=channels)
     manager, bot = make_manager(FakeDB({}), app="bump_reminder_bot")
     bot.spec, bot.module_manager = SPEC, manager
+    content, _v, view = await mb.build_welcome(bot, guild, "fr")
+    assert not _selects(view)
+    assert "{config}" in content.body
 
-    _c, _v, view = await mb.build_welcome(bot, guild_with(26), "fr")
-    items = view.children[0].children
-    assert not [i for i in items if isinstance(i, _d.ui.ActionRow)]
-    assert any("/config" in getattr(i, "content", "") for i in items)
 
-    _c, _v, view = await mb.build_welcome(bot, guild_with(25), "fr")
-    assert [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+class TestOfferUnderAMinibot:
+    """The "directory added later" DM: the mini-bot sends it without a picker."""
+
+    def _guild(self):
+        return SimpleNamespace(id=GUILD, name="S")
+
+    def test_card_without_picker(self):
+        from bumpreminder import BUMP_BOTS
+        from utils.bump_views import build_suggestion_card, suggestion_content
+        channel = SimpleNamespace(id=1, name="bump")
+        view = build_suggestion_card(BUMP_BOTS[0], self._guild(), [channel],
+                                     locale="fr", picker=False)
+        assert not _selects(view)
+        texts = " ".join(getattr(i, "content", "") for i in view.children[0].children)
+        assert "/config" in texts or "</config" in texts
+        content = suggestion_content(BUMP_BOTS[0], "fr", picker=False)
+        assert content.template_id.endswith(".auto") and content.title != \
+            suggestion_content(BUMP_BOTS[0], "fr").title
+
+    def test_moddy_keeps_its_picker(self):
+        from bumpreminder import BUMP_BOTS
+        from utils.bump_views import build_suggestion_card
+        channel = SimpleNamespace(id=1, name="bump")
+        view = build_suggestion_card(BUMP_BOTS[0], self._guild(), [channel], locale="fr")
+        assert _selects(view)
+
+    @pytest.mark.parametrize("app_id, picker", [(None, True), ("moddy", True),
+                                                ("bump_reminder_bot", False)])
+    async def test_service_picks_the_version(self, monkeypatch, app_id, picker):
+        import services.bump_suggestion_service as sugg
+        import utils.bump_views as bv
+        from bumpreminder import BUMP_BOTS
+        seen = {}
+
+        def card(spec, guild, channels, *, locale, picker=True):
+            seen["picker"], seen["channels"] = picker, list(channels)
+            return SimpleNamespace()
+
+        monkeypatch.setattr(bv, "build_suggestion_card", card)
+        monkeypatch.setattr(sugg, "candidate_channels", lambda g: [SimpleNamespace(id=1)])
+        import utils.guild_language as gl
+        monkeypatch.setattr(gl, "guild_locale", AsyncMock(return_value="fr"))
+        send = AsyncMock(return_value=SimpleNamespace(delivered=True))
+        bot = SimpleNamespace(notifications=SimpleNamespace(send_dm=send))
+        if app_id is not None:
+            bot.app_id = app_id
+        service = sugg.BumpSuggestionService.__new__(sugg.BumpSuggestionService)
+        service.bot = bot
+        await service._send(self._guild(), BUMP_BOTS[0], SimpleNamespace(id=5))
+        assert seen["picker"] is picker
+        assert bool(seen["channels"]) is picker
 
 
 # --------------------------------------------------------------------------- #

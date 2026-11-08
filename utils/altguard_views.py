@@ -45,6 +45,13 @@ TERMS_URL = "https://moddy.app/terms"
 PRIVACY_URL = "https://moddy.app/privacy"
 
 PANEL_ACCENT = discord.Colour(0x5865F2)
+
+
+def panel_accent(client) -> discord.Colour:
+    """Accent of the AltGuard cards ``client`` posts: the panel colour under
+    Moddy, the bot's own colour under the AltGuard mini-bot (``spec.accent``)."""
+    accent = getattr(getattr(client, "spec", None), "accent", None)
+    return discord.Colour(accent) if isinstance(accent, int) else PANEL_ACCENT
 SUCCESS_ACCENT = discord.Colour(0x57F287)
 WARNING_ACCENT = discord.Colour(0xFEE75C)
 ERROR_ACCENT = discord.Colour(0xED4245)
@@ -72,15 +79,16 @@ class AltGuardPanelView(BaseView):
 
     __persistent__ = True
 
-    def __init__(self, locale: str = "en-US"):
+    def __init__(self, locale: str = "en-US", accent: Optional[discord.Colour] = None):
         super().__init__()  # timeout=None
         self.locale = locale
+        self.accent = accent or PANEL_ACCENT
         self._build_view()
 
     def _build_view(self) -> None:
         self.clear_items()
 
-        container = ui.Container(accent_colour=PANEL_ACCENT)
+        container = ui.Container(accent_colour=self.accent)
         container.add_item(ui.TextDisplay(
             f"### {ALTGUARD} {t('modules.altguard.panel.title', locale=self.locale)}"
         ))
@@ -141,9 +149,10 @@ class AltGuardPanelView(BaseView):
         bot.add_view(cls())
 
 
-def build_verification_panel(locale: str = "en-US") -> AltGuardPanelView:
+def build_verification_panel(locale: str = "en-US",
+                             accent: Optional[discord.Colour] = None) -> AltGuardPanelView:
     """The panel message posted (and re-posted) by the module."""
-    return AltGuardPanelView(locale=locale)
+    return AltGuardPanelView(locale=locale, accent=accent)
 
 
 async def _already_verified(interaction: discord.Interaction) -> bool:
@@ -297,6 +306,7 @@ class AltGuardConsentModal(BaseModal):
         await interaction.followup.send(
             view=build_link_card(
                 locale,
+                accent=panel_accent(bot),
                 url=result.get("authorization_url", ""),
                 expires_at=result.get("expires_at"),
             ),
@@ -321,10 +331,11 @@ def _parse_expiry(expires_at: Optional[str]) -> Optional[int]:
     return int(moment.timestamp())
 
 
-def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None) -> ui.LayoutView:
+def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None,
+                    accent: Optional[discord.Colour] = None) -> ui.LayoutView:
     """The ephemeral card carrying the member's personal verification link."""
     view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=PANEL_ACCENT)
+    container = ui.Container(accent_colour=accent or PANEL_ACCENT)
 
     container.add_item(ui.TextDisplay(
         f"### {ALTGUARD} {t('modules.altguard.link.title', locale=locale)}"

@@ -7,7 +7,8 @@ and to add. Once a server is in, it is offered to move to Moddy, where it gets
 every option and the dashboard.
 
 This document covers **the core** that runs and manages them; adding one is
-described in §8, and the first one, **Bump Reminder**, in §10.
+described in §8, the first one, **Bump Reminder**, in §10, and **AltGuard** in
+§11.
 
 ## 1. Principles
 
@@ -114,7 +115,13 @@ minibots/
     bot carries its content without the privileged intent. Nothing is cached
     (`max_messages=None`), but every message of every server still reaches
     the process, so it costs some CPU;
-  - `members` and `presences` are refused by `MiniBotSpec`;
+  - `members` and `presences` are refused by `MiniBotSpec`, with one
+    exception listed in `INTENT_EXCEPTIONS`: `members` for **AltGuard**
+    (`altguard_bot`) only. It brings the events (joins, departures, the
+    member-list endpoints), never the cache, which stays off whatever the
+    intents. Privileged: Developer Portal, justification at 100 servers.
+    Without a cache, discord.py fires `on_raw_member_remove` but never
+    `on_member_remove`. Any other bot asking for it is refused at import;
   - `max_messages=None` (the default keeps 1000 messages *per bot*);
   - `MemberCacheFlags.none()`, `chunk_guilds_at_startup=False`.
 - **Modules loaded lazily, per server**: an instance exists only where an event
@@ -235,6 +242,7 @@ application cannot display them. Nothing has to be re-imported by hand:
 | `minibots:emojis:<app>` | hash | emoji name → the Moddy emoji id it was copied from. |
 | `minibots:cmdhash:<app>` | key | fingerprint of the last global command sync. |
 | `minibots:transfer:<guild>:<module>` | key | transfer lock (`SET NX EX 60`). |
+| `minibots:moddy` | Pub/Sub | to **Moddy**'s process: `release` (a mini-bot takes a module over) and `altguard_gate_opened` `{app, guild_id, user_id}` (§11: Moddy's Auto Role may hand out its roles; Moddy re-reads `altguard_members` first, so the unsigned message grants nothing the stored state does not allow). |
 
 The runtime **does not** listen to `moddy:bot`: there is no dashboard push for a
 mini-bot.
@@ -370,6 +378,9 @@ Limits:
    ```
 3. Add the module's persistent views to `persistent_views`. `/config`,
    `/about`, the welcome DM, emojis and staff commands come automatically.
+   An optional permission the module uses when it has it (AltGuard: *Manage
+   Server* to list invites) goes in `extra_permissions`, so the add-to-server
+   link asks for it. Never `administrator` (refused).
 4. Write its listeners (`commands_module.setup(client)`): the module's events
    must be wired to `client.module_manager`. A periodic job sends inside
    `client.emoji_context()`.
@@ -379,6 +390,15 @@ Limits:
    state beyond a panel.
 7. Set `MINIBOT_..._TOKEN` on the **mini-bots** Railway service. On first
    start the emojis are copied and the commands published; nothing manual.
+
+**No configuration in a DM.** A mini-bot's DMs (welcome, offers) carry no
+channel or role select. A select lists 25 options at most, so on most servers
+the channel or role the admin is looking for is missing, and a picker that
+does not show it frustrates more than it helps. The DM says what the bot does
+on its own and points to `/config`, whose channel and role selects search the
+whole server. Link buttons (Get Moddy, Support) are fine.
+`tests/test_minibots.py` guards it for Bump Reminder (welcome + offer);
+AltGuard's welcome has no view at all.
 
 ## 9. Deployment (Railway)
 
@@ -404,9 +424,9 @@ detection, cards, `/config` panel and table as Moddy. What it adds is aimed at
 
 | Moment | What happens |
 |---|---|
-| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual". It also offers an optional channel picker per directory (the same `BumpSuggestChannelSelect` as Moddy's offer: one pick = activated). If Moddy already runs the module there, it says so and stays out of the way. | Past 25 text channels it can post in, no picker: a select holds 25 options and the right channel might be missing, so the DM points to `/config` instead (a real channel picker).
+| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual", and points to `/config` for a role or the delay. **No channel picker** (rule in §8). If Moddy already runs the module there, it says so and stays out of the way. |
 | First successful bump | No reminder for that directory yet → it **sets itself up in that channel**: directory cooldown, no role, `button` ping mode. It arms the reminder and says so in one `-#` line on the thank-you card. This happens once per (server, directory): marker `guilds.data.minibots.<app>.bump_autosetup.<directory>`, so a reminder the admin deletes stays deleted. A paused module, a failed bump (refusal), or a module Moddy runs → nothing. |
-| A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → the same one-pick DM as Moddy's offer (`services/bump_suggestion_service.py`). It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
+| A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → Moddy's offer (`services/bump_suggestion_service.py`) **without its picker** (`picker=False`, template `bump_reminder.suggest.<bot>.auto`): "nothing to do, bump as usual — I set myself up on the first bump; other choices in `/config`". It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
 | Every bump after | Exactly Moddy's behaviour: thank-you, "remind me" button, reminder at the end of the cooldown. |
 
 Other points:
@@ -440,15 +460,92 @@ Setup checklist:
 4. Start: the emojis are copied, the commands published, and the bot shows in
    `/dev minibots`.
 
+## 11. AltGuard (`minibots/bots/altguard.py`)
+
+Moddy's `altguard` module under its own name and token
+(`MINIBOT_ALTGUARD_TOKEN`, app id `altguard_bot`, accent `#2EB84A`). Same panel, consent modal, `/config` screen, tables and service
+contract as on Moddy ([ALTGUARD.md](ALTGUARD.md)). What the file adds is the
+wiring Moddy does in other places, for a client that caches no member:
+
+| Moddy | AltGuard bot |
+|---|---|
+| `cogs/module_events.py` gates the join, the AltGuard cog reports it | `AltGuardBotCog.on_member_join`: gate first, then `altguard:membership` `active` |
+| `on_member_remove` (member cache) | `on_raw_member_remove` (no cache; skipped when discord.py did hand a cached `Member`) |
+| `bot._listen_pubsub` → `altguard:verdict` | the cog's own subscription, opened once the gateway is ready, reconnecting with backoff (5 → 60 s); each verdict in its own task |
+| `bot.altguard` (HTTP client) | `client.altguard`, created in `setup`, closed with the cog |
+| `/altguard verify|unverify` registered per guild where the module runs | global, guild-only commands (`kick_members` by default) |
+
+- **Cog name `AltGuard`** (`class AltGuardBotCog(AltGuard, name="AltGuard")`):
+  the module reaches the invite tracker and the membership resync through
+  `get_cog("AltGuard")`.
+- **Both processes hear every verdict.** Each acts only where it owns the
+  module: the module lookup comes **before** the idempotency insert in
+  `AltGuard.handle_verdict`, so the process that does not run the gate never
+  records the verdict as seen.
+- **Intents**: `guilds`, `guild_messages`, `members` (the only mini-bot
+  allowed it, `INTENT_EXCEPTIONS`; privileged: joins,
+  departures, the hourly full member list), `moderation` (bans), `invites`
+  (invite baseline). No member cache, no chunking: the hourly resync pulls the
+  list with `fetch_all_members(cache=False)` and drops it.
+- **Invite link**: *Manage Roles* (gate roles + channel overwrites), the
+  baseline, *View Audit Log* (kick vs leave, installer welcome) and *Manage
+  Server* (`extra_permissions`, inviter attribution — skipped without it).
+- **`/config`** is the module screen (no Back, no trail) with the **Language**
+  button: the panel speaks the server language.
+- **Icon**: `shield` on the bot (welcome DM, `/config` title,
+  `altguard_config.config_icon`); Moddy keeps the `fingerprint`. The animated
+  AltGuard face stays on the panel and the member's cards.
+- **Welcome DM** (`build_welcome`): the three
+  things the gate needs (channel,
+  the two roles, the bot's role above them), then `/config`. Where Moddy
+  already runs the gate, it says so and stays out of the way.
+
+### Auto Role across the two processes
+
+Auto Role stays a Moddy module. Without care, a server using both would hand
+Moddy's auto roles to a member the AltGuard bot still holds back (role
+overwrites add up: a member role allowing a channel beats the unverified
+role's denial).
+- **Hold back.** `AutoRoleModule._altguard_holds_back`: when Moddy has no
+  AltGuard instance, the stored config is read; if another app owns it and it
+  runs a gate (`modules/altguard.py::gate_configured`: channel + both roles,
+  not paused), the member waits until `altguard_members` says `verified`.
+  A lookup failure fails closed.
+- **Hand off.** When the gate opens on the bot (verdict `passed`, `/altguard
+  verify`), `AltGuardModule._run_auto_role` finds no local Auto Role and
+  publishes `altguard_gate_opened` on `minibots:moddy`.
+  `bot._handle_altguard_gate_opened` re-checks the database, fetches the
+  member and calls `apply_roles`.
+
+### Limits
+- Moddy's staff commands (`/mod altguard verify|unverify|refusal`) only act on
+  gates Moddy runs. On a gate the AltGuard bot runs, they answer "not
+  configured". `t.config` opens the panel for the team.
+- A member who passes while Moddy's process is down never gets the auto roles
+  (Pub/Sub has no replay). `/altguard verify` again re-sends the hand-off.
+
+Setup checklist:
+1. Developer Portal: create the application (name **AltGuard**, avatar,
+   description) and enable the **Server Members** intent.
+2. Railway, mini-bots service: `MINIBOT_ALTGUARD_TOKEN`, plus the same
+   `ALTGUARD_BOT_TOKEN` (and `ALTGUARD_API_URL` if not the default) as Moddy.
+   Without `ALTGUARD_BOT_TOKEN` the consent modal answers "unavailable".
+3. Start: the emojis are copied, `/config`, `/about` and `/altguard` published,
+   and the bot shows in `/dev minibots`.
+
 ## Accent colour
 
 Each mini-bot has its own accent colour, `MiniBotSpec.accent` (default Moddy
-blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**. It colours:
+blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**, **AltGuard**
+**`#2EB84A`**. It colours:
 
 - the bot's own cards: `/about` and the welcome DM (`client_accent(client)` in
   `minibots/builtin.py`);
 - the cards its module posts: the bump thank-you, the reminder and its test
-  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts).
+  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts);
+  for AltGuard, the verification panel and the link card
+  (`panel_accent(client)` in `utils/altguard_views.py`, `#5865F2` under Moddy).
+  The log cards and the member DMs keep their verdict colours.
 
 `/config` panels keep their state colours (active / paused / simulation), and
 the Moddy-side activation offer stays Moddy blue.

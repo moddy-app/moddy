@@ -24,13 +24,24 @@ from minibots.ownership import APP_ID_PATTERN, MODDY_APP
 
 #: Intents a mini-bot may ask for. ``guilds`` is always on (the guild cache is
 #: what everything else hangs on). ``members`` / ``presences`` are deliberately
-#: absent: they are the two most expensive caches and no single-feature bot
-#: should need them — a spec that does must be discussed first.
+#: absent: they are the two most expensive streams and no single-feature bot
+#: should need them — a spec that does must be discussed first and listed in
+#: :data:`INTENT_EXCEPTIONS`.
 ALLOWED_INTENTS: FrozenSet[str] = frozenset({
     "guild_messages", "message_content", "guild_reactions",
     "moderation", "emojis_and_stickers", "invites", "webhooks",
     "voice_states", "auto_moderation_execution", "integrations",
 })
+
+#: Intents outside :data:`ALLOWED_INTENTS`, granted to named mini-bots only.
+#: - ``members`` → AltGuard: it gates every joining member and its hourly
+#:   resync needs the full member list (Discord reserves both to this intent).
+#:   Events only: a mini-bot never caches members (``MemberCacheFlags.none``,
+#:   no chunking, minibots/client.py). Privileged: enable it on the Developer
+#:   Portal, justify it to Discord once the bot passes 100 servers.
+INTENT_EXCEPTIONS: Dict[str, FrozenSet[str]] = {
+    "members": frozenset({"altguard_bot"}),
+}
 
 #: The only web pages a mini-bot's users may reach. Mini-bots have no
 #: dashboard: they are configured in Discord, and the dashboard is a Moddy
@@ -79,6 +90,10 @@ class MiniBotSpec:
     #: Accent colour of this bot's own cards (/about, welcome DM, and the
     #: cards its modules post, e.g. the bump thank-you / reminder).
     accent: int = 0x3661FF
+    #: Permissions asked in the add-to-server link on top of what its modules
+    #: require (``REQUIRED_BOT_PERMISSIONS`` + baseline): optional extras a
+    #: feature uses when it has them. Never ``administrator`` (rule #12).
+    extra_permissions: Tuple[str, ...] = ()
 
     def __post_init__(self):
         if not _APP_ID_RE.match(self.id) or self.id == MODDY_APP:
@@ -87,9 +102,14 @@ class MiniBotSpec:
             raise ValueError(f"mini-bot {self.id!r} runs no module")
         if not 0 <= self.accent <= 0xFFFFFF:
             raise ValueError(f"mini-bot {self.id!r} has an invalid accent colour")
-        unknown = set(self.intents) - ALLOWED_INTENTS
+        unknown = {
+            intent for intent in set(self.intents) - ALLOWED_INTENTS
+            if self.id not in INTENT_EXCEPTIONS.get(intent, frozenset())
+        }
         if unknown:
             raise ValueError(f"mini-bot {self.id!r} asks for unsupported intents: {sorted(unknown)}")
+        if "administrator" in self.extra_permissions:
+            raise ValueError(f"mini-bot {self.id!r} may not ask for Administrator")
         surfaces = set(self.web_surfaces) - WEB_SURFACES
         if surfaces:
             raise ValueError(f"mini-bot {self.id!r} asks for unknown web surfaces: {sorted(surfaces)}")
@@ -130,6 +150,30 @@ SPECS: Tuple[MiniBotSpec, ...] = (
         activity="Bump as usual, I'll remind you",
         welcome_builder="minibots.bots.bump_reminder:build_welcome",
         accent=0xE8604C,
+    ),
+    # AltGuard — docs/features/MINIBOTS.md §11. Gates every joining member
+    # (members: the one exception, see INTENT_EXCEPTIONS; nothing cached), reports bans (moderation) and
+    # keeps the invite baseline for inviter attribution (invites). Members go
+    # through the verification page (the one web surface it may send them to).
+    MiniBotSpec(
+        id="altguard_bot",
+        name="AltGuard",
+        token_env="MINIBOT_ALTGUARD_TOKEN",
+        modules=("altguard",),
+        module_paths=("modules.altguard",),
+        commands_module="minibots.bots.altguard",
+        intents=frozenset({"members", "moderation", "invites"}),
+        web_surfaces=frozenset({"altguard_verification"}),
+        persistent_views=(
+            "modules.configs.altguard_config:AltGuardConfigView",
+            "utils.altguard_views:AltGuardPanelView",
+        ),
+        activity="Keeping alt accounts out • /config",
+        welcome_builder="minibots.bots.altguard:build_welcome",
+        accent=0x2EB84A,
+        # Listing invites (Manage Server) tells the service who invited a new
+        # member; without it the attribution is simply skipped.
+        extra_permissions=("manage_guild",),
     ),
 )
 
