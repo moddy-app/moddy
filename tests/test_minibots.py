@@ -1556,3 +1556,52 @@ class TestTransferFromModdy:
             gl.guild_locale = orig
         assert not ok
         assert "**Moddy**" in error and "Bump Reminder" in error
+
+
+class TestGuildBanner:
+    """``MiniBotSpec.guild_banner``: the bot sets its server-profile banner on join."""
+
+    def test_bump_reminder_ships_its_banner(self):
+        spec = spec_mod.get_spec("bump_reminder_bot")
+        assert spec.guild_banner
+        path = pathlib.Path(__file__).resolve().parent.parent / spec.guild_banner
+        assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+        assert path.stat().st_size < 8 * 1024 * 1024  # Discord's upload limit
+
+    def test_spec_rejects_unknown_format(self):
+        with pytest.raises(ValueError):
+            MiniBotSpec(id="x_bot", name="X", token_env="X", modules=("m",),
+                        guild_banner="assets/banner.bmp")
+
+    def test_data_uri(self):
+        from minibots.builtin import banner_data_uri
+        uri = banner_data_uri("assets/minibots/bump_reminder_banner.png")
+        assert uri.startswith("data:image/png;base64,iVBORw0KGgo")
+
+    async def test_patches_own_member(self):
+        from minibots.builtin import apply_guild_banner
+        request = AsyncMock(return_value={})
+        client = SimpleNamespace(app_id="bump_reminder_bot",
+                                 spec=spec_mod.get_spec("bump_reminder_bot"),
+                                 http=SimpleNamespace(request=request))
+        assert await apply_guild_banner(client, SimpleNamespace(id=GUILD))
+        route = request.await_args.args[0]
+        assert route.method == "PATCH" and route.path == "/guilds/{guild_id}/members/@me"
+        assert route.guild_id == GUILD
+        assert request.await_args.kwargs["json"]["banner"].startswith("data:image/png;base64,")
+
+    async def test_no_banner_no_call(self):
+        from minibots.builtin import apply_guild_banner
+        request = AsyncMock()
+        client = SimpleNamespace(app_id="bump", spec=SPEC, http=SimpleNamespace(request=request))
+        assert not await apply_guild_banner(client, SimpleNamespace(id=GUILD))
+        request.assert_not_awaited()
+
+    async def test_refusal_never_raises(self):
+        from minibots.builtin import apply_guild_banner
+        response = SimpleNamespace(status=403, reason="Forbidden")
+        request = AsyncMock(side_effect=discord.Forbidden(response, "nope"))
+        client = SimpleNamespace(app_id="bump_reminder_bot",
+                                 spec=spec_mod.get_spec("bump_reminder_bot"),
+                                 http=SimpleNamespace(request=request))
+        assert not await apply_guild_banner(client, SimpleNamespace(id=GUILD))

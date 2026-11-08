@@ -186,6 +186,7 @@ class MiniBotClient(commands.Bot):
                 logger.error("Mini-bot %s: presence write failed: %s", self.app_id, exc)
         if self.tech_logger is not None:
             await self.tech_logger.log_guild_join(guild)
+        await builtin.apply_guild_banner(self, guild)
         await builtin.send_welcome(self, guild)
 
     async def on_guild_remove(self, guild: discord.Guild) -> None:

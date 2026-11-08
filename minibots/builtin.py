@@ -256,6 +256,57 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# Server-profile banner
+# --------------------------------------------------------------------------- #
+
+#: Repository root (``guild_banner`` paths are relative to it).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+_BANNER_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                ".gif": "image/gif", ".webp": "image/webp"}
+
+#: Built data URIs, by path: read the file once per process, not per join.
+_banner_cache: dict = {}
+
+
+def banner_data_uri(path: str) -> str:
+    """``data:<mime>;base64,…`` of the banner file (cached). Raises OSError."""
+    cached = _banner_cache.get(path)
+    if cached is None:
+        import base64
+        file = _REPO_ROOT / path
+        mime = _BANNER_MIME[file.suffix.lower()]
+        cached = f"data:{mime};base64,{base64.b64encode(file.read_bytes()).decode('ascii')}"
+        _banner_cache[path] = cached
+    return cached
+
+
+async def apply_guild_banner(client, guild: discord.Guild) -> bool:
+    """Set the bot's server-profile banner in ``guild`` (``MiniBotSpec.guild_banner``).
+
+    Same endpoint as Moddy's bot customization (``PATCH
+    /guilds/{id}/members/@me``), which needs no permission: it only edits the
+    bot's own member. Never raises: a banner is never worth a failed join.
+    """
+    path = getattr(getattr(client, "spec", None), "guild_banner", None)
+    if not path:
+        return False
+    try:
+        payload = {"banner": banner_data_uri(path)}
+        route = discord.http.Route("PATCH", "/guilds/{guild_id}/members/@me",
+                                   guild_id=guild.id)
+        await client.http.request(route, json=payload, reason="Server profile banner")
+        return True
+    except (discord.Forbidden, discord.NotFound) as exc:
+        logger.info("Mini-bot %s: banner refused in guild %s: %s",
+                    client.app_id, guild.id, exc)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Mini-bot %s: banner not applied in guild %s: %s",
+                       client.app_id, guild.id, exc)
+    return False
+
+
+# --------------------------------------------------------------------------- #
 # Wiring
 # --------------------------------------------------------------------------- #
 
