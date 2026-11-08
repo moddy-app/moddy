@@ -2,7 +2,7 @@
 
 ## What was done
 - New mini-bot **AltGuard** (`altguard_bot`, token `MINIBOT_ALTGUARD_TOKEN`,
-  accent `#5865F2`): Moddy's `altguard` module unchanged, under its own name.
+  accent `#2EB84A`): Moddy's `altguard` module unchanged, under its own name.
   `minibots/bots/altguard.py` holds what Moddy wires elsewhere:
   - `AltGuardBotCog(AltGuard, name="AltGuard")`: gate on join, then report;
     departures through `on_raw_member_remove` (no member cache);
@@ -76,4 +76,11 @@
   its picker (Moddy has no zero setup).
 - Tests: `test_bump_welcome_never_carries_a_picker`, `TestOfferUnderAMinibot`.
 - Open question: Moddy's own offer DM still lists 25 channels at most.
+
+## Follow-up: accent + icon
+- AltGuard bot accent `#2EB84A` (given by Jules). It colours `/about`, the
+  welcome DM, the verification panel and the link card (`panel_accent(client)`
+  in `utils/altguard_views.py`); under Moddy they stay `#5865F2`.
+- Welcome DM icon: `fingerprint` (the module's icon), not the animated AltGuard
+  face, which the module reserves for the panel and the member's cards.
 

@@ -463,8 +463,7 @@ Setup checklist:
 ## 11. AltGuard (`minibots/bots/altguard.py`)
 
 Moddy's `altguard` module under its own name and token
-(`MINIBOT_ALTGUARD_TOKEN`, app id `altguard_bot`, accent `#5865F2`, the panel's
-colour). Same panel, consent modal, `/config` screen, tables and service
+(`MINIBOT_ALTGUARD_TOKEN`, app id `altguard_bot`, accent `#2EB84A`). Same panel, consent modal, `/config` screen, tables and service
 contract as on Moddy ([ALTGUARD.md](ALTGUARD.md)). What the file adds is the
 wiring Moddy does in other places, for a client that caches no member:
 
@@ -493,7 +492,9 @@ wiring Moddy does in other places, for a client that caches no member:
   Server* (`extra_permissions`, inviter attribution — skipped without it).
 - **`/config`** is the module screen (no Back, no trail) with the **Language**
   button: the panel speaks the server language.
-- **Welcome DM** (`build_welcome`): the three things the gate needs (channel,
+- **Welcome DM** (`build_welcome`, icon `fingerprint` — the module's icon; the
+  animated AltGuard face stays on the panel and the member's cards): the three
+  things the gate needs (channel,
   the two roles, the bot's role above them), then `/config`. Where Moddy
   already runs the gate, it says so and stays out of the way.
 
@@ -534,12 +535,15 @@ Setup checklist:
 
 Each mini-bot has its own accent colour, `MiniBotSpec.accent` (default Moddy
 blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**, **AltGuard**
-**`#5865F2`** (the verification panel's colour). It colours:
+**`#2EB84A`**. It colours:
 
 - the bot's own cards: `/about` and the welcome DM (`client_accent(client)` in
   `minibots/builtin.py`);
 - the cards its module posts: the bump thank-you, the reminder and its test
-  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts).
+  (`card_accent(client)` in `utils/bump_views.py`, Moddy blue when Moddy posts);
+  for AltGuard, the verification panel and the link card
+  (`panel_accent(client)` in `utils/altguard_views.py`, `#5865F2` under Moddy).
+  The log cards and the member DMs keep their verdict colours.
 
 `/config` panels keep their state colours (active / paused / simulation), and
 the Moddy-side activation offer stays Moddy blue.

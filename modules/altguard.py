@@ -554,7 +554,7 @@ class AltGuardModule(ModuleBase):
         language change or a channel change reaches the message. A panel that
         can no longer be found is simply replaced.
         """
-        from utils.altguard_views import build_verification_panel
+        from utils.altguard_views import build_verification_panel, panel_accent
 
         guild = self.guild
         if not guild or not self.channel_id:
@@ -567,7 +567,8 @@ class AltGuardModule(ModuleBase):
         await self.delete_panel()
 
         try:
-            message = await channel.send(view=build_verification_panel(self.panel_locale))
+            message = await channel.send(view=build_verification_panel(
+                self.panel_locale, accent=panel_accent(self.bot)))
         except discord.Forbidden:
             logger.warning(f"[AltGuard] Cannot post the panel in guild {self.guild_id}")
             return None

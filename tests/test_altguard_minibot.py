@@ -428,7 +428,9 @@ class TestWelcome:
         content, variables, view = await self._build(None)
         assert content.template_id == "minibots.altguard.welcome.body"
         assert "{config}" in content.body and variables["name"] == "AltGuard"
-        assert content.accent_color == 0x5865F2 and view is None
+        assert content.accent_color == 0x2EB84A and view is None
+        from utils.emojis import FINGERPRINT
+        assert content.icon == FINGERPRINT
 
     async def test_steps_aside_where_moddy_runs_the_gate(self):
         content, _, _ = await self._build(dict(GATE))  # no app key: Moddy's
@@ -444,3 +446,18 @@ def test_i18n(locale):
     assert "{name}" in welcome["title"]
     assert "{config}" in welcome["body"] and "{server}" in welcome["body"]
     assert "mini-bot" not in json.dumps(welcome).lower()
+
+
+def test_the_bot_paints_its_cards_in_its_own_colour():
+    """#2EB84A on the AltGuard bot, the panel colour under Moddy."""
+    from minibots.spec import get_spec
+    from utils.altguard_views import PANEL_ACCENT, build_link_card, build_verification_panel, panel_accent
+    bot = SimpleNamespace(spec=get_spec(APP))
+    assert panel_accent(bot).value == 0x2EB84A
+    assert panel_accent(SimpleNamespace()) == PANEL_ACCENT
+    panel = build_verification_panel("en-US", accent=panel_accent(bot))
+    assert panel.children[0].accent_colour.value == 0x2EB84A
+    assert build_verification_panel("en-US").children[0].accent_colour == PANEL_ACCENT
+    card = build_link_card("en-US", url="https://verify.moddy.app/x", accent=panel_accent(bot))
+    assert card.children[0].accent_colour.value == 0x2EB84A
+

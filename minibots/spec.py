@@ -170,7 +170,7 @@ SPECS: Tuple[MiniBotSpec, ...] = (
         ),
         activity="Keeping alt accounts out • /config",
         welcome_builder="minibots.bots.altguard:build_welcome",
-        accent=0x5865F2,
+        accent=0x2EB84A,
         # Listing invites (Manage Server) tells the service who invited a new
         # member; without it the attribution is simply skipped.
         extra_permissions=("manage_guild",),
