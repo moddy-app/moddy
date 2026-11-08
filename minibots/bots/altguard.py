@@ -178,9 +178,9 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
     from config import MODDY_INVITE_URL, SUPPORT_URL, command_label
     from minibots.builtin import client_accent
     from notifications.models import NotificationContent
-    # The module's icon (as in /config); the animated AltGuard face is kept
-    # for the verification panel and what the member reads.
-    from utils.emojis import FINGERPRINT
+    # The bot's shield (as in its /config; Moddy shows the fingerprint). The
+    # animated AltGuard face is kept for the panel and what the member reads.
+    from utils.emojis import SHIELD
     from utils.i18n import t
 
     stored = await client.module_manager.get_module_config(guild.id, MODULE_ID)
@@ -191,7 +191,7 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
         title=t("minibots.bots.altguard.welcome.title", locale=locale, name="{name}"),
         body=t(f"minibots.bots.altguard.welcome.{body_key}", locale=locale,
                name="{name}", server="{server}", config="{config}"),
-        icon=FINGERPRINT, accent_color=client_accent(client),
+        icon=SHIELD, accent_color=client_accent(client),
         links=[{"label": t("minibots.links.get_moddy", locale=locale), "url": MODDY_INVITE_URL},
                {"label": t("modules.config.main.links.support", locale=locale), "url": SUPPORT_URL}],
         template_id=f"minibots.altguard.welcome.{body_key}",

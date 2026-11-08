@@ -492,8 +492,10 @@ wiring Moddy does in other places, for a client that caches no member:
   Server* (`extra_permissions`, inviter attribution — skipped without it).
 - **`/config`** is the module screen (no Back, no trail) with the **Language**
   button: the panel speaks the server language.
-- **Welcome DM** (`build_welcome`, icon `fingerprint` — the module's icon; the
-  animated AltGuard face stays on the panel and the member's cards): the three
+- **Icon**: `shield` on the bot (welcome DM, `/config` title,
+  `altguard_config.config_icon`); Moddy keeps the `fingerprint`. The animated
+  AltGuard face stays on the panel and the member's cards.
+- **Welcome DM** (`build_welcome`): the three
   things the gate needs (channel,
   the two roles, the bot's role above them), then `/config`. Where Moddy
   already runs the gate, it says so and stays out of the way.

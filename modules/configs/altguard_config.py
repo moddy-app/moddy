@@ -36,10 +36,16 @@ from modules.configs._common import (
     standalone_module,
     state_accent,
 )
-from utils.emojis import BACK, FINGERPRINT, SAVE, UNDONE
+from utils.emojis import BACK, FINGERPRINT, SAVE, SHIELD, UNDONE
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.altguard_config")
+
+def config_icon(client) -> str:
+    """Title icon: the fingerprint on Moddy, the shield on the AltGuard
+    mini-bot (a client carrying a ``spec``)."""
+    return SHIELD if getattr(client, "spec", None) is not None else FINGERPRINT
+
 
 _CID_CHANNEL = "moddy:altguard:config:channel"
 _CID_UNVERIFIED = "moddy:altguard:config:unverified"
@@ -103,7 +109,7 @@ class AltGuardConfigView(BaseView):
             container.add_item(crumb(self.locale, 'altguard'))
 
         container.add_item(ui.TextDisplay(
-            f"### {FINGERPRINT} {t('modules.altguard.config.title', locale=self.locale)}"
+            f"### {config_icon(self.bot)} {t('modules.altguard.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.altguard.config.description', locale=self.locale)

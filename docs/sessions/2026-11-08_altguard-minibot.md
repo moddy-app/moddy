@@ -81,6 +81,7 @@
 - AltGuard bot accent `#2EB84A` (given by Jules). It colours `/about`, the
   welcome DM, the verification panel and the link card (`panel_accent(client)`
   in `utils/altguard_views.py`); under Moddy they stay `#5865F2`.
-- Welcome DM icon: `fingerprint` (the module's icon), not the animated AltGuard
-  face, which the module reserves for the panel and the member's cards.
+- Icon on the bot: `shield` (welcome DM + `/config` title, `config_icon`);
+  Moddy keeps `fingerprint`. The animated AltGuard face stays reserved for the
+  panel and the member's cards.
 

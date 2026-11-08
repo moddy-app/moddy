@@ -429,8 +429,8 @@ class TestWelcome:
         assert content.template_id == "minibots.altguard.welcome.body"
         assert "{config}" in content.body and variables["name"] == "AltGuard"
         assert content.accent_color == 0x2EB84A and view is None
-        from utils.emojis import FINGERPRINT
-        assert content.icon == FINGERPRINT
+        from utils.emojis import SHIELD
+        assert content.icon == SHIELD
 
     async def test_steps_aside_where_moddy_runs_the_gate(self):
         content, _, _ = await self._build(dict(GATE))  # no app key: Moddy's
@@ -460,4 +460,16 @@ def test_the_bot_paints_its_cards_in_its_own_colour():
     assert build_verification_panel("en-US").children[0].accent_colour == PANEL_ACCENT
     card = build_link_card("en-US", url="https://verify.moddy.app/x", accent=panel_accent(bot))
     assert card.children[0].accent_colour.value == 0x2EB84A
+
+
+def test_config_title_icon_shield_on_the_bot_fingerprint_on_moddy():
+    from utils.emojis import FINGERPRINT, SHIELD
+    from minibots.spec import get_spec
+    on_bot = _config_view(True, current_config=GATE, bot=SimpleNamespace(
+        spec=get_spec(APP), get_channel=lambda cid: None, get_guild=lambda gid: None))
+    on_moddy = _config_view(False, current_config=GATE)
+    title = lambda view: next(i.content for i in view.children[0].children
+                              if getattr(i, "content", "").startswith("### "))
+    assert title(on_bot).startswith(f"### {SHIELD} ")
+    assert title(on_moddy).startswith(f"### {FINGERPRINT} ")
 
