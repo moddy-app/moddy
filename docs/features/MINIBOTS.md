@@ -189,6 +189,15 @@ built, not before.
     "Sent by **Bump Reminder** ✓" once rebranded.
   - On a bot's very first start it waits for the emoji copy (up to 10 min),
     so the first message the admin reads is not raw `:emoji:` text.
+- **Server-profile banner** (`MiniBotSpec.guild_banner`, optional): on every
+  `on_guild_join` the bot sets its own banner **for that server only**
+  (`PATCH /guilds/{id}/members/@me`, the endpoint of Moddy's bot
+  customization; it edits only the bot's own member, no permission needed).
+  The global profile (`PATCH /users/@me`) is never touched. The image ships
+  in the repository (`assets/minibots/`, read once per process) rather than
+  as a CDN link that could disappear. A refusal is logged and never blocks
+  the join or the welcome DM. Servers joined before the field existed keep
+  their banner until the bot rejoins.
 - **Users never read the word "mini-bot"**: it is an internal name, kept to
   the staff screens. `test_users_never_read_the_word_minibot` guards the
   locales.
@@ -426,6 +435,7 @@ detection, cards, `/config` panel and table as Moddy. What it adds is aimed at
 |---|---|
 | Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual", and points to `/config` for a role or the delay. **No channel picker** (rule in §8). If Moddy already runs the module there, it says so and stays out of the way. |
 | First successful bump | No reminder for that directory yet → it **sets itself up in that channel**: directory cooldown, no role, `button` ping mode. It arms the reminder and says so in one `-#` line on the thank-you card. This happens once per (server, directory): marker `guilds.data.minibots.<app>.bump_autosetup.<directory>`, so a reminder the admin deletes stays deleted. A paused module, a failed bump (refusal), or a module Moddy runs → nothing. |
+| Added to a server (profile) | It sets its server-profile banner in that server (`assets/minibots/bump_reminder_banner.png`, 1024×361). Its global profile is untouched. |
 | A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → Moddy's offer (`services/bump_suggestion_service.py`) **without its picker** (`picker=False`, template `bump_reminder.suggest.<bot>.auto`): "nothing to do, bump as usual — I set myself up on the first bump; other choices in `/config`". It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
 | Every bump after | Exactly Moddy's behaviour: thank-you, "remind me" button, reminder at the end of the cooldown. |
 

@@ -94,6 +94,11 @@ class MiniBotSpec:
     #: require (``REQUIRED_BOT_PERMISSIONS`` + baseline): optional extras a
     #: feature uses when it has them. Never ``administrator`` (rule #12).
     extra_permissions: Tuple[str, ...] = ()
+    #: Optional server-profile banner the bot sets on itself in every server it
+    #: joins (``PATCH /guilds/{id}/members/@me``): a PNG/JPEG/GIF/WebP path
+    #: relative to the repository root, shipped with the code (a CDN link can
+    #: disappear). None = keep the global profile banner.
+    guild_banner: Optional[str] = None
 
     def __post_init__(self):
         if not _APP_ID_RE.match(self.id) or self.id == MODDY_APP:
@@ -102,6 +107,9 @@ class MiniBotSpec:
             raise ValueError(f"mini-bot {self.id!r} runs no module")
         if not 0 <= self.accent <= 0xFFFFFF:
             raise ValueError(f"mini-bot {self.id!r} has an invalid accent colour")
+        if self.guild_banner is not None and not self.guild_banner.lower().endswith(
+                (".png", ".jpg", ".jpeg", ".gif", ".webp")):
+            raise ValueError(f"mini-bot {self.id!r} has an unsupported banner file")
         unknown = {
             intent for intent in set(self.intents) - ALLOWED_INTENTS
             if self.id not in INTENT_EXCEPTIONS.get(intent, frozenset())
@@ -150,6 +158,7 @@ SPECS: Tuple[MiniBotSpec, ...] = (
         activity="Bump as usual, I'll remind you",
         welcome_builder="minibots.bots.bump_reminder:build_welcome",
         accent=0xE8604C,
+        guild_banner="assets/minibots/bump_reminder_banner.png",
     ),
     # AltGuard — docs/features/MINIBOTS.md §11. Gates every joining member
     # (members: the one exception, see INTENT_EXCEPTIONS; nothing cached), reports bans (moderation) and
