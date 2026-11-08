@@ -32,7 +32,7 @@ import discord
 from discord.ext import commands
 
 from cogs.altguard import AltGuard
-from services.altguard_client import VERDICT_CHANNEL, AltGuardClient
+from services.altguard_client import BOT_MINIBOT, VERDICT_CHANNEL, AltGuardClient
 from utils.background import spawn
 
 logger = logging.getLogger("moddy.minibots.altguard")
@@ -201,5 +201,7 @@ async def build_welcome(client, guild: discord.Guild, locale: str):
 
 async def setup(client) -> None:
     # What the panel's consent modal and the cog call (HTTP + Redis).
-    client.altguard = AltGuardClient(client)
+    # ``bot_name`` is sent as ``bot`` to /altguard/token: the verification page
+    # then shows this bot's logo instead of Moddy's.
+    client.altguard = AltGuardClient(client, bot_name=BOT_MINIBOT)
     await client.add_cog(AltGuardBotCog(client))

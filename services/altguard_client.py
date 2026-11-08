@@ -17,7 +17,9 @@ The bot never reads AltGuard's database and never receives personal data:
 everything crossing this boundary is Discord ids, statuses and category labels.
 The optional ``inviter_id`` sent with a token request is the public Discord id
 of whoever created the invite the member joined with (see
-``services/altguard_invites.py``).
+``services/altguard_invites.py``). The ``bot`` field names the app that asked
+for the verification (``BOT_MODDY`` / ``BOT_MINIBOT``): the service only uses
+it to show that app's logo on the verification page.
 """
 
 from __future__ import annotations
@@ -49,6 +51,15 @@ MEMBERSHIP_LEFT = "left"
 MEMBERSHIP_KICKED = "kicked"
 MEMBERSHIP_BANNED = "banned"
 
+# Fixed identifier of the calling app, sent as ``bot`` with every
+# /altguard/token call. Each process sets its own constant when it builds its
+# client (``bot.py`` -> Moddy, ``minibots/bots/altguard.py`` -> the AltGuard
+# mini-bot); it is never inferred at runtime. The service only uses it to pick
+# the logo of the verification page (unknown / missing -> Moddy's): no effect
+# on the score or the verdict, nothing stored.
+BOT_MODDY = "moddy"
+BOT_MINIBOT = "minibot"
+
 REQUEST_TIMEOUT = 15  # seconds
 
 
@@ -65,8 +76,10 @@ class AltGuardError(Exception):
 class AltGuardClient:
     """Async client for the AltGuard HTTP endpoints and Redis channels."""
 
-    def __init__(self, bot):
+    def __init__(self, bot, *, bot_name: str = BOT_MODDY):
         self.bot = bot
+        # Sent as ``bot`` in /altguard/token (see BOT_MODDY / BOT_MINIBOT).
+        self.bot_name = bot_name
         self._session: Optional[aiohttp.ClientSession] = None
 
     # ------------------------------------------------------------------ #
@@ -157,6 +170,9 @@ class AltGuardClient:
         ``inviter_id`` (snowflake, sent as a string) is included only when known
         and different from the member; otherwise the key is omitted entirely --
         never ``null`` or an empty string.
+
+        ``bot`` is always sent: the fixed identifier this client was built
+        with (``BOT_MODDY`` or ``BOT_MINIBOT``).
         """
         moment = consent_at or datetime.now(timezone.utc)
         payload = {
@@ -168,6 +184,7 @@ class AltGuardClient:
         }
         if inviter_id and int(inviter_id) != int(discord_user_id):
             payload["inviter_id"] = str(inviter_id)
+        payload["bot"] = self.bot_name
         return await self._post("/altguard/token", payload)
 
     # ------------------------------------------------------------------ #

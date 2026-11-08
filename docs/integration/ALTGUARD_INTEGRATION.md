@@ -43,7 +43,8 @@ Content-Type: application/json
   "guild_id": "123456789012345678",
   "consent_version": "2026-10-27",
   "consent_at": "2026-10-27T14:00:00.123456Z",
-  "inviter_id": "555555555555555555"
+  "inviter_id": "555555555555555555",
+  "bot": "moddy"
 }
 ```
 
@@ -54,6 +55,7 @@ Content-Type: application/json
 | `consent_version` | string | `CONSENT_VERSION` in `services/altguard_client.py` — currently `"2026-10-27"` |
 | `consent_at` | string | ISO 8601 **UTC**, `+00:00` rewritten as `Z`. Includes microseconds. Always ≤ now, taken at modal submit, a fraction of a second before the request |
 | `inviter_id` | **string**, optional | creator of the invite the member joined with (`altguard_members.inviter_id`, see [ALTGUARD.md → Inviter attribution](../features/ALTGUARD.md#inviter-attribution)). **Omitted** — never `null`, never `""` — when unknown or equal to the member |
+| `bot` | string | the calling app: `"moddy"` (`BOT_MODDY`, set in `bot.py`) or `"minibot"` (`BOT_MINIBOT`, set in `minibots/bots/altguard.py`). Fixed per process, always sent. The service lowercases/trims it, **ignores** (never rejects) a value outside `[a-z0-9][a-z0-9_-]{0,31}`, and only uses it for the logo on the verification page (unknown → Moddy). No effect on score/verdict, not stored; the response and `altguard:verdict` are unchanged |
 
 - Header is `Content-Type: application/json` (aiohttp `json=` payload).
 - No other header is sent — no `User-Agent` override, no API version header,

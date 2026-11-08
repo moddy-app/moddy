@@ -473,3 +473,14 @@ def test_config_title_icon_shield_on_the_bot_fingerprint_on_moddy():
     assert title(on_bot).startswith(f"### {SHIELD} ")
     assert title(on_moddy).startswith(f"### {FINGERPRINT} ")
 
+
+
+async def test_the_bot_tells_altguard_it_is_the_minibot():
+    """The token call names this app (``bot``: ``minibot``), so the
+    verification page shows its logo instead of Moddy's."""
+    from minibots.bots import altguard as bot_module
+
+    client = MagicMock()
+    client.add_cog = AsyncMock()
+    await bot_module.setup(client)
+    assert client.altguard.bot_name == "minibot"
