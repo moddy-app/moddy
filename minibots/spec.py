@@ -23,20 +23,25 @@ from typing import Dict, FrozenSet, Optional, Tuple
 from minibots.ownership import APP_ID_PATTERN, MODDY_APP
 
 #: Intents a mini-bot may ask for. ``guilds`` is always on (the guild cache is
-#: what everything else hangs on). ``presences`` is deliberately absent: it is
-#: the most expensive event stream and no single-feature bot needs it.
-#: ``members`` is allowed for the *events* only (joins, departures, the member
-#: list endpoints): a mini-bot never caches members (``MemberCacheFlags.none``,
-#: no chunking at startup, minibots/client.py), so asking for it costs events,
-#: not RAM. It is privileged: enable it on the Developer Portal, and justify it
-#: to Discord once the bot passes 100 servers. AltGuard is the one bot that
-#: needs it (it gates every joining member).
+#: what everything else hangs on). ``members`` / ``presences`` are deliberately
+#: absent: they are the two most expensive streams and no single-feature bot
+#: should need them — a spec that does must be discussed first and listed in
+#: :data:`INTENT_EXCEPTIONS`.
 ALLOWED_INTENTS: FrozenSet[str] = frozenset({
-    "members",
     "guild_messages", "message_content", "guild_reactions",
     "moderation", "emojis_and_stickers", "invites", "webhooks",
     "voice_states", "auto_moderation_execution", "integrations",
 })
+
+#: Intents outside :data:`ALLOWED_INTENTS`, granted to named mini-bots only.
+#: - ``members`` → AltGuard: it gates every joining member and its hourly
+#:   resync needs the full member list (Discord reserves both to this intent).
+#:   Events only: a mini-bot never caches members (``MemberCacheFlags.none``,
+#:   no chunking, minibots/client.py). Privileged: enable it on the Developer
+#:   Portal, justify it to Discord once the bot passes 100 servers.
+INTENT_EXCEPTIONS: Dict[str, FrozenSet[str]] = {
+    "members": frozenset({"altguard_bot"}),
+}
 
 #: The only web pages a mini-bot's users may reach. Mini-bots have no
 #: dashboard: they are configured in Discord, and the dashboard is a Moddy
@@ -97,7 +102,10 @@ class MiniBotSpec:
             raise ValueError(f"mini-bot {self.id!r} runs no module")
         if not 0 <= self.accent <= 0xFFFFFF:
             raise ValueError(f"mini-bot {self.id!r} has an invalid accent colour")
-        unknown = set(self.intents) - ALLOWED_INTENTS
+        unknown = {
+            intent for intent in set(self.intents) - ALLOWED_INTENTS
+            if self.id not in INTENT_EXCEPTIONS.get(intent, frozenset())
+        }
         if unknown:
             raise ValueError(f"mini-bot {self.id!r} asks for unsupported intents: {sorted(unknown)}")
         if "administrator" in self.extra_permissions:
@@ -144,7 +152,7 @@ SPECS: Tuple[MiniBotSpec, ...] = (
         accent=0xE8604C,
     ),
     # AltGuard — docs/features/MINIBOTS.md §11. Gates every joining member
-    # (members: events only, nothing cached), reports bans (moderation) and
+    # (members: the one exception, see INTENT_EXCEPTIONS; nothing cached), reports bans (moderation) and
     # keeps the invite baseline for inviter attribution (invites). Members go
     # through the verification page (the one web surface it may send them to).
     MiniBotSpec(

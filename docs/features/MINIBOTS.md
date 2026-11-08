@@ -115,12 +115,13 @@ minibots/
     bot carries its content without the privileged intent. Nothing is cached
     (`max_messages=None`), but every message of every server still reaches
     the process, so it costs some CPU;
-  - `presences` is refused by `MiniBotSpec`. `members` is allowed for its
-    **events** only (joins, departures, the member-list endpoints), because
-    the member cache stays off whatever the intents: AltGuard needs it, no
-    other bot should. It is privileged (Developer Portal, justification at
-    100 servers). Without a cache, discord.py fires `on_raw_member_remove`
-    but never `on_member_remove`;
+  - `members` and `presences` are refused by `MiniBotSpec`, with one
+    exception listed in `INTENT_EXCEPTIONS`: `members` for **AltGuard**
+    (`altguard_bot`) only. It brings the events (joins, departures, the
+    member-list endpoints), never the cache, which stays off whatever the
+    intents. Privileged: Developer Portal, justification at 100 servers.
+    Without a cache, discord.py fires `on_raw_member_remove` but never
+    `on_member_remove`. Any other bot asking for it is refused at import;
   - `max_messages=None` (the default keeps 1000 messages *per bot*);
   - `MemberCacheFlags.none()`, `chunk_guilds_at_startup=False`.
 - **Modules loaded lazily, per server**: an instance exists only where an event
@@ -473,7 +474,8 @@ wiring Moddy does in other places, for a client that caches no member:
   module: the module lookup comes **before** the idempotency insert in
   `AltGuard.handle_verdict`, so the process that does not run the gate never
   records the verdict as seen.
-- **Intents**: `guilds`, `guild_messages`, `members` (privileged: joins,
+- **Intents**: `guilds`, `guild_messages`, `members` (the only mini-bot
+  allowed it, `INTENT_EXCEPTIONS`; privileged: joins,
   departures, the hourly full member list), `moderation` (bans), `invites`
   (invite baseline). No member cache, no chunking: the hourly resync pulls the
   list with `fetch_all_members(cache=False)` and drops it.

@@ -137,6 +137,9 @@ class TestSpec:
             MiniBotSpec(id="moddy", name="x", token_env="X", modules=("a",))
         with pytest.raises(ValueError):
             MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
+                        intents=frozenset({"members"}))
+        with pytest.raises(ValueError):
+            MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
                         intents=frozenset({"presences"}))
         with pytest.raises(ValueError):
             MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
@@ -431,15 +434,16 @@ class TestClient:
         assert client._connection._chunk_guilds is False
         assert client.module_manager.app == "bump"
 
-    def test_members_intent_never_fills_a_member_cache(self):
-        """``members`` brings the events (AltGuard gates joins), never the cache."""
-        from minibots.client import MiniBotClient
-        spec = MiniBotSpec(id="gate", name="Gate", token_env="MINIBOT_TEST_TOKEN",
-                           modules=("panel",), intents=frozenset({"members"}))
-        client = MiniBotClient(spec, SimpleNamespace(db=None, redis=None, tech_logger=None))
-        assert client.intents.members and not client.intents.presences
-        assert client._connection.member_cache_flags.value == 0
-        assert client._connection._chunk_guilds is False
+    def test_members_intent_is_an_altguard_only_exception(self):
+        """``members`` is refused to every mini-bot except AltGuard."""
+        assert spec_mod.INTENT_EXCEPTIONS == {"members": frozenset({"altguard_bot"})}
+        assert "members" not in spec_mod.ALLOWED_INTENTS
+        MiniBotSpec(id="altguard_bot", name="AltGuard", token_env="X", modules=("altguard",),
+                    intents=frozenset({"members"}))
+        for app in ("bump_reminder_bot", "tickets_bot"):
+            with pytest.raises(ValueError):
+                MiniBotSpec(id=app, name="x", token_env="X", modules=("a",),
+                            intents=frozenset({"members"}))
 
 
 class TestRuntime:

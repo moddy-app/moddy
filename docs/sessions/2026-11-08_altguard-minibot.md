@@ -9,8 +9,9 @@
     its own `altguard:verdict` subscription (after ready, backoff, one task per
     verdict); `client.altguard` HTTP client;
   - `build_welcome`: the three things the gate needs, or "Moddy already runs it".
-- `minibots/spec.py`: `members` allowed for its events (the cache stays off);
-  `presences` still refused. New `MiniBotSpec.extra_permissions` (optional
+- `minibots/spec.py`: `members` stays out of `ALLOWED_INTENTS`; new
+  `INTENT_EXCEPTIONS` grants it to `altguard_bot` only (events, the cache
+  stays off). `presences` still refused. New `MiniBotSpec.extra_permissions` (optional
   extras in the invite link; `administrator` refused), used by AltGuard for
   *Manage Server* (inviter attribution).
 - `/config`: the AltGuard screen hides Back and the trail in a one-module app
@@ -40,7 +41,8 @@
   `docs/infra/RAILWAY.md`, `CLAUDE.md`
 
 ## Decisions
-- **`members` intent allowed.** AltGuard cannot work without join events, and the
+- **`members` intent: an AltGuard-only exception** (`INTENT_EXCEPTIONS`), not a
+  general allowance. AltGuard cannot work without join events, and the
   member list endpoint (hourly resync) needs it. The RAM worry behind the old
   ban was the cache, which `MemberCacheFlags.none()` keeps off for every
   mini-bot. Privileged: enable it on the Developer Portal.
