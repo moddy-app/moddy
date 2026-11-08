@@ -222,8 +222,15 @@ class AltGuard(commands.Cog):
 
     async def _classify_removal(self, member: discord.Member):
         """(state, occurred_at) for a member_remove — None to skip the event."""
+        return await self._classify_departure(member.guild, member.id)
+
+    async def _classify_departure(self, guild: discord.Guild, user_id: int):
+        """(state, occurred_at) for a departure from ``guild`` — None to skip.
+
+        Takes ids rather than a member: a client without a member cache (the
+        AltGuard mini-bot) only ever gets ``on_raw_member_remove``.
+        """
         now = datetime.now(timezone.utc)
-        guild = member.guild
 
         if not guild.me.guild_permissions.view_audit_log:
             return MEMBERSHIP_LEFT, now
@@ -231,11 +238,11 @@ class AltGuard(commands.Cog):
         cutoff = now - AUDIT_LOOKBACK
         try:
             async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.ban):
-                if entry.target and entry.target.id == member.id and entry.created_at >= cutoff:
+                if entry.target and entry.target.id == user_id and entry.created_at >= cutoff:
                     # on_member_ban reports this one; not twice.
                     return None, None
             async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.kick):
-                if entry.target and entry.target.id == member.id and entry.created_at >= cutoff:
+                if entry.target and entry.target.id == user_id and entry.created_at >= cutoff:
                     return MEMBERSHIP_KICKED, entry.created_at
         except discord.Forbidden:
             pass

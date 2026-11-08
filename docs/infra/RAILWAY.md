@@ -194,7 +194,11 @@ mini-bots dans un seul process (voir [MINIBOTS.md](../features/MINIBOTS.md)).
 - Mêmes `DATABASE_URL`, `REDIS_URL`, `REDIS_PASSWORD` que Moddy.
 - **Pas de `DISCORD_TOKEN`** : le point d'entrée pose `MODDY_SERVICE=minibots`,
   ce qui lève cette vérification de `config.py`.
-- `MINIBOT_<X>_TOKEN` : un token par mini-bot (nom déclaré dans `minibots/spec.py`).
+- `MINIBOT_<X>_TOKEN` : un token par mini-bot (nom déclaré dans `minibots/spec.py`) :
+  `MINIBOT_BUMP_REMINDER_TOKEN`, `MINIBOT_ALTGUARD_TOKEN`.
+- Pour le bot **AltGuard** : le même `ALTGUARD_BOT_TOKEN` que Moddy (et
+  `ALTGUARD_API_URL` s'il diffère de la valeur par défaut). Sans lui, la
+  vérification répond « indisponible ».
 - `MINIBOTS_ENABLED` (optionnel) : ids séparés par des virgules ; vide = tous.
 - `MINIBOTS_DB_POOL_MAX` (optionnel, défaut `3`) : le pool PostgreSQL de
   **tous** les mini-bots réunis.

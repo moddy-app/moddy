@@ -35,6 +35,8 @@ import discord
 
 from bumpreminder import BumpBot, bot_by_app_id
 
+from minibots.ownership import MODDY_APP
+
 logger = logging.getLogger("moddy.services.bump_suggestion")
 
 MODULE_ID = "bump_reminder"
@@ -198,12 +200,16 @@ class BumpSuggestionService:
         from utils.guild_language import guild_locale
 
         locale = await guild_locale(self.bot, guild)
-        channels = candidate_channels(guild)
-        view = build_suggestion_card(spec, guild, channels, locale=locale)
+        # A mini-bot never configures from a DM (docs/features/MINIBOTS.md §8):
+        # its select would list 25 channels at most, and its zero setup arms
+        # the reminder on the first bump anyway.
+        picker = (getattr(self.bot, "app_id", None) or MODDY_APP) == MODDY_APP
+        channels = candidate_channels(guild) if picker else []
+        view = build_suggestion_card(spec, guild, channels, locale=locale, picker=picker)
 
         result = await self.bot.notifications.send_dm(
             recipient,
-            content=suggestion_content(spec, locale),
+            content=suggestion_content(spec, locale, picker=picker),
             # Moddy offering one of its own modules, about a server event.
             source=NotificationSource.service_guild(MODULE_ID, guild.id),
             variables={"server": guild.name},

@@ -492,8 +492,12 @@ class ModdyBot(ModdyFrameworkBot):
                             await self._handle_altguard_verdict(data)
                         elif channel == "minibots:moddy":
                             # Discord calls inside: never block the listener.
-                            self.spawn(self._handle_minibot_release(data),
-                                       name="minibots:release")
+                            if data.get("type") == "altguard_gate_opened":
+                                self.spawn(self._handle_altguard_gate_opened(data),
+                                           name="minibots:altguard-gate-opened")
+                            else:
+                                self.spawn(self._handle_minibot_release(data),
+                                           name="minibots:release")
                         else:
                             await self._handle_bot_event(data)
                     except Exception as e:
@@ -826,6 +830,38 @@ class ModdyBot(ModdyFrameworkBot):
         except Exception as e:
             logger.error(f"[FAIL] Release of {module_id} in guild {guild_id} "
                          f"to a mini-bot failed: {e}", exc_info=True)
+
+    async def _handle_altguard_gate_opened(self, data: dict) -> None:
+        """A member passed the AltGuard gate the AltGuard bot runs here.
+
+        Auto Role held its roles back meanwhile (``_altguard_holds_back``); the
+        message only says "look again". The gate state is re-read from the
+        database, so an unsigned message can never grant more than the stored
+        state already allows.
+        """
+        from minibots import status as mstatus
+        from utils.members import get_or_fetch_member
+        event = mstatus.parse_moddy_event(data)
+        if event is None or not self.module_manager or not self.db:
+            return
+        guild = self.get_guild(event["guild_id"])
+        if guild is None:
+            return
+        try:
+            auto_role = await self.module_manager.get_module_instance(guild.id, "auto_role")
+            if auto_role is None or not auto_role.enabled:
+                return
+            if not await self.db.is_altguard_verified(guild.id, event["user_id"]):
+                return
+            member = await get_or_fetch_member(guild, event["user_id"])
+            if member is None:
+                return
+            await auto_role.apply_roles(member)
+            logger.info(f"[AltGuard] Auto roles handed out to {member.id} in guild "
+                        f"{guild.id} (gate run by {event.get('app')})")
+        except Exception as e:
+            logger.error(f"[AltGuard] Auto Role hand-off from {event.get('app')} failed "
+                         f"in guild {guild.id}: {e}", exc_info=True)
 
     async def _handle_altguard_verdict(self, data: dict):
         """Handle a message from the ``altguard:verdict`` channel.

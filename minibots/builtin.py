@@ -79,7 +79,7 @@ EXTRA_INVITE_PERMISSIONS = ("view_audit_log",)
 def invite_permissions(client) -> int:
     """Exactly what the bot's modules need (never Administrator, rule #12)."""
     perms = discord.Permissions.none()
-    names = set(EXTRA_INVITE_PERMISSIONS)
+    names = set(EXTRA_INVITE_PERMISSIONS) | set(getattr(client.spec, "extra_permissions", ()))
     for cls in client.module_manager.registered_modules.values():
         names.update(cls.required_permissions())
     for name in names:

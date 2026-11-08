@@ -308,43 +308,62 @@ def unnotifiable_roles(roles: Sequence[discord.Role],
 _SUGGEST_PREFIX = "moddy:bump:suggest"
 
 
-def suggestion_content(spec: BumpBot, locale: str):
-    """Uniform payload behind the offer DM. ``{server}`` stays a placeholder."""
+def suggestion_content(spec: BumpBot, locale: str, *, picker: bool = True):
+    """Uniform payload behind the offer DM. ``{server}`` stays a placeholder.
+
+    ``picker=False`` is the mini-bot's version: nothing to pick, zero setup
+    arms the reminder on the first bump (minibots/bots/bump_reminder.py)."""
+    from config import command_label
     from notifications.models import NotificationContent
 
+    body = t("modules.bump_reminder.suggest.body", locale=locale,
+             emoji=spec.emoji, name=spec.name, server="{server}",
+             command=spec.command_hint,
+             interval=format_interval(spec.default_interval))
+    if not picker:
+        body += "\n\n" + t("modules.bump_reminder.suggest.auto", locale=locale,
+                            config=command_label("config"))
     return NotificationContent(
-        title=t("modules.bump_reminder.suggest.title", locale=locale),
-        body=t("modules.bump_reminder.suggest.body", locale=locale,
-               emoji=spec.emoji, name=spec.name, server="{server}",
-               command=spec.command_hint,
-               interval=format_interval(spec.default_interval)),
+        title=(t("modules.bump_reminder.suggest.title", locale=locale) if picker
+               else t("modules.bump_reminder.suggest.auto_title", locale=locale)),
+        body=body,
         icon=ROCKET_LAUNCH,
         accent_color=ACCENT,
-        template_id=f"bump_reminder.suggest.{spec.key}",
+        template_id=f"bump_reminder.suggest.{spec.key}" + ("" if picker else ".auto"),
     )
 
 
 def build_suggestion_card(spec: BumpBot, guild: discord.Guild,
-                          channels: Sequence[Any], *, locale: str) -> BaseView:
+                          channels: Sequence[Any], *, locale: str,
+                          picker: bool = True) -> BaseView:
     """The DM offering to activate the reminder for a directory just added.
 
     The picker *is* the activation: choosing a channel creates the reminder
     there with the directory's defaults. Without any channel Moddy can post in,
     the card only points at ``/config``.
+
+    ``picker=False`` (a mini-bot): no select at all. It lists 25 channels at
+    most, so the right one is often missing; the bot sets itself up on the
+    first bump and every choice is made in ``/config``.
     """
     from config import command_label
 
     view = BaseView()
     container = ui.Container(accent_colour=discord.Colour(ACCENT))
-    container.add_item(ui.TextDisplay(
-        f"### {ROCKET_LAUNCH} {t('modules.bump_reminder.suggest.title', locale=locale)}"))
+    title = (t("modules.bump_reminder.suggest.title", locale=locale) if picker
+             else t("modules.bump_reminder.suggest.auto_title", locale=locale))
+    container.add_item(ui.TextDisplay(f"### {ROCKET_LAUNCH} {title}"))
     container.add_item(ui.TextDisplay(
         t("modules.bump_reminder.suggest.body", locale=locale,
           emoji=spec.emoji, name=spec.name, server=guild.name,
           command=spec.command_hint,
           interval=format_interval(spec.default_interval))))
 
-    if channels:
+    if not picker:
+        container.add_item(ui.TextDisplay(t(
+            "modules.bump_reminder.suggest.auto", locale=locale,
+            config=command_label("config"))))
+    elif channels:
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(
             t("modules.bump_reminder.suggest.pick", locale=locale)))

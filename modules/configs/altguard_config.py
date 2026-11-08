@@ -31,13 +31,21 @@ from modules.configs._common import (
     module_manage_button,
     open_main_config,
     refuse_unassignable_roles,
+    ServerLanguageButton,
     show,
+    standalone_module,
     state_accent,
 )
-from utils.emojis import BACK, FINGERPRINT, SAVE, UNDONE
+from utils.emojis import BACK, FINGERPRINT, SAVE, SHIELD, UNDONE
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.altguard_config")
+
+def config_icon(client) -> str:
+    """Title icon: the fingerprint on Moddy, the shield on the AltGuard
+    mini-bot (a client carrying a ``spec``)."""
+    return SHIELD if getattr(client, "spec", None) is not None else FINGERPRINT
+
 
 _CID_CHANNEL = "moddy:altguard:config:channel"
 _CID_UNVERIFIED = "moddy:altguard:config:unverified"
@@ -96,10 +104,12 @@ class AltGuardConfigView(BaseView):
         # Accent follows the module state (gray when paused).
         state = config_state(self.current_config) if self.has_existing_config else None
         container = ui.Container(accent_colour=state_accent(state))
-        container.add_item(crumb(self.locale, 'altguard'))
+        # Standalone (the AltGuard app): this IS /config — no trail.
+        if not standalone_module():
+            container.add_item(crumb(self.locale, 'altguard'))
 
         container.add_item(ui.TextDisplay(
-            f"### {FINGERPRINT} {t('modules.altguard.config.title', locale=self.locale)}"
+            f"### {config_icon(self.bot)} {t('modules.altguard.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.altguard.config.description', locale=self.locale)
@@ -195,20 +205,23 @@ class AltGuardConfigView(BaseView):
     def _add_action_buttons(self) -> None:
         button_row = ui.ActionRow()
 
-        back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str(BACK),
-            label=t('modules.config.buttons.back', locale=self.locale),
-            style=discord.ButtonStyle.secondary,
-            custom_id=_CID_BACK,
-            disabled=self.has_changes,
-        )
-        back_btn.callback = self.on_back
-        button_row.add_item(back_btn)
-
         # Registration shell (self.bot is None): render every conditional
         # button so discord.py learns each custom_id — see
         # docs/guides/PERSISTENT_VIEWS.md, gotcha 2.
         is_shell = self.bot is None
+        standalone = standalone_module() is not None
+
+        # No "Back" in a one-module app: there is no home screen to go back to.
+        if not standalone or is_shell:
+            back_btn = ui.Button(
+                emoji=discord.PartialEmoji.from_str(BACK),
+                label=t('modules.config.buttons.back', locale=self.locale),
+                style=discord.ButtonStyle.secondary,
+                custom_id=_CID_BACK,
+                disabled=self.has_changes,
+            )
+            back_btn.callback = self.on_back
+            button_row.add_item(back_btn)
 
         if self.has_changes or is_shell:
             save_btn = ui.Button(
@@ -231,6 +244,10 @@ class AltGuardConfigView(BaseView):
 
         if not self.has_changes and self.has_existing_config:
             button_row.add_item(module_manage_button(MODULE_ID, self.locale))
+        # One-module app: no home screen holds the server settings (the
+        # language the panel speaks), so they are reached from here.
+        if standalone and not self.has_changes and not is_shell:
+            button_row.add_item(ServerLanguageButton(locale=self.locale))
 
         self.add_item(button_row)
 

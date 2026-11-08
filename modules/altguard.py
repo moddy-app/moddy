@@ -57,6 +57,17 @@ MODULE_ID = "altguard"
 PANEL_ACCENT = 0x5865F2
 
 
+def gate_configured(config: Optional[Dict[str, Any]]) -> bool:
+    """True when a stored AltGuard config runs a gate: the channel and both
+    roles are set, and the module is not paused. Pure — used to tell, from the
+    database alone, that another app gates this guild."""
+    from modules.module_manager import STATE_KEY, STATE_PAUSED
+    if not isinstance(config, dict) or config.get(STATE_KEY) == STATE_PAUSED:
+        return False
+    return bool(config.get('channel_id') and config.get('unverified_role_id')
+                and config.get('verified_role_id'))
+
+
 class AltGuardModule(ModuleBase):
     """Anti multi-account verification gate."""
 
@@ -543,7 +554,7 @@ class AltGuardModule(ModuleBase):
         language change or a channel change reaches the message. A panel that
         can no longer be found is simply replaced.
         """
-        from utils.altguard_views import build_verification_panel
+        from utils.altguard_views import build_verification_panel, panel_accent
 
         guild = self.guild
         if not guild or not self.channel_id:
@@ -556,7 +567,8 @@ class AltGuardModule(ModuleBase):
         await self.delete_panel()
 
         try:
-            message = await channel.send(view=build_verification_panel(self.panel_locale))
+            message = await channel.send(view=build_verification_panel(
+                self.panel_locale, accent=panel_accent(self.bot)))
         except discord.Forbidden:
             logger.warning(f"[AltGuard] Cannot post the panel in guild {self.guild_id}")
             return None
@@ -822,8 +834,33 @@ class AltGuardModule(ModuleBase):
             auto_role = await self.bot.module_manager.get_module_instance(self.guild_id, 'auto_role')
             if auto_role and auto_role.enabled:
                 await auto_role.apply_roles(member)
+                return
         except Exception as e:
             logger.error(f"[AltGuard] Auto Role hand-off failed for {member.id}: {e}")
+            return
+        await self._hand_off_to_moddy(member)
+
+    async def _hand_off_to_moddy(self, member: discord.Member) -> None:
+        """Under a mini-bot (the AltGuard bot), Auto Role is Moddy's: tell it.
+
+        Moddy's Auto Role holds its roles back while a gate another app runs
+        is closed (``AutoRoleModule._altguard_holds_back``), so without this
+        message a member who passed would never get them. Moddy re-reads the
+        gate state before granting anything. Never raises.
+        """
+        from minibots.ownership import MODDY_APP
+        app = getattr(getattr(self.bot, "module_manager", None), "app", MODDY_APP)
+        redis = getattr(self.bot, "redis", None)
+        if app == MODDY_APP or redis is None:
+            return
+        from minibots import status as mstatus
+        try:
+            await redis.publish(mstatus.MODDY_CONTROL_CHANNEL, mstatus.moddy_event(
+                mstatus.EVT_ALTGUARD_GATE_OPENED, app=app,
+                guild_id=str(self.guild_id), user_id=str(member.id)))
+        except Exception as e:  # noqa: BLE001 — the gate itself is already open
+            logger.error(f"[AltGuard] Auto Role hand-off to Moddy failed for "
+                         f"{member.id} in guild {self.guild_id}: {e}")
 
     # ------------------------------------------------------------------ #
     # Manual staff decisions
@@ -947,6 +984,6 @@ class AltGuardModule(ModuleBase):
 
 
 __all__ = [
-    "AltGuardModule", "MODULE_ID", "PANEL_ACCENT", "STATUS_PENDING", "STATUS_VERIFIED", "STATUS_FLAGGED",
+    "AltGuardModule", "MODULE_ID", "gate_configured", "PANEL_ACCENT", "STATUS_PENDING", "STATUS_VERIFIED", "STATUS_FLAGGED",
     "STATUS_BLOCKED",
 ]
