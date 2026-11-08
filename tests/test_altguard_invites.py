@@ -9,7 +9,9 @@ import discord
 import pytest
 
 from services import altguard_client
-from services.altguard_client import CONSENT_VERSION, AltGuardClient
+from services.altguard_client import (
+    BOT_MINIBOT, BOT_MODDY, CONSENT_VERSION, AltGuardClient,
+)
 from services.altguard_invites import InviteTracker
 
 
@@ -45,8 +47,8 @@ def forbidden():
 # --------------------------------------------------------------- client
 
 class CapturingClient(AltGuardClient):
-    def __init__(self):
-        super().__init__(bot=None)
+    def __init__(self, **kwargs):
+        super().__init__(bot=None, **kwargs)
         self.sent = None
 
     async def _post(self, path, payload):
@@ -75,6 +77,28 @@ async def test_consent_version():
     client = CapturingClient()
     await client.create_verification_token(discord_user_id=42, guild_id=1)
     assert client.sent[1]["consent_version"] == "2026-10-27"
+
+
+async def test_payload_bot_defaults_to_moddy():
+    client = CapturingClient()
+    await client.create_verification_token(discord_user_id=42, guild_id=1)
+    assert client.sent[1]["bot"] == "moddy" == BOT_MODDY
+
+
+async def test_payload_bot_minibot():
+    client = CapturingClient(bot_name=BOT_MINIBOT)
+    await client.create_verification_token(
+        discord_user_id=42, guild_id=1, inviter_id=777)
+    assert client.sent[1]["bot"] == "minibot"
+    # The other fields are untouched by the new key.
+    assert client.sent[1]["inviter_id"] == "777"
+
+
+def test_bot_identifiers_match_service_format():
+    import re
+    pattern = re.compile(r"[a-z0-9][a-z0-9_-]{0,31}")
+    for value in (BOT_MODDY, BOT_MINIBOT):
+        assert pattern.fullmatch(value)
 
 
 def test_parse_verdict_keeps_unknown_reasons():

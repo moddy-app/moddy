@@ -223,12 +223,19 @@ already uses ([docs/integration/REDIS_COMMUNICATION.md](../integration/REDIS_COM
 ```json
 {"discord_user_id": "987...", "guild_id": "123...",
  "consent_version": "2026-10-27", "consent_at": "2026-10-27T14:00:00Z",
- "inviter_id": "555..."}
+ "inviter_id": "555...", "bot": "moddy"}
 ```
 
 → `{"authorization_url": "...", "expires_at": "..."}`.
 
 `inviter_id` is optional and omitted when unknown.
+`bot` names the app that asked for the verification — `"moddy"` (Moddy) or
+`"minibot"` (the AltGuard mini-bot). It is a fixed constant per process
+(`BOT_MODDY` / `BOT_MINIBOT` in `services/altguard_client.py`, passed as
+`bot_name=` when the client is built), never inferred at runtime. The service
+only uses it to show that app's logo on the verification page (missing or
+unknown → Moddy's logo); it has no effect on the score or the verdict and is not
+stored. Preview: `https://verify.moddy.app/demo?bot=minibot`.
 `401` invalid token · `400` malformed call — the body names the faulty field (never retried automatically) ·
 `429` quota (5 calls / 10 min / user, `Retry-After` honoured). The URL is never
 reused: an expired link means a new consent screen and a new call.

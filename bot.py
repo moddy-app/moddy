@@ -162,9 +162,9 @@ class ModdyBot(ModdyFrameworkBot):
         from services.music_links_service import MusicLinksService
         # Spotify link -> Deezer / Apple Music / YouTube Music (module + /music)
         self.music_links = MusicLinksService(self)
-        from services.altguard_client import AltGuardClient
+        from services.altguard_client import BOT_MODDY, AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
-        self.altguard = AltGuardClient(self)
+        self.altguard = AltGuardClient(self, bot_name=BOT_MODDY)
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
         from services.ticket_transcript_service import TicketTranscriptService
