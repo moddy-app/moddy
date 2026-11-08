@@ -164,7 +164,9 @@ moddy/
 │   ├── branding.py            #   Under a mini-bot, translated texts name the bot instead of "Moddy"
 │   ├── runtime.py             #   N clients in ONE process: supervision, heartbeat, control, periodic jobs
 │   ├── main.py                #   `python -m minibots.main` (second Railway service)
-│   └── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
+│   ├── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
+│   └── bots/altguard.py       #   AltGuard mini-bot: joins/departures without member cache, own verdict
+│                              #   subscription, Auto Role hand-off to Moddy (minibots:moddy)
 │
 ├── stats/                     # Statistics (aggregate before writing)
 │   ├── registry.py            #   Every metric declared once (no migration to add one)
@@ -463,6 +465,7 @@ moddy/
     ├── test_announcement_verification.py # Relay detection, Manager/Dev gate, copies answered once, edits
     ├── test_music_links.py, test_translate_button.py          # Music links (default-enabled) + translate button (opt-in)
     ├── test_minibots.py       #   Mini-bots: ownership, manager, transfer, runtime, Redis contract, light imports
+    ├── test_altguard_minibot.py # AltGuard mini-bot: spec/intents, departures, verdicts, standalone /config, Auto Role hand-off
     └── test_hardening_*.py    #   Chaos resilience + hostile permissions (Top.gg review setups):
                                #   core, config, modules1, modules2, commands
 ```
@@ -737,7 +740,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/LINKED_ROLES.md](docs/features/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
 | [docs/features/LOGS.md](docs/features/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/features/MEMBER_APPLICATIONS.md](docs/features/MEMBER_APPLICATIONS.md) | **Member Applications** — Discord "Apply to Join" reviewed from a channel: what the API allows bots, gateway hook + poll, the card, Approve/Reject, the `member_applications` table |
-| [docs/features/MINIBOTS.md](docs/features/MINIBOTS.md) | **Mini-bots** — single-feature apps sharing Moddy's code + DB: `app` ownership key, one-process runtime (RAM budget), `app_guilds`, Redis contract, manual transfer to Moddy (panel re-posted), staff commands, logs, no dashboard |
+| [docs/features/MINIBOTS.md](docs/features/MINIBOTS.md) | **Mini-bots** (Bump Reminder, AltGuard) — single-feature apps sharing Moddy's code + DB: `app` ownership key, one-process runtime (RAM budget), `app_guilds`, Redis contract, manual transfer to Moddy (panel re-posted), staff commands, logs, no dashboard |
 | [docs/features/MODERATION_CASES.md](docs/features/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/features/OCR.md](docs/features/OCR.md) | **OCR** — `/ocr` and the Transcribe menu on images (Google Vision, monthly free tier) |
 | [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |

@@ -6847,6 +6847,13 @@
           "pick": "Prefere escolher o canal agora? Opcional:",
           "pick_config": "Prefere escolher o canal você mesmo? Use {config} no servidor."
         }
+      },
+      "altguard": {
+        "welcome": {
+          "title": "{name} está pronto",
+          "body": "Obrigado por adicionar **{name}** a **{server}**!\n\nEu seguro os novos membros atrás de uma verificação anti contas múltiplas: um clique, um consentimento e o serviço decide. Para ativar, preciso de três coisas:\n1. um **canal de verificação**;\n2. um **cargo não verificado** (dado na entrada) e um **cargo verificado** (dado quando a verificação é aprovada);\n3. **meu cargo acima dos dois** em Configurações do servidor → Cargos.\n\nDepois use {config} no servidor e escolha-os: eu publico a mensagem de verificação e fecho todos os outros canais para o cargo não verificado.",
+          "elsewhere": "Obrigado por adicionar **{name}** a **{server}**!\n\nNeste servidor, a verificação anti contas múltiplas já é feita pelo **Moddy**: fico de lado para que ninguém seja verificado duas vezes. Você pode me remover sem perder nada."
+        }
       }
     }
   }

@@ -70,6 +70,12 @@ def build_module(config, *, altguard=None, features=()):
         async def get_module_instance(self, guild_id, module_id):
             return altguard if module_id == "altguard" else None
 
+        async def get_module_config(self, guild_id, module_id):
+            return None  # no AltGuard run by another app (the AltGuard bot)
+
+        def owns(self, config):
+            return True
+
     bot = SimpleNamespace(get_guild=lambda gid: guild if gid == GUILD_ID else None,
                           module_manager=FakeModuleManager(), stats=None)
     module = AutoRoleModule(bot, GUILD_ID)

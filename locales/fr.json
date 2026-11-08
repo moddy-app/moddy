@@ -6932,6 +6932,13 @@
           "pick": "Tu préfères choisir le salon dès maintenant ? Facultatif :",
           "pick_config": "Tu préfères choisir le salon toi-même ? Lance {config} sur le serveur."
         }
+      },
+      "altguard": {
+        "welcome": {
+          "title": "{name} est prêt",
+          "body": "Merci d'avoir ajouté **{name}** sur **{server}** !\n\nJe bloque les nouveaux arrivants derrière une vérification anti double compte : un clic, un consentement, et le service décide. Pour l'activer, il me faut trois choses :\n1. un **salon de vérification** ;\n2. un **rôle non vérifié** (donné à l'arrivée) et un **rôle vérifié** (donné une fois la vérification passée) ;\n3. **mon rôle au-dessus de ces deux rôles** dans Paramètres du serveur → Rôles.\n\nLance ensuite {config} sur le serveur et choisis-les : je publie le message de vérification et je ferme tous les autres salons au rôle non vérifié.",
+          "elsewhere": "Merci d'avoir ajouté **{name}** sur **{server}** !\n\nSur ce serveur, la vérification anti double compte est déjà gérée par **Moddy** : je reste en retrait pour ne jamais vérifier deux fois les mêmes membres. Tu peux me retirer du serveur sans rien perdre."
+        }
       }
     }
   }

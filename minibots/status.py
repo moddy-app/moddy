@@ -12,8 +12,10 @@ docs/integration/REDIS_COMMUNICATION.md).
   surfaces), so the backend can name an app without reading this repo.
 - ``minibots:control`` (Pub/Sub) — requests to the runtime. Every one is
   idempotent and non-destructive, so they are not signed.
-- ``minibots:moddy`` (Pub/Sub) — the same requests, to **Moddy**'s process:
-  only ``release``, when a mini-bot takes a module over from Moddy.
+- ``minibots:moddy`` (Pub/Sub) — requests to **Moddy**'s process: ``release``,
+  when a mini-bot takes a module over from Moddy, and the events of
+  :data:`MODDY_EVENT_TYPES` (``altguard_gate_opened``: a member passed a gate
+  a mini-bot runs, so Moddy's Auto Role may hand out its roles).
 - ``minibots:ack:<request_id>`` (list) — the answer to a ``release``.
 - ``minibots:transfer:<guild>:<module>`` — lock held during a transfer.
 """
@@ -56,6 +58,14 @@ CONTROL_TYPES = (CTRL_RELEASE, CTRL_RELOAD_GUILD, CTRL_RESTART, CTRL_QUERY)
 #: Methods a query may call (minibots/queries.py).
 QUERY_METHODS = ("guilds", "mutual_guilds", "guild_info", "create_invite")
 QUERY_TIMEOUT = 8
+
+# --- events for Moddy's process (``minibots:moddy``) --------------------------
+#: A member passed the AltGuard gate a mini-bot runs in that guild. Moddy's
+#: Auto Role held its roles back until now; it re-checks the gate state in the
+#: database before granting anything, so the (unsigned) message only ever
+#: triggers what the stored state already allows.
+EVT_ALTGUARD_GATE_OPENED = "altguard_gate_opened"
+MODDY_EVENT_TYPES = (EVT_ALTGUARD_GATE_OPENED,)
 
 # --- app states ----------------------------------------------------------------
 STATE_CONNECTING = "connecting"
@@ -132,6 +142,26 @@ def control_message(kind: str, **fields: Any) -> str:
     if kind not in CONTROL_TYPES:
         raise ValueError(f"unknown control type: {kind}")
     return json.dumps({"type": kind, **fields}, separators=(",", ":"))
+
+
+def moddy_event(kind: str, **fields: Any) -> str:
+    """An event for Moddy's process (``minibots:moddy``)."""
+    if kind not in MODDY_EVENT_TYPES:
+        raise ValueError(f"unknown Moddy event type: {kind}")
+    return json.dumps({"type": kind, **fields}, separators=(",", ":"), default=str)
+
+
+def parse_moddy_event(data: Any) -> Optional[Dict[str, Any]]:
+    """A decoded ``minibots:moddy`` event with int ids, or None (never raises)."""
+    if not isinstance(data, dict) or data.get("type") not in MODDY_EVENT_TYPES:
+        return None
+    try:
+        guild_id, user_id = int(data["guild_id"]), int(data["user_id"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if guild_id <= 0 or user_id <= 0:
+        return None
+    return {**data, "guild_id": guild_id, "user_id": user_id}
 
 
 def parse_control(raw: Any) -> Optional[Dict[str, Any]]:

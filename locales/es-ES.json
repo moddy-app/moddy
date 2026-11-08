@@ -6847,6 +6847,13 @@
           "pick": "¿Prefieres elegir el canal ahora? Opcional:",
           "pick_config": "¿Prefieres elegir el canal tú mismo? Usa {config} en el servidor."
         }
+      },
+      "altguard": {
+        "welcome": {
+          "title": "{name} está listo",
+          "body": "¡Gracias por añadir **{name}** a **{server}**!\n\nRetengo a los nuevos miembros tras una verificación anti multicuenta: un clic, un consentimiento y el servicio decide. Para activarla necesito tres cosas:\n1. un **canal de verificación**;\n2. un **rol no verificado** (al llegar) y un **rol verificado** (cuando se supera la verificación);\n3. **mi rol por encima de ambos** en Ajustes del servidor → Roles.\n\nDespués ejecuta {config} en el servidor y elígelos: publico el mensaje de verificación y cierro todos los demás canales al rol no verificado.",
+          "elsewhere": "¡Gracias por añadir **{name}** a **{server}**!\n\nEn este servidor, la verificación anti multicuenta ya la gestiona **Moddy**: me mantengo al margen para que nadie se verifique dos veces. Puedes quitarme del servidor sin perder nada."
+        }
       }
     }
   }

@@ -153,10 +153,32 @@ class AutoRoleModule(ModuleBase):
             logger.error(f"AltGuard lookup failed for guild {self.guild_id}: {e}")
             return True
 
-        if not altguard or not altguard.enabled:
+        if altguard is None:
+            return await self._foreign_gate_holds_back(member)
+        if not altguard.enabled:
             return False
 
         return not await altguard.is_verified(member.id)
+
+    async def _foreign_gate_holds_back(self, member: discord.Member) -> bool:
+        """The gate runs under another app (the AltGuard bot): ask the database.
+
+        That app's module is never loaded here, so its stored config tells
+        whether a gate is up and ``altguard_members`` whether the member passed
+        it. The roles are handed out later, when that app reports the gate
+        opened (``minibots:moddy`` -> ``bot._handle_altguard_gate_opened``).
+        """
+        from modules.altguard import gate_configured
+        manager = self.bot.module_manager
+        try:
+            stored = await manager.get_module_config(self.guild_id, 'altguard')
+            if not stored or manager.owns(stored) or not gate_configured(stored):
+                return False
+            return not await self.bot.db.is_altguard_verified(self.guild_id, member.id)
+        except Exception as e:
+            # Fail closed, like the local lookup above.
+            logger.error(f"AltGuard (other app) lookup failed for guild {self.guild_id}: {e}")
+            return True
 
     async def on_member_join(self, member: discord.Member):
         """

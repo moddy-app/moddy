@@ -6847,6 +6847,13 @@
           "pick": "Lieber jetzt gleich den Kanal wählen? Optional:",
           "pick_config": "Lieber selbst den Kanal wählen? Nutze {config} auf dem Server."
         }
+      },
+      "altguard": {
+        "welcome": {
+          "title": "{name} ist bereit",
+          "body": "Danke, dass du **{name}** zu **{server}** hinzugefügt hast!\n\nIch halte neue Mitglieder hinter einer Prüfung gegen Zweitaccounts zurück: ein Klick, eine Einwilligung, und der Dienst entscheidet. Zum Aktivieren brauche ich drei Dinge:\n1. einen **Verifizierungskanal**;\n2. eine **Rolle „nicht verifiziert“** (beim Beitritt) und eine **Rolle „verifiziert“** (nach bestandener Prüfung);\n3. **meine Rolle über beiden** unter Servereinstellungen → Rollen.\n\nFühre dann {config} auf dem Server aus und wähle sie: Ich poste die Verifizierungsnachricht und sperre alle anderen Kanäle für die nicht verifizierte Rolle.",
+          "elsewhere": "Danke, dass du **{name}** zu **{server}** hinzugefügt hast!\n\nAuf diesem Server übernimmt **Moddy** bereits die Prüfung gegen Zweitaccounts: Ich halte mich zurück, damit niemand doppelt geprüft wird. Du kannst mich entfernen, ohne etwas zu verlieren."
+        }
       }
     }
   }

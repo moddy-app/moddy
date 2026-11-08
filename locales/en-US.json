@@ -6933,6 +6933,13 @@
           "pick": "Rather pick the channel right now? Optional:",
           "pick_config": "Rather pick the channel yourself? Run {config} on the server."
         }
+      },
+      "altguard": {
+        "welcome": {
+          "title": "{name} is ready",
+          "body": "Thanks for adding **{name}** to **{server}**!\n\nI hold new members behind an anti multi-account check: one click, one consent, and the service decides. To switch it on I need three things:\n1. a **verification channel**;\n2. an **unverified role** (given on join) and a **verified role** (given once the check is passed);\n3. **my role above both of them** in Server Settings → Roles.\n\nThen run {config} on the server and pick them: I post the verification message and close every other channel to the unverified role.",
+          "elsewhere": "Thanks for adding **{name}** to **{server}**!\n\nOn this server, the anti multi-account check is already handled by **Moddy**: I stay out of the way so members are never checked twice. You can remove me without losing anything."
+        }
       }
     }
   }

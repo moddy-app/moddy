@@ -137,7 +137,10 @@ class TestSpec:
             MiniBotSpec(id="moddy", name="x", token_env="X", modules=("a",))
         with pytest.raises(ValueError):
             MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
-                        intents=frozenset({"members"}))
+                        intents=frozenset({"presences"}))
+        with pytest.raises(ValueError):
+            MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
+                        extra_permissions=("administrator",))
         with pytest.raises(ValueError):
             MiniBotSpec(id="bump", name="x", token_env="X", modules=("a",),
                         web_surfaces=frozenset({"dashboard"}))
@@ -427,6 +430,16 @@ class TestClient:
         assert client._connection.member_cache_flags.value == 0
         assert client._connection._chunk_guilds is False
         assert client.module_manager.app == "bump"
+
+    def test_members_intent_never_fills_a_member_cache(self):
+        """``members`` brings the events (AltGuard gates joins), never the cache."""
+        from minibots.client import MiniBotClient
+        spec = MiniBotSpec(id="gate", name="Gate", token_env="MINIBOT_TEST_TOKEN",
+                           modules=("panel",), intents=frozenset({"members"}))
+        client = MiniBotClient(spec, SimpleNamespace(db=None, redis=None, tech_logger=None))
+        assert client.intents.members and not client.intents.presences
+        assert client._connection.member_cache_flags.value == 0
+        assert client._connection._chunk_guilds is False
 
 
 class TestRuntime:

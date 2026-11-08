@@ -7,7 +7,8 @@ and to add. Once a server is in, it is offered to move to Moddy, where it gets
 every option and the dashboard.
 
 This document covers **the core** that runs and manages them; adding one is
-described in §8, and the first one, **Bump Reminder**, in §10.
+described in §8, the first one, **Bump Reminder**, in §10, and **AltGuard** in
+§11.
 
 ## 1. Principles
 
@@ -114,7 +115,12 @@ minibots/
     bot carries its content without the privileged intent. Nothing is cached
     (`max_messages=None`), but every message of every server still reaches
     the process, so it costs some CPU;
-  - `members` and `presences` are refused by `MiniBotSpec`;
+  - `presences` is refused by `MiniBotSpec`. `members` is allowed for its
+    **events** only (joins, departures, the member-list endpoints), because
+    the member cache stays off whatever the intents: AltGuard needs it, no
+    other bot should. It is privileged (Developer Portal, justification at
+    100 servers). Without a cache, discord.py fires `on_raw_member_remove`
+    but never `on_member_remove`;
   - `max_messages=None` (the default keeps 1000 messages *per bot*);
   - `MemberCacheFlags.none()`, `chunk_guilds_at_startup=False`.
 - **Modules loaded lazily, per server**: an instance exists only where an event
@@ -235,6 +241,7 @@ application cannot display them. Nothing has to be re-imported by hand:
 | `minibots:emojis:<app>` | hash | emoji name → the Moddy emoji id it was copied from. |
 | `minibots:cmdhash:<app>` | key | fingerprint of the last global command sync. |
 | `minibots:transfer:<guild>:<module>` | key | transfer lock (`SET NX EX 60`). |
+| `minibots:moddy` | Pub/Sub | to **Moddy**'s process: `release` (a mini-bot takes a module over) and `altguard_gate_opened` `{app, guild_id, user_id}` (§11: Moddy's Auto Role may hand out its roles; Moddy re-reads `altguard_members` first, so the unsigned message grants nothing the stored state does not allow). |
 
 The runtime **does not** listen to `moddy:bot`: there is no dashboard push for a
 mini-bot.
@@ -370,6 +377,9 @@ Limits:
    ```
 3. Add the module's persistent views to `persistent_views`. `/config`,
    `/about`, the welcome DM, emojis and staff commands come automatically.
+   An optional permission the module uses when it has it (AltGuard: *Manage
+   Server* to list invites) goes in `extra_permissions`, so the add-to-server
+   link asks for it. Never `administrator` (refused).
 4. Write its listeners (`commands_module.setup(client)`): the module's events
    must be wired to `client.module_manager`. A periodic job sends inside
    `client.emoji_context()`.
@@ -440,10 +450,80 @@ Setup checklist:
 4. Start: the emojis are copied, the commands published, and the bot shows in
    `/dev minibots`.
 
+## 11. AltGuard (`minibots/bots/altguard.py`)
+
+Moddy's `altguard` module under its own name and token
+(`MINIBOT_ALTGUARD_TOKEN`, app id `altguard_bot`, accent `#5865F2`, the panel's
+colour). Same panel, consent modal, `/config` screen, tables and service
+contract as on Moddy ([ALTGUARD.md](ALTGUARD.md)). What the file adds is the
+wiring Moddy does in other places, for a client that caches no member:
+
+| Moddy | AltGuard bot |
+|---|---|
+| `cogs/module_events.py` gates the join, the AltGuard cog reports it | `AltGuardBotCog.on_member_join`: gate first, then `altguard:membership` `active` |
+| `on_member_remove` (member cache) | `on_raw_member_remove` (no cache; skipped when discord.py did hand a cached `Member`) |
+| `bot._listen_pubsub` → `altguard:verdict` | the cog's own subscription, opened once the gateway is ready, reconnecting with backoff (5 → 60 s); each verdict in its own task |
+| `bot.altguard` (HTTP client) | `client.altguard`, created in `setup`, closed with the cog |
+| `/altguard verify|unverify` registered per guild where the module runs | global, guild-only commands (`kick_members` by default) |
+
+- **Cog name `AltGuard`** (`class AltGuardBotCog(AltGuard, name="AltGuard")`):
+  the module reaches the invite tracker and the membership resync through
+  `get_cog("AltGuard")`.
+- **Both processes hear every verdict.** Each acts only where it owns the
+  module: the module lookup comes **before** the idempotency insert in
+  `AltGuard.handle_verdict`, so the process that does not run the gate never
+  records the verdict as seen.
+- **Intents**: `guilds`, `guild_messages`, `members` (privileged: joins,
+  departures, the hourly full member list), `moderation` (bans), `invites`
+  (invite baseline). No member cache, no chunking: the hourly resync pulls the
+  list with `fetch_all_members(cache=False)` and drops it.
+- **Invite link**: *Manage Roles* (gate roles + channel overwrites), the
+  baseline, *View Audit Log* (kick vs leave, installer welcome) and *Manage
+  Server* (`extra_permissions`, inviter attribution — skipped without it).
+- **`/config`** is the module screen (no Back, no trail) with the **Language**
+  button: the panel speaks the server language.
+- **Welcome DM** (`build_welcome`): the three things the gate needs (channel,
+  the two roles, the bot's role above them), then `/config`. Where Moddy
+  already runs the gate, it says so and stays out of the way.
+
+### Auto Role across the two processes
+
+Auto Role stays a Moddy module. Without care, a server using both would hand
+Moddy's auto roles to a member the AltGuard bot still holds back (role
+overwrites add up: a member role allowing a channel beats the unverified
+role's denial).
+- **Hold back.** `AutoRoleModule._altguard_holds_back`: when Moddy has no
+  AltGuard instance, the stored config is read; if another app owns it and it
+  runs a gate (`modules/altguard.py::gate_configured`: channel + both roles,
+  not paused), the member waits until `altguard_members` says `verified`.
+  A lookup failure fails closed.
+- **Hand off.** When the gate opens on the bot (verdict `passed`, `/altguard
+  verify`), `AltGuardModule._run_auto_role` finds no local Auto Role and
+  publishes `altguard_gate_opened` on `minibots:moddy`.
+  `bot._handle_altguard_gate_opened` re-checks the database, fetches the
+  member and calls `apply_roles`.
+
+### Limits
+- Moddy's staff commands (`/mod altguard verify|unverify|refusal`) only act on
+  gates Moddy runs. On a gate the AltGuard bot runs, they answer "not
+  configured". `t.config` opens the panel for the team.
+- A member who passes while Moddy's process is down never gets the auto roles
+  (Pub/Sub has no replay). `/altguard verify` again re-sends the hand-off.
+
+Setup checklist:
+1. Developer Portal: create the application (name **AltGuard**, avatar,
+   description) and enable the **Server Members** intent.
+2. Railway, mini-bots service: `MINIBOT_ALTGUARD_TOKEN`, plus the same
+   `ALTGUARD_BOT_TOKEN` (and `ALTGUARD_API_URL` if not the default) as Moddy.
+   Without `ALTGUARD_BOT_TOKEN` the consent modal answers "unavailable".
+3. Start: the emojis are copied, `/config`, `/about` and `/altguard` published,
+   and the bot shows in `/dev minibots`.
+
 ## Accent colour
 
 Each mini-bot has its own accent colour, `MiniBotSpec.accent` (default Moddy
-blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**. It colours:
+blue `#3661FF`). The **Bump Reminder** mini-bot uses **`#E8604C`**, **AltGuard**
+**`#5865F2`** (the verification panel's colour). It colours:
 
 - the bot's own cards: `/about` and the welcome DM (`client_accent(client)` in
   `minibots/builtin.py`);
