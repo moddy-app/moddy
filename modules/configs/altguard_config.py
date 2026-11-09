@@ -343,6 +343,7 @@ class AltGuardConfigView(BaseView):
 
         success, error_msg = await bot.module_manager.save_module_config(
             interaction.guild_id, MODULE_ID, working_config, actor_id=interaction.user.id,
+            locale=locale,
         )
 
         if not success:

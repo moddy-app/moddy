@@ -313,12 +313,23 @@ class ModuleBase(ABC):
             Label du champ traduit
         """
         from utils.i18n import t
-        # Par défaut, utilise les traductions du module si disponibles
-        try:
-            return t(f'modules.{self.MODULE_ID}.config.{field_name}.section_title', locale=locale)
-        except:
-            # Fallback sur le nom brut du champ
-            return field_name.replace('_', ' ').title()
+        # Config keys usually carry an `_id` suffix (`unverified_role_id`)
+        # while the panel's i18n section is named after the thing itself
+        # (`unverified_role`): try the exact key first, then the bare name.
+        # `t()` never raises on a missing key, it returns `[key]`.
+        candidates = [field_name]
+        if field_name.endswith('_id'):
+            candidates.append(field_name[:-3])
+        for name in candidates:
+            key = f'modules.{self.MODULE_ID}.config.{name}.section_title'
+            try:
+                label = t(key, locale=locale)
+            except Exception:
+                continue
+            if label and label != f'[{key}]':
+                return label
+        # Fallback sur le nom brut du champ
+        return field_name.replace('_', ' ').title()
 
     async def enable(self):
         """Active le module"""
@@ -910,7 +921,8 @@ class ModuleManager:
 
     async def save_module_config(self, guild_id: int, module_id: str,
                                  config_data: Dict[str, Any],
-                                 actor_id: Optional[int] = None) -> tuple[bool, Optional[str]]:
+                                 actor_id: Optional[int] = None,
+                                 locale: Optional[str] = None) -> tuple[bool, Optional[str]]:
         """
         Sauvegarde la configuration d'un module dans la DB
 
@@ -921,6 +933,9 @@ class ModuleManager:
             actor_id: ID de l'utilisateur à l'origine du changement (optionnel) —
                 une limitation globale le concernant bloque les nouveaux modules
                 comme si le serveur était limité
+            locale: langue de la personne qui enregistre (optionnel) — le
+                message "champs obligatoires" lui est adressé en privé ; sans
+                elle, la langue du serveur est utilisée
 
         Returns:
             (success, error_message)
@@ -957,7 +972,7 @@ class ModuleManager:
                 from utils.guild_language import guild_locale
                 from utils.i18n import t
                 from minibots.spec import app_display_name
-                locale = await guild_locale(self.bot, guild_id)
+                locale = locale or await guild_locale(self.bot, guild_id)
                 owner = app_display_name(config_app(previous))
                 if self.app == MODDY_APP:
                     return False, t('modules.config.external.save_refused', locale=locale,
@@ -984,9 +999,11 @@ class ModuleManager:
                     missing_fields.append(field)
 
             if missing_fields:
-                # Langue du serveur (/config → Paramètres du serveur)
-                from utils.guild_language import guild_locale
-                locale = await guild_locale(self.bot, guild_id)
+                # Read privately by whoever pressed Save: their language when
+                # the caller passed it, else the server language.
+                if not locale:
+                    from utils.guild_language import guild_locale
+                    locale = await guild_locale(self.bot, guild_id)
 
                 # Construit le message d'erreur avec les labels traduits
                 from utils.i18n import t
