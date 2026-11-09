@@ -847,3 +847,25 @@ def test_consent_submit_passes_the_stored_inviter(monkeypatch):
                         property(lambda self: ["terms", "processing"]), raising=False)
     asyncio.run(modal.on_submit(inter))
     assert captured["inviter_id"] == 99
+
+
+# ------------------------------------------------- required-field labels
+
+
+@pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+def test_required_field_labels_resolve_to_section_titles(locale):
+    """The "fields must be filled" error names each field by its panel title,
+    never by a raw `[modules.altguard.config.<field>_id.section_title]` key."""
+    from utils.i18n import t
+
+    module = AltGuardModule(None, 1)
+    for field in module.get_required_fields():
+        label = module.get_field_label(field, locale)
+        expected = t(f"modules.altguard.config.{field[:-3]}.section_title", locale=locale)
+        assert label == expected
+        assert not label.startswith("[")
+
+
+def test_field_label_falls_back_to_readable_name():
+    module = AltGuardModule(None, 1)
+    assert module.get_field_label("no_such_field_id", "en-US") == "No Such Field Id"
