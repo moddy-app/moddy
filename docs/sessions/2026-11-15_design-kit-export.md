@@ -10,7 +10,7 @@
   token. Collects Moddy's application emojis + every emoji referenced in code and
   locales (`minibots.emojis.moddy_emojis`) + `DARK_VARIANTS`, uploads the missing
   names to the target application via REST (429-aware), runs in `bot.spawn`,
-  edits a progress message, then posts `emoji_mapping.json` and a remapped
+  edits a progress message, then posts `nouveaux_emojis.json` (every target emoji with its new id), `emoji_mapping.json` and a remapped
   `utils/emojis.py`.
 - `remap_emoji_ids.py`: local helper applying the mapping to any files.
 - CLAUDE.md index + docs/README.md: new `docs/export/` folder.

@@ -53,11 +53,14 @@ async def job(tok):
                 fails.append(f"{n}: {x}")
             if k % 10 == 0:
                 await msg.edit(content=f"Copie des emojis : {k}/{len(todo)} (ok {ok}, echecs {ko})")
+        new = {e["name"]: {"id": e["id"], "animated": bool(e.get("animated")), "markdown": f"<{'a' if e.get('animated') else ''}:{e['name']}:{e['id']}>"}
+               for e in sorted((await rq("GET", f"/applications/{aid}/emojis"))["items"], key=lambda e: e["name"])}
     idmap = {i: have[n] for i, (n, _) in old.items() if n in have}
     mapping = {str(i): {"name": old[i][0], "new": str(v)} for i, v in idmap.items()}
     swap = lambda t: re.sub(r"\d{17,20}", lambda m: str(idmap.get(int(m.group()), m.group())), t)
     import utils.emojis as ue
-    files = [discord.File(io.BytesIO(json.dumps(mapping, indent=1).encode()), "emoji_mapping.json"),
+    J = lambda d, f: discord.File(io.BytesIO(json.dumps(d, indent=1).encode()), f)
+    files = [J(new, "nouveaux_emojis.json"), J(mapping, "emoji_mapping.json"),
              discord.File(io.BytesIO(swap(pathlib.Path(ue.__file__).read_text()).encode()), "emojis.py")]
     if fails:
         files.append(discord.File(io.BytesIO("\n".join(fails).encode()), "echecs.txt"))
@@ -68,6 +71,6 @@ async def run(tok):
         await job(tok)
     except Exception as x:
         await channel.send(f"Copie des emojis interrompue : {x}"[:1900])
-# >>> Paste the target bot's token between the quotes (bottom: never shown in the jsk panel)
+# >>> Target bot token below (bottom line: never shown in the jsk panel)
 bot.spawn(run("TOKEN_DU_BOT_CIBLE"), name="emoji-copy")
 return "Copie lancee en arriere-plan : suis la progression dans ce salon."

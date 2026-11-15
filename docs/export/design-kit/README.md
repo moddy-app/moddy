@@ -36,6 +36,9 @@ Moddy peut les afficher. Le script les recopie (même nom, même image) dans les
 4. Tourne **en arrière-plan** et affiche sa progression dans le salon (un
    message édité tous les 10 émojis).
 5. À la fin, envoie dans le salon :
+   - `nouveaux_emojis.json` : **tous les émojis de l'autre bot** après la copie,
+     triés par nom, avec leur nouvel ID
+     (`"done": {"id": "...", "animated": false, "markdown": "<:done:...>"}`) ;
    - `emoji_mapping.json` : `ID Moddy → {name, new}` pour chaque émoji ;
    - `emojis.py` : le `utils/emojis.py` de Moddy (toutes les constantes `DONE`,
      `ERROR`, `SETTINGS`…) **déjà réécrit avec les IDs du nouveau bot**, prêt à
@@ -50,7 +53,7 @@ manquent.
 1. Ouvre [copy_emojis_jsk.py](copy_emojis_jsk.py) et remplace
    `TOKEN_DU_BOT_CIBLE` (**avant-dernière ligne**) par le token de l'autre bot.
 2. Sur Discord, dans un salon privé : **`/dev jsk`** (la version slash, qui
-   ouvre un modal) et colle tout le script (3,6k caractères, la limite du
+   ouvre un modal) et colle tout le script (3,9k caractères, la limite du
    modal est 4000).
 3. Suis la progression dans le salon, récupère les fichiers à la fin.
 
