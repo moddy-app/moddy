@@ -11,7 +11,9 @@ have their ``---`` line, then a ``TextDisplay`` with the ``-#`` line. The
 
 Every value comes from the privacy whitelist of ``aidetector/manifest.py``
 (issuer organisation, tool, camera model, dates, retouch names): no GPS, no
-author, no identity assertion ever reaches a card.
+author, no identity assertion ever reaches a card. The ``ai_confirmed`` verdict
+(OpenAI's provenance check, ``aidetector/provenance.py``) shows only the model,
+the date and the signal OpenAI returned.
 
 Persistence
 -----------
@@ -34,6 +36,7 @@ from discord import ui
 
 from aidetector import analysis as an
 from aidetector import manifest as mf
+from aidetector import provenance as pv
 from cogs.error_handler import BaseView
 from utils.emojis import AI_SHIELD, INFO, ROBOT_WORKING
 from utils.i18n import i18n, t
@@ -120,6 +123,22 @@ def verdict_texts(result: an.Analysis, locale: str) -> Optional[Tuple[str, str, 
     if kind is None:
         return None
     base = f"ai_detector.verdicts.{kind}"
+
+    if kind == mf.KIND_AI_CONFIRMED:
+        provider = result.provider
+        params = {
+            "tool_part": _tool_part(provider.model, "OpenAI",
+                                    locale),
+            "date": discord_timestamp(provider.generated_at) or "",
+            "url": LEARN_MORE_URL,
+        }
+        body_key = "body" if provider.generated_at else "body_no_date"
+        footer_key = "footer_c2pa" if provider.signal == pv.SIGNAL_C2PA else "footer_synthid"
+        return (
+            t(f"{base}.title", locale=locale),
+            t(f"{base}.{body_key}", locale=locale, **params),
+            t(f"{base}.{footer_key}", locale=locale, **params),
+        )
 
     if kind == mf.KIND_UNSIGNED:
         generation = result.generation
@@ -258,6 +277,21 @@ def _generation_lines(result: an.Analysis, locale: str) -> List[str]:
     return lines
 
 
+def _provider_lines(provider: pv.ProviderProvenance, locale: str) -> List[str]:
+    td = lambda key, **kw: t(f"ai_detector.details.{key}", locale=locale, **kw)  # noqa: E731
+    signal = "SynthID" if provider.signal == pv.SIGNAL_SYNTHID else "C2PA"
+    lines = [f"**{td('openai_title')}**", f"- {td('openai_signal')} `{signal}`"]
+    if provider.model:
+        lines.append(f"- {td('openai_model')} `{provider.model}`")
+    if provider.generated_at:
+        lines.append(f"- {td('openai_generated_at')} {discord_timestamp(provider.generated_at)}")
+    if provider.issuer:
+        lines.append(f"- {td('issuer')} `{provider.issuer}`")
+    if provider.c2pa_state and provider.c2pa_state != "not_present":
+        lines.append(f"- {td('validation')} `{provider.c2pa_state}`")
+    return lines
+
+
 def details_containers(result: an.Analysis, locale: str) -> List[ui.Container]:
     """The facts behind a verdict, then how the check works and how far to trust it."""
     td = lambda key, **kw: t(f"ai_detector.details.{key}", locale=locale, **kw)  # noqa: E731
@@ -266,9 +300,14 @@ def details_containers(result: an.Analysis, locale: str) -> List[ui.Container]:
 
     kind = result.kind
     from_c2pa = kind is not None and kind != mf.KIND_UNSIGNED and result.summary is not None
+    from_provider = kind == mf.KIND_AI_CONFIRMED
     if kind is not None:
         title = t(f"ai_detector.verdicts.{kind}.title", locale=locale)
-        source = td("source_c2pa" if from_c2pa else "source_unsigned")
+        if from_provider:
+            source = td("source_openai_c2pa" if result.provider.signal == pv.SIGNAL_C2PA
+                        else "source_openai_synthid")
+        else:
+            source = td("source_c2pa" if from_c2pa else "source_unsigned")
         facts.add_item(ui.TextDisplay(
             f"**{td('verdict')}** {title}\n**{td('source')}** {source}"))
     facts.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -276,14 +315,23 @@ def details_containers(result: an.Analysis, locale: str) -> List[ui.Container]:
     if from_c2pa:
         facts.add_item(ui.TextDisplay("\n".join(_signature_lines(result.summary, result, locale))))
         facts.add_item(ui.TextDisplay("\n".join(_history_lines(result.summary, locale))))
+    elif from_provider:
+        facts.add_item(ui.TextDisplay("\n".join(_provider_lines(result.provider, locale))))
     elif result.generation is not None:
         facts.add_item(ui.TextDisplay("\n".join(_generation_lines(result, locale))))
-    facts.add_item(ui.TextDisplay(f"-# {td('privacy')}"))
+    privacy = td("privacy")
+    if result.provider_checked:
+        privacy += " " + td("privacy_openai")
+    facts.add_item(ui.TextDisplay(f"-# {privacy}"))
 
     about = ui.Container(accent_colour=discord.Colour(ACCENT))
     about.add_item(ui.TextDisplay(f"**{td('how_title')}**\n{td('how_body')}"))
     about.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-    reliability = td("reliability_c2pa" if from_c2pa or kind is None else "reliability_unsigned")
+    if from_provider:
+        reliability = td("reliability_openai")
+    else:
+        reliability = td("reliability_c2pa" if from_c2pa or kind is None
+                         else "reliability_unsigned")
     about.add_item(ui.TextDisplay(f"**{td('reliability_title')}**\n{reliability}"))
     if kind in (mf.KIND_PHOTO, mf.KIND_PHOTO_EDITED):
         about.add_item(ui.TextDisplay(f"-# {td('reliability_photo')}"))
@@ -321,6 +369,11 @@ def build_check_view(result: an.Analysis, locale: str) -> ui.LayoutView:
         text = i18n.get(f"ai_detector.reasons.{reason}", locale=locale)
         if text.startswith("["):
             text = t("ai_detector.reasons.no_data", locale=locale)
+        provider = result.provider
+        if provider is not None:
+            key = ("provider_not_detected" if result.provider_checked
+                   else "provider_unavailable")
+            text += "\n-# " + t(f"ai_detector.reasons.{key}", locale=locale)
         none.add_item(ui.TextDisplay(
             f"### {AI_SHIELD} **{t('ai_detector.no_verdict_title', locale=locale)}**\n{text}"))
         view.add_item(none)
@@ -380,7 +433,10 @@ class AiDetectorDetailsButton(
                 await interaction.followup.send(view=render_error_card("gone", locale),
                                                 ephemeral=True)
                 return
-            result = await service.analyze_attachment(attachment)
+            # The verdict may have come from OpenAI: ask it again on a cache miss.
+            result = await service.analyze_attachment(
+                attachment, provider_check=True,
+                metadata={"user_id": interaction.user.id, "guild_id": interaction.guild_id})
 
         if result.kind is None:
             await interaction.followup.send(view=render_error_card(result.reason, locale),

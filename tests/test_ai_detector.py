@@ -617,11 +617,12 @@ class TestModule:
     def test_defaults_and_normalisation(self):
         from modules.ai_detector import AiDetectorModule, CATEGORIES, normalize_config
         assert AiDetectorModule.DEFAULT_ENABLED is True
-        assert normalize_config(None) == {"categories": list(CATEGORIES), "ignored_channel_ids": []}
+        assert normalize_config(None) == {"categories": list(CATEGORIES), "ignored_channel_ids": [],
+                                          "openai_check": False}
         cfg = normalize_config({"categories": ["photo", "bogus", "ai_full"],
                                 "ignored_channel_ids": ["12", 12, "x", 13], "state": "paused"})
         assert cfg == {"categories": ["ai_full", "photo"], "ignored_channel_ids": [12, 13],
-                       "state": "paused"}
+                       "state": "paused", "openai_check": False}
 
     async def test_validate_config(self):
         from modules.ai_detector import AiDetectorModule

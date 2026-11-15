@@ -108,6 +108,7 @@ class Gateway:
         self.virustotal = None
         self.urlscan = None
         self.cloudconvert = None
+        self.provenance = None
 
     def rebind(self, redis=None, pool=None) -> None:
         """Hand the gateway a Redis client / DB pool that came up after start().
@@ -148,6 +149,7 @@ class Gateway:
         from .clients.web_security import UrlscanClient, VirusTotalClient
         from .adapters.cloudconvert import CloudConvertAdapter
         from .clients.conversion import CloudConvertClient
+        from .clients.provenance import ProvenanceClient
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -267,6 +269,8 @@ class Gateway:
         self.virustotal = VirusTotalClient(self._executor)
         self.urlscan = UrlscanClient(self._executor)
         self.cloudconvert = CloudConvertClient(self._executor)
+        # OpenAI's C2PA + SynthID check (AI detector). Same OpenAI adapter.
+        self.provenance = ProvenanceClient(self._executor)
 
         self._gw_logger.start()
         self._started = True

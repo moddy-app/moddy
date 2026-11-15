@@ -4034,6 +4034,19 @@
           "section_title": "Salons ignorés",
           "section_description": "Moddy ne répond jamais dans ces salons (ni dans leurs fils)",
           "placeholder": "Aucun salon ignoré"
+        },
+        "openai": {
+          "section_title": "Vérification OpenAI (SynthID)",
+          "section_description": "Repère les images générées par ChatGPT / OpenAI même après une capture d'écran. Une fois activée, les images sans signature sont envoyées à OpenAI pour la vérification. `/ai-check` l'utilise toujours.",
+          "placeholder": "Vérification OpenAI",
+          "off": {
+            "label": "Signatures uniquement",
+            "description": "Seules les métadonnées du fichier sont lues, les images ne sont envoyées nulle part"
+          },
+          "on": {
+            "label": "Signatures + vérification OpenAI",
+            "description": "Les images non signées sont envoyées à OpenAI pour chercher son filigrane"
+          }
         }
       }
     },
@@ -5814,6 +5827,13 @@
         "title": "Contenu probablement généré par intelligence artificielle",
         "body": "Cette image contient des paramètres de génération propres à **{tool}**.",
         "footer": "Ces métadonnées ne sont pas signées et constituent un indice fort, sans valeur de preuve. [**En savoir plus**]({url})"
+      },
+      "ai_confirmed": {
+        "title": "Contenu généré par intelligence artificielle",
+        "body": "Cette image a été générée par {tool_part} le **{date}**.",
+        "body_no_date": "Cette image a été générée par {tool_part}.",
+        "footer_synthid": "Le service de vérification d'OpenAI a détecté son filigrane invisible SynthID dans les pixels de l'image, une marque qui résiste aux captures d'écran et aux réenregistrements. [**En savoir plus**]({url})",
+        "footer_c2pa": "Le service de vérification d'OpenAI a confirmé sa signature C2PA intégrée au fichier. [**En savoir plus**]({url})"
       }
     },
     "actions": {
@@ -5871,12 +5891,20 @@
       "prompt_hidden": "Le prompt n'est jamais affiché.",
       "privacy": "Moddy n'affiche jamais la localisation, l'auteur ni aucune donnée personnelle contenue dans le fichier.",
       "how_title": "Comment ça marche ?",
-      "how_body": "C2PA est un standard ouvert (Adobe, Microsoft, Google, OpenAI, Sony, Leica…) : l'outil ou l'appareil qui produit une image y joint un manifeste signé qui décrit son origine et ses modifications. Moddy télécharge le fichier original, vérifie que la signature est intacte et que le certificat de l'émetteur figure sur la liste de confiance officielle de la C2PA, puis lit les actions déclarées. Pour les PNG, Moddy repère aussi les paramètres que Stable Diffusion et ComfyUI écrivent dans le fichier.",
+      "how_body": "C2PA est un standard ouvert (Adobe, Microsoft, Google, OpenAI, Sony, Leica…) : l'outil ou l'appareil qui produit une image y joint un manifeste signé qui décrit son origine et ses modifications. Moddy télécharge le fichier original, vérifie que la signature est intacte et que le certificat de l'émetteur figure sur la liste de confiance officielle de la C2PA, puis lit les actions déclarées. Pour les PNG, Moddy repère aussi les paramètres que Stable Diffusion et ComfyUI écrivent dans le fichier. Quand rien n'est trouvé, Moddy peut aussi interroger le service de vérification d'OpenAI, qui reconnaît le filigrane invisible de ses images même après une capture d'écran.",
       "reliability_title": "Quelle confiance accorder à ce résultat ?",
       "reliability_c2pa": "La signature garantit que le fichier n'a pas été modifié depuis sa signature et que son émetteur est reconnu par la C2PA : personne ne peut fabriquer ce résultat sans la clé de l'émetteur. Elle reflète ce que l'émetteur a déclaré, et seulement ce qu'il a déclaré.",
       "reliability_unsigned": "Ces paramètres ne sont pas signés : n'importe qui peut les ajouter ou les retirer. Leur présence est un indice fort de génération par IA, pas une preuve.",
       "reliability_photo": "Une photo authentifiée prouve l'appareil et la date de la prise de vue, pas la véracité de ce qu'elle montre (une scène mise en scène reste mise en scène).",
-      "absence": "L'absence de résultat ne prouve rien : une capture d'écran, un réenregistrement ou la plupart des réseaux sociaux suppriment ces informations."
+      "absence": "L'absence de résultat ne prouve rien : une capture d'écran, un réenregistrement ou la plupart des réseaux sociaux suppriment ces informations.",
+      "source_openai_synthid": "vérification OpenAI (filigrane SynthID)",
+      "source_openai_c2pa": "vérification OpenAI (signature C2PA)",
+      "openai_title": "Vérification OpenAI",
+      "openai_signal": "Signal :",
+      "openai_model": "Modèle :",
+      "openai_generated_at": "Générée le :",
+      "privacy_openai": "Pour la vérification OpenAI, l'image a été envoyée à OpenAI.",
+      "reliability_openai": "Le filigrane SynthID est intégré par OpenAI à la génération et relu par OpenAI lui-même : une détection est une preuve solide que l'image vient d'un modèle OpenAI. OpenAI ne reconnaît que ses propres signaux : les autres générateurs ne sont pas couverts."
     },
     "reasons": {
       "unsupported": "Seules les images PNG, JPEG et WebP peuvent être vérifiées.",
@@ -5886,7 +5914,9 @@
       "unclassified": "Cette image porte une signature C2PA de confiance, mais son historique ne précise pas son origine (IA ou prise de vue).",
       "trust_unavailable": "La liste de confiance C2PA n'est pas encore chargée, réessaie dans quelques instants.",
       "error": "La signature C2PA de cette image n'a pas pu être lue.",
-      "busy": "Trop d'analyses sont en cours, réessaie dans quelques instants."
+      "busy": "Trop d'analyses sont en cours, réessaie dans quelques instants.",
+      "provider_not_detected": "Le service de vérification d'OpenAI n'a trouvé aucun filigrane ni aucune signature OpenAI non plus.",
+      "provider_unavailable": "La vérification OpenAI n'a pas pu être effectuée cette fois-ci."
     },
     "errors": {
       "title": "Vérification impossible",

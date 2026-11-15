@@ -8,6 +8,10 @@ Order of the checks (cheapest first, C2PA before unsigned hints):
 3. otherwise (or when the store gave no verdict) a PNG may still carry
    unsigned Stable Diffusion / ComfyUI parameters -> template 5.
 
+A fourth source is added by the service, not here (it needs the network):
+OpenAI's provenance check (``provenance.py``), consulted only when the local
+checks found nothing. Its finding lands on :attr:`Analysis.provider`.
+
 ``reason`` explains a missing verdict. The automatic module stays silent on
 every one of them; ``/ai-check`` turns them into an explanation.
 """
@@ -17,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from aidetector import formats, manifest, png_text, verify
+from aidetector import formats, manifest, png_text, provenance, verify
 
 REASON_VERDICT = "verdict"
 REASON_UNSUPPORTED = "unsupported"
@@ -45,15 +49,32 @@ class Analysis:
     validation_state: Optional[str] = None
     summary: Optional[manifest.ManifestSummary] = None
     generation: Optional[png_text.GenerationMetadata] = None
+    #: OpenAI provenance check (SynthID / OpenAI C2PA) — None when not attempted.
+    provider: Optional[provenance.ProviderProvenance] = None
 
     @property
     def kind(self) -> Optional[str]:
         """Verdict kind (``manifest.KIND_*``) or None."""
         if self.summary is not None and self.summary.verdict is not None:
             return self.summary.verdict.kind
+        # The generator's own confirmation outranks unsigned PNG parameters.
+        if self.provider is not None and self.provider.detected:
+            return manifest.KIND_AI_CONFIRMED
         if self.generation is not None:
             return manifest.KIND_UNSIGNED
         return None
+
+    @property
+    def provider_checked(self) -> bool:
+        """True when OpenAI actually answered (detected or not)."""
+        return self.provider is not None and self.provider.status != provenance.STATUS_UNAVAILABLE
+
+    def with_provider(self, finding: provenance.ProviderProvenance) -> "Analysis":
+        """Attach OpenAI's finding; a detection becomes the verdict."""
+        self.provider = finding
+        if finding.detected:
+            self.reason = REASON_VERDICT
+        return self
 
     @property
     def verdict(self) -> Optional[manifest.C2paVerdict]:

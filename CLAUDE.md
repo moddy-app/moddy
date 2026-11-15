@@ -54,7 +54,7 @@ moddy/
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper; images → OCR)
 │   ├── ocr.py                 #   /ocr (Google Vision document OCR)
-│   ├── ai_detector.py         #   /ai-check (C2PA + generation metadata, image or message link)
+│   ├── ai_detector.py         #   /ai-check (C2PA + generation metadata + OpenAI SynthID check, image or message link)
 │   ├── tools_text.py          #   /define, /tldr, /regex, /diff, /textstats (docs/features/TOOLS_TEXT.md)
 │   ├── tools_security.py      #   /pwned, /password, /uuid, /hash, /jwt, /color
 │   ├── tools_web.py           #   /whois, /dns, /ssl, /subdomains, /link-check
@@ -188,6 +188,7 @@ moddy/
 │   ├── png_text.py            #   Unsigned SD / ComfyUI parameters in PNG text chunks
 │   ├── manifest.py            #   Trusted C2PA store -> verdict + privacy whitelist
 │   ├── verify.py              #   c2pa-python read (trust list, EKUs, network off)
+│   ├── provenance.py          #   OpenAI provenance check answer (SynthID / OpenAI C2PA) -> finding
 │   └── analysis.py            #   One image -> Analysis (verdict or reason)
 │
 ├── automod/                   # Automod DETECTION pipeline (decides only; no side effects)
@@ -350,7 +351,7 @@ moddy/
 │   ├── logger.py              #   Buffered PG logging + staff webhook per call
 │   ├── executor.py            #   GatewayExecutor (single execution path)
 │   ├── adapters/              #   Provider adapters
-│   │   ├── openai.py          #     embed + chat
+│   │   ├── openai.py          #     embed + chat + vision + content_provenance (C2PA/SynthID)
 │   │   ├── deepl.py           #     translate
 │   │   ├── groq.py            #     transcribe (whisper-large-v3-turbo)
 │   │   ├── google_vision.py   #     SafeSearch + document OCR (monthly free tier)
@@ -364,7 +365,8 @@ moddy/
 │       ├── vision.py          #     bot.gateway.vision
 │       ├── image_search.py    #     bot.gateway.saucenao / tracemoe
 │       ├── web_security.py    #     bot.gateway.virustotal / urlscan
-│       └── conversion.py      #     bot.gateway.cloudconvert
+│       ├── conversion.py      #     bot.gateway.cloudconvert
+│       └── provenance.py      #     bot.gateway.provenance (OpenAI C2PA + SynthID check)
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
@@ -458,6 +460,8 @@ moddy/
     ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
     ├── test_ai_detector.py    #   AI detector: signed C2PA fixtures, classification, cards,
     │                          #   privacy, module, default-enabled manager, service
+    ├── test_ai_detector_openai.py # AI detector × OpenAI provenance check (SynthID): parser,
+    │                          #   adapter, service, opt-in, cards, i18n
     ├── test_icon_theme.py     #   Icon theme: light→dark mapping, payload swap, discord.py patch guard
     ├── test_user_preferences.py # Preferences cache, language override, /preferences selects
     ├── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
@@ -726,7 +730,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 `docs/features/` — How a feature works on the bot side.
 | Document | When to Read |
 |---|---|
-| [docs/features/AI_DETECTOR.md](docs/features/AI_DETECTOR.md) | **AI Detector** — C2PA Content Credentials (official trust list, EKUs), verdict templates, privacy whitelist, details button, `/ai-check`, default-enabled module |
+| [docs/features/AI_DETECTOR.md](docs/features/AI_DETECTOR.md) | **AI Detector** — C2PA Content Credentials (official trust list, EKUs), verdict templates, privacy whitelist, details button, `/ai-check`, default-enabled module, **OpenAI provenance check (SynthID)** |
 | [docs/features/ALTGUARD.md](docs/features/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/features/ANNOUNCEMENT_TRANSLATION.md](docs/features/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
 | [docs/features/ANNOUNCEMENT_VERIFICATION.md](docs/features/ANNOUNCEMENT_VERIFICATION.md) | **Announcement verification** — Managers/Devs authenticate support-server announcements; every relayed copy in a following server gets a check_circle reaction + Translate button |

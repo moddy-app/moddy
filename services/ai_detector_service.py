@@ -15,7 +15,12 @@ synchronous (``aidetector/analysis.py``); this service only:
   burst of images never starves the event loop nor holds dozens of files in
   memory at once (automatic analyses beyond the queue limit are dropped);
 - remembers recent results per attachment id, so the details button does not
-  download the image a second time.
+  download the image a second time;
+- when the local checks found nothing and the caller asks for it, sends the
+  image to **OpenAI's provenance check** (``bot.gateway.provenance``: OpenAI
+  C2PA + the SynthID watermark, which survives screenshots and re-saves).
+  On demand (``/ai-check``, details button) and, for servers that opted in,
+  automatically — each on its own rate-limit budget.
 
 See docs/features/AI_DETECTOR.md.
 """
@@ -32,6 +37,7 @@ import discord
 
 from aidetector import analysis as an
 from aidetector import formats, verify
+from aidetector import provenance as pv
 
 logger = logging.getLogger("moddy.services.ai_detector")
 
@@ -51,6 +57,11 @@ ATTACHMENT_TIMEOUT = 30
 MAX_CONCURRENT = 3
 #: Automatic analyses waiting for a slot beyond this are dropped (busy).
 MAX_WAITING = 25
+
+#: Automatic OpenAI checks skip images whose two sides are both under this
+#: (stickers, emojis, thumbnails): a watermark cannot be read reliably there
+#: and they are most of the volume.
+PROVIDER_MIN_SIDE = 256
 
 CACHE_SIZE = 512
 CACHE_TTL = 3600
@@ -216,20 +227,81 @@ class AiDetectorService:
         while len(self._cache) > CACHE_SIZE:
             self._cache.popitem(last=False)
 
+    # ----------------------------------------------------------------- #
+    # OpenAI provenance check
+    # ----------------------------------------------------------------- #
+
+    def provider_available(self) -> bool:
+        """True when the gateway can reach OpenAI's provenance check."""
+        gateway = getattr(self.bot, "gateway", None)
+        try:
+            return bool(gateway is not None and gateway.available
+                        and gateway.openai_available()
+                        and getattr(gateway, "provenance", None) is not None)
+        except Exception:  # noqa: BLE001
+            return False
+
+    @staticmethod
+    def _wants_provider(result: an.Analysis, provider_check: bool,
+                        automatic: bool) -> bool:
+        """Whether OpenAI should still be asked about this analysis."""
+        if not provider_check or result.kind is not None:
+            return False
+        if result.mime not in formats.SUPPORTED_MIMES:
+            return False
+        if result.provider is None:
+            return True
+        # A failed call (rate limit, outage) is retried on demand only.
+        return not automatic and not result.provider_checked
+
+    @staticmethod
+    def _large_enough(attachment: discord.Attachment) -> bool:
+        width = getattr(attachment, "width", None)
+        height = getattr(attachment, "height", None)
+        if not width or not height:
+            return True  # unknown: let OpenAI decide
+        return max(width, height) >= PROVIDER_MIN_SIDE
+
+    async def check_provider(self, data: bytes, mime: Optional[str], *,
+                             filename: Optional[str] = None, automatic: bool = False,
+                             metadata: Optional[dict] = None) -> pv.ProviderProvenance:
+        """Ask OpenAI about ``data``. Never raises: failures read ``unavailable``."""
+        if not self.provider_available():
+            return pv.unavailable()
+        try:
+            data_json = await self.bot.gateway.provenance.check(
+                data, mime=mime, filename=filename, automatic=automatic,
+                call_type="ai_detector_auto" if automatic else "ai_detector_command",
+                metadata=metadata or {},
+            )
+        except Exception as e:  # noqa: BLE001 — GatewayError, rate limits, outage
+            logger.debug(f"AI detector: OpenAI provenance check unavailable: {e}")
+            return pv.unavailable()
+        if isinstance(data_json, dict) and data_json.get("rejected"):
+            return pv.unavailable()
+        return pv.parse_response(data_json)
+
     async def analyze_bytes(self, data: bytes) -> an.Analysis:
         """Analyse raw bytes in a worker thread (no queue limit)."""
         async with self._semaphore:
             return await asyncio.to_thread(an.analyze, data, self.settings_json())
 
     async def analyze_attachment(self, attachment: discord.Attachment, *,
-                                 automatic: bool = False) -> an.Analysis:
+                                 automatic: bool = False,
+                                 provider_check: bool = False,
+                                 metadata: Optional[dict] = None) -> an.Analysis:
         """Download ``attachment`` (original URL) and analyse it.
 
         ``automatic`` analyses (the module) give up instead of queueing when
         the bot is already busy; on-demand ones (button, command) wait.
+        ``provider_check`` also asks OpenAI when the local checks found
+        nothing (automatic calls skip small images, see ``PROVIDER_MIN_SIDE``).
         """
+        if provider_check and (not self.provider_available()
+                               or (automatic and not self._large_enough(attachment))):
+            provider_check = False
         cached = self.cached(attachment.id)
-        if cached is not None:
+        if cached is not None and not self._wants_provider(cached, provider_check, automatic):
             return cached
         if attachment.size and attachment.size > MAX_FILE_BYTES:
             return an.Analysis(reason=an.REASON_TOO_LARGE, size=attachment.size)
@@ -253,21 +325,30 @@ class AiDetectorService:
                 result = await asyncio.to_thread(an.analyze, data, self.settings_json())
         finally:
             self._waiting -= 1
+        # Outside the semaphore: it guards CPU work, not a network wait.
+        if self._wants_provider(result, provider_check, automatic):
+            result.with_provider(await self.check_provider(
+                data, result.mime, filename=attachment.filename,
+                automatic=automatic, metadata=metadata))
         self._remember(attachment.id, result)
         return result
 
     async def analyze_message(
         self, message: discord.Message, *, automatic: bool = False,
-        kinds: Optional[List[str]] = None,
+        kinds: Optional[List[str]] = None, provider_check: bool = False,
+        metadata: Optional[dict] = None,
     ) -> Optional[Tuple[discord.Attachment, an.Analysis]]:
         """The strongest verdict among a message's images, or None.
 
         ``kinds`` restricts which verdict kinds count (a server that switched
-        some off); None accepts them all.
+        some off); None accepts them all. ``provider_check``: see
+        :meth:`analyze_attachment`.
         """
         best: Optional[Tuple[discord.Attachment, an.Analysis]] = None
         for attachment in self.candidate_images(message):
-            result = await self.analyze_attachment(attachment, automatic=automatic)
+            result = await self.analyze_attachment(
+                attachment, automatic=automatic, provider_check=provider_check,
+                metadata=metadata)
             if result.kind is None or (kinds is not None and result.kind not in kinds):
                 continue
             if best is None or result.rank < best[1].rank:

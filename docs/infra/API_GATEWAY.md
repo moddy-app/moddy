@@ -226,6 +226,8 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `sauce` | saucenao/search + tracemoe/search | user + guild (charged once) | ✅ |
 | `convert_cloud` | cloudconvert/convert | user + guild | ✅ |
 | `translation` (source `translate_button`) | deepl/translate | user (the person who clicks) | ✅ |
+| `ai_detector_command` | openai/content_provenance (accounted on `content_provenance`) | — (rate limits only) | ❌ |
+| `ai_detector_auto` | openai/content_provenance (accounted on `content_provenance_auto`) | — (rate limits only) | ❌ |
 
 > `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
 > The guild target is only added when the command runs inside a server — in DMs
@@ -254,6 +256,13 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 > `/link-check`, "unavailable" for `/sauce`, office/ebook formats hidden in
 > `/convert`).
 >
+> `ai_detector_*` come from `services/ai_detector_service.py` via
+> `bot.gateway.provenance` (`gateway/clients/provenance.py`): OpenAI's
+> `POST /v1/content_provenance_checks` (C2PA + SynthID), multipart, image on
+> `CallSpec.binary`. A `400` (file refused) is returned as `{"rejected": true}`
+> data, not raised, so odd files never trip the circuit breaker. See
+> [AI_DETECTOR.md](../features/AI_DETECTOR.md) §9.
+>
 > **Not through the gateway:** keyless public APIs (Wiktionary, HIBP range,
 > RDAP, DNS-over-HTTPS, crt.sh, Statuspage, Annuaire des Entreprises, Deezer,
 > iTunes Search, Spotify pages, WhatsMyName sites) go through `bot.public_api`
@@ -280,6 +289,8 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | openai / `text-embedding-3-small` | `rpm` | 3 000 requests | 1 min | `OPENAI_EMBED_RPM` |
 | openai / `gpt-5.6-luna` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
 | openai / `gpt-4.1-mini` | `rpm` | 500 requests | 1 min | `OPENAI_MINI_RPM` |
+| openai / `content_provenance` (on demand) | `rpm` / `rpd` | 10 / 500 requests | 1 min / 1 day | `OPENAI_PROVENANCE_RPM` / `_RPD` |
+| openai / `content_provenance_auto` (module) | `rpm` / `rpd` | 10 / 1 000 requests | 1 min / 1 day | `OPENAI_PROVENANCE_AUTO_RPM` / `_RPD` |
 | google_vision / `safe_search` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_SAFESEARCH_MONTHLY` |
 | google_vision / `safe_search_profile` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed — a separate budget for member avatars / banners (same SafeSearch API call, own accounting key) | `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` |
 | google_vision / `document_text` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_OCR_MONTHLY` |
@@ -441,6 +452,8 @@ except (APIUnavailableError, GatewayError):
 | `OPENAI_EMBED_RPM` | `3000` | `text-embedding-3-small` requests per minute (provider account) |
 | `OPENAI_NANO_RPM` | `500` | `gpt-5.6-luna` requests per minute |
 | `OPENAI_MINI_RPM` | `500` | `gpt-4.1-mini` requests per minute |
+| `OPENAI_PROVENANCE_RPM` / `OPENAI_PROVENANCE_RPD` | `10` / `500` | OpenAI provenance checks on demand (`/ai-check`, details button). OpenAI publishes no number ("strict"): copy the org's *Limits* page |
+| `OPENAI_PROVENANCE_AUTO_RPM` / `OPENAI_PROVENANCE_AUTO_RPD` | `10` / `1000` | OpenAI provenance checks from the module (opt-in servers). Keep both sums under the real limit |
 | `GATEWAY_MAX_RETRIES` | `3` | Max retry attempts |
 | `GATEWAY_RETRY_BASE_DELAY` | `0.5` | Retry base delay (seconds) |
 | `GATEWAY_CB_FAILURE_THRESHOLD` | `5` | Circuit breaker failure count |

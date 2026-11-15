@@ -7,7 +7,10 @@ about narrowing it down, never about switching it on:
 - which verdicts Moddy announces (AI-generated, partially AI, authenticated
   photos, unsigned generation metadata) — a multi-select whose ticked options
   are the current setting;
-- channels where Moddy never answers.
+- channels where Moddy never answers;
+- whether images with no local evidence are also sent to OpenAI's provenance
+  check (SynthID watermark) — opt-in, a two-option select whose default shows
+  the stored choice.
 
 Pausing the whole module is the generic state, in the Manage panel (the button
 next to Back), like every other module.
@@ -40,6 +43,7 @@ logger = logging.getLogger("moddy.modules.ai_detector_config")
 
 _CID_CATEGORIES = "moddy:ai_detector:config:categories"
 _CID_CHANNELS = "moddy:ai_detector:config:channels"
+_CID_OPENAI = "moddy:ai_detector:config:openai"
 _CID_BACK = "moddy:ai_detector:config:back"
 _CID_SAVE = "moddy:ai_detector:config:save"
 _CID_CANCEL = "moddy:ai_detector:config:cancel"
@@ -135,6 +139,30 @@ class AiDetectorConfigView(BaseView):
         channel_select.callback = self.on_channels_select
         container.add_item(ui.ActionRow(channel_select))
 
+        # --- OpenAI provenance check (opt-in) ------------------------- #
+        container.add_item(ui.TextDisplay(
+            f"**{self._tc('openai.section_title')}**\n"
+            f"-# {self._tc('openai.section_description')}"
+        ))
+        openai_on = self.working_config.get("openai_check") is True
+        openai_select = ui.Select(
+            placeholder=self._tc("openai.placeholder"),
+            options=[
+                discord.SelectOption(
+                    label=self._tc(f"openai.{value}.label")[:100],
+                    description=self._tc(f"openai.{value}.description")[:100],
+                    value=value,
+                    default=(value == "on") == openai_on,
+                )
+                for value in ("off", "on")
+            ],
+            min_values=1,
+            max_values=1,
+            custom_id=_CID_OPENAI,
+        )
+        openai_select.callback = self.on_openai_select
+        container.add_item(ui.ActionRow(openai_select))
+
         self.add_item(container)
         self._add_action_buttons()
 
@@ -226,6 +254,15 @@ class AiDetectorConfigView(BaseView):
         values: List[str] = interaction.data.get("values") or []
         working_config = await self._fresh_working_config(interaction)
         working_config["ignored_channel_ids"] = [int(v) for v in values if str(v).isdigit()]
+        await show(interaction, await self._rebuild(interaction, working_config))
+
+    async def on_openai_select(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        values: List[str] = interaction.data.get("values") or []
+        working_config = await self._fresh_working_config(interaction)
+        working_config["openai_check"] = "on" in values
         await show(interaction, await self._rebuild(interaction, working_config))
 
     async def on_back(self, interaction: discord.Interaction):
