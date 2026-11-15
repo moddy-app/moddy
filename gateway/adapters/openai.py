@@ -211,8 +211,27 @@ class OpenAIAdapter(BaseAdapter):
                 logger.debug("OpenAI provenance check refused the file: %s", body[:300])
                 return AdapterResult(data={"rejected": True, "results": []})
             await self._raise_for_status(resp)
+            self._note_provenance_limits(resp)
             data = await resp.json()
         return AdapterResult(data=data if isinstance(data, dict) else {})
+
+    def _note_provenance_limits(self, resp: aiohttp.ClientResponse) -> None:
+        """Log the account's real provenance-check limit when OpenAI reports it.
+
+        OpenAI publishes no number for this endpoint ("strict" limits); the
+        ``x-ratelimit-*`` headers are the only source. Logged at INFO the first
+        time and whenever the limit changes, so the OPENAI_PROVENANCE_* env vars
+        can be set from it.
+        """
+        limit = resp.headers.get("x-ratelimit-limit-requests")
+        if not limit or limit == getattr(self, "_provenance_limit_seen", None):
+            return
+        self._provenance_limit_seen = limit
+        logger.info(
+            "OpenAI provenance check limit: %s requests (remaining %s, reset %s)",
+            limit, resp.headers.get("x-ratelimit-remaining-requests"),
+            resp.headers.get("x-ratelimit-reset-requests"),
+        )
 
     async def _raise_for_status(self, resp: aiohttp.ClientResponse) -> None:
         if resp.status == 429:

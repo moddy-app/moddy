@@ -246,8 +246,9 @@ l'une des deux variables si besoin.
 ### OPENAI_PROVENANCE_RPM / _RPD, OPENAI_PROVENANCE_AUTO_RPM / _RPD
 **Valeur :** limites locales de la vérification de provenance OpenAI (détecteur
 d'IA : C2PA + filigrane SynthID), avec la même `OPENAI_API_KEY`. OpenAI ne publie
-pas de chiffre (« limites strictes », relèvement sur demande) : recopier la page
-*Limits* de l'organisation. Défauts : 10/min et 500/jour à la demande, 10/min et
+pas de chiffre (« limites strictes », relèvement sur demande ; gratuit pour
+l'instant) : recopier la page *Limits* de l'organisation, ou le log
+`OpenAI provenance check limit: …` écrit au premier appel. Défauts : 10/min et 500/jour à la demande, 10/min et
 1000/jour pour le module. Une organisation sans accès reçoit `404` : la
 vérification est alors simplement absente. Voir [AI_DETECTOR.md](../features/AI_DETECTOR.md) §9.
 

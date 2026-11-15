@@ -283,7 +283,11 @@ application). Two local budgets on the same account, so the module can never
 starve `/ai-check`: `content_provenance` (on demand, `OPENAI_PROVENANCE_RPM` /
 `_RPD`, defaults 10 / 500) and `content_provenance_auto` (module,
 `OPENAI_PROVENANCE_AUTO_RPM` / `_RPD`, defaults 10 / 1000) —
-[API_GATEWAY.md](../infra/API_GATEWAY.md). Pricing is not published either.
+[API_GATEWAY.md](../infra/API_GATEWAY.md). OpenAI's help center states the
+checks are **currently free** and subject to usage limits (higher limits on
+application, case by case). The real limit is only visible in the org's
+*Limits* page or the `x-ratelimit-limit-requests` header: the adapter logs it
+at INFO (`OpenAI provenance check limit: …`) the first time and on change.
 
 **Other providers (checked 2026-11-15)**: Google reads SynthID in the Gemini
 app, Lens / Circle to Search and its SynthID Detector portal, but publishes no

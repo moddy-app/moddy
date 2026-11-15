@@ -451,3 +451,22 @@ class TestConfigPanel:
         view = AiDetectorConfigView(None, 1, 2, "fr", current_config=stored)
         select = self._select(view)
         assert [o.value for o in select.options if o.default] == [default]
+
+
+async def test_limit_headers_are_logged_once(caplog):
+    import logging
+    from gateway.adapters.openai import OpenAIAdapter
+    from gateway.spec import CallSpec
+    response = _FakeResponse(200, NOTHING)
+    response.headers = {"x-ratelimit-limit-requests": "60",
+                        "x-ratelimit-remaining-requests": "59"}
+    adapter = OpenAIAdapter("sk-test")
+    adapter._session = _FakeSession(response)
+    spec = CallSpec(provider="openai", operation="content_provenance", model="content_provenance",
+                    payload={"mime": "image/png"}, quota=[], call_type="t",
+                    correlation_id="c", binary=b"x")
+    with caplog.at_level(logging.INFO, logger="moddy.gateway.openai"):
+        await adapter.execute(spec)
+        await adapter.execute(spec)
+    lines = [r for r in caplog.records if "provenance check limit" in r.getMessage()]
+    assert len(lines) == 1 and "60" in lines[0].getMessage()
