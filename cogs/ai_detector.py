@@ -1,5 +1,6 @@
 """
-``/ai-check`` — check an image's origin on demand (C2PA + generation metadata).
+``/ai-check`` — check an image's origin on demand (C2PA + generation metadata,
+then OpenAI's provenance check — SynthID watermark — when those found nothing).
 
 Same analysis as the ``ai_detector`` module (``services/ai_detector_service.py``),
 but it always answers: with the verdict and its details when there is one, with
@@ -78,17 +79,22 @@ class AiDetector(commands.Cog):
         await interaction.response.send_message(view=render_loading_card(locale),
                                                 ephemeral=ephemeral)
 
+        # On demand: OpenAI's provenance check (SynthID) runs whenever the
+        # local checks found nothing — the requester asked for an answer.
+        meta = {"user_id": interaction.user.id, "guild_id": interaction.guild_id}
         if image is not None:
-            result = await service.analyze_attachment(image)
+            result = await service.analyze_attachment(image, provider_check=True, metadata=meta)
         else:
             target, error = await self._message_from_link(interaction, message)
             if target is None:
                 await interaction.edit_original_response(view=render_error_card(error, locale))
                 return
             # Several images: the strongest verdict; none: why the first has none.
-            found = await service.analyze_message(target)
+            found = await service.analyze_message(target, provider_check=True, metadata=meta)
             result = (found[1] if found is not None
-                      else await service.analyze_attachment(service.candidate_images(target)[0]))
+                      else await service.analyze_attachment(
+                          service.candidate_images(target)[0], provider_check=True,
+                          metadata=meta))
         if result.reason in (an.REASON_TOO_LARGE, an.REASON_DOWNLOAD_FAILED):
             await interaction.edit_original_response(
                 view=render_error_card(result.reason, locale))

@@ -3,7 +3,9 @@
 Moddy tells a channel where a posted image comes from, **only when it can prove
 it**: the image carries a C2PA manifest signed by a certificate on the official
 C2PA trust list (validation state `Trusted`). Unsigned Stable Diffusion /
-ComfyUI parameters in a PNG get a softer "probably generated" card.
+ComfyUI parameters in a PNG get a softer "probably generated" card. When none
+of that is present, **OpenAI's provenance check** can be asked too (§9): it
+finds OpenAI's invisible SynthID watermark even after a screenshot.
 
 | Piece | File |
 |---|---|
@@ -13,7 +15,9 @@ ComfyUI parameters in a PNG get a softer "probably generated" card.
 | `/config` screen | `modules/configs/ai_detector_config.py` |
 | Cards + persistent button | `utils/ai_detector_views.py` |
 | `/ai-check` command | `cogs/ai_detector.py` |
-| Tests | `tests/test_ai_detector.py`, fixtures in `tests/data/c2pa/` |
+| OpenAI check (pure parser) | `aidetector/provenance.py` |
+| OpenAI check (gateway) | `gateway/clients/provenance.py` → `OpenAIAdapter._content_provenance` |
+| Tests | `tests/test_ai_detector.py`, `tests/test_ai_detector_openai.py`, fixtures in `tests/data/c2pa/` |
 
 Library: **c2pa-python 0.38.0** (`requirements.txt`, pinned — it bundles the
 native c2pa-rs 0.91 library in its wheel).
@@ -89,9 +93,10 @@ generated image a photo). Each action keeps: action name, short
 | `ai_partial` | `compositeWithTrainedAlgorithmicMedia` anywhere, or `trainedAlgorithmicMedia` on a later action, or AI creation mixed with a capture | 2 |
 | `photo` | `digitalCapture` (or `computationalCapture`, what phones like the Pixel declare) on the creation | 3 |
 | `photo_edited` | same, plus non-AI retouch actions (`c2pa.edited`, `cropped`, `color_adjustments`, `resized`, `filtered`, `drawing`, `orientation`, `redacted`, `converted`, `transcoded`, `edited.metadata`) | 4 |
+| `ai_confirmed` | OpenAI's provenance check returned `detected` (SynthID watermark, or an OpenAI C2PA manifest) — §9 | 6 |
 | `unsigned` | PNG text chunk `parameters` (Stable Diffusion) or `prompt` / `workflow` (ComfyUI) — no C2PA verdict | 5 |
 
-Priority when a message holds several images: `ai_full` > `ai_partial` >
+Priority when a message holds several images: `ai_full` > `ai_confirmed` > `ai_partial` >
 `unsigned` > `photo_edited` > `photo`.
 
 Variables:
@@ -166,6 +171,7 @@ Stored config (`guilds.data.modules.ai_detector`), absent = defaults:
 {
   "categories": ["ai_full", "ai_partial", "photo", "unsigned"],
   "ignored_channel_ids": [],
+  "openai_check": false,
   "state": "active"
 }
 ```
@@ -174,6 +180,11 @@ Stored config (`guilds.data.modules.ai_detector`), absent = defaults:
   `photo_edited`). Unknown values are dropped on load; `validate_config`
   rejects them.
 - `ignored_channel_ids`: ≤ 25 channels; their threads are ignored too.
+- `openai_check`: send images with no local evidence to OpenAI's provenance
+  check (§9). **Opt-in** (`false` when absent or not a boolean) — it ships the
+  server's images to a third party. `/config`: a two-option select.
+  `ai_confirmed` follows the `ai_full` category: switching that off also stops
+  the OpenAI calls.
 - `state`: generic module state — `paused` turns the module off in that server.
 
 `/config` → *AI Detector*: a multi-select of announced results (ticked = on),
@@ -216,3 +227,67 @@ paths and the service (Redis cache, downloads, caps).
 kind to `real/expected.json`; they are verified offline against
 `tests/data/c2pa/C2PA-TRUST-LIST.pem` (refresh that snapshot if a newer signer
 is not on it).
+
+## 9. OpenAI provenance check (SynthID)
+
+OpenAI's **Content Provenance API** — `POST https://api.openai.com/v1/content_provenance_checks`,
+multipart field `file` (PNG / JPEG / WebP / GIF, ≤ 50 MiB), synchronous answer:
+
+```json
+{"object": "content_provenance_check", "created_at": 1785170052,
+ "results": [
+   {"type": "c2pa", "outcome": "detected", "validation_state": "trusted",
+    "issuer": "OpenAI OpCo, LLC", "model": "gpt-image", "generated_at": "2026-07-27T18:34:12Z"},
+   {"type": "synthid", "outcome": "not_detected", "model": null, "generated_at": null}]}
+```
+
+Why: OpenAI images carry a C2PA manifest **and** an invisible SynthID watermark.
+The manifest dies with a screenshot or a re-save; the watermark lives in the
+pixels and survives. The local check (§1-2) sees the first, only OpenAI can
+read the second.
+
+**When it is asked** (`AiDetectorService.analyze_attachment(provider_check=True)`):
+
+- only when the local checks gave **no verdict** (no C2PA, untrusted, invalid,
+  unclassified…) — a local verdict never costs a call;
+- `/ai-check`: always (the requester asked for an answer); the details button
+  on a cache miss (the verdict may have come from OpenAI);
+- the module: only in servers with `openai_check: true`, only while
+  `ai_confirmed` is announced there, and only for images whose larger side is
+  ≥ 256 px (`PROVIDER_MIN_SIDE` — stickers and thumbnails are most of the volume);
+- never without `OPENAI_API_KEY` (the gateway's OpenAI adapter).
+
+**Reading the answer** (`aidetector/provenance.py`): only an explicit
+`"outcome": "detected"` counts; a C2PA entry must also be `trusted`/`valid`
+(OpenAI's own rule — `invalid` is never evidence). SynthID wins when both are
+detected; the other entry fills a missing model / date / issuer. Everything
+displayed goes through the same markdown stripping as the manifest values.
+`not_detected` proves nothing: OpenAI only recognises its **own** signals.
+
+**Verdict** `ai_confirmed` (template 6): "Content generated by artificial
+intelligence — This image was generated by **gpt-image** (OpenAI) on <date>",
+footer naming the signal (SynthID watermark in the pixels / OpenAI C2PA
+signature). Details panel: source *OpenAI verification*, signal, model,
+generation date, issuer and validation of the C2PA entry, a reliability text
+of its own and the line "the image was sent to OpenAI". `/ai-check` without a
+verdict adds whether OpenAI found nothing or could not be reached.
+
+**Failures** never break anything: no key, `404` (organization without access),
+`429`, our own rate limit, timeout, or a `400` (file refused, returned as data
+by the adapter so it never trips the circuit breaker) all read `unavailable` —
+the module stays silent, `/ai-check` says the check could not run. An
+`unavailable` result is retried on demand, never automatically.
+
+**Limits**: OpenAI documents "strict" limits without numbers (higher limits on
+application). Two local budgets on the same account, so the module can never
+starve `/ai-check`: `content_provenance` (on demand, `OPENAI_PROVENANCE_RPM` /
+`_RPD`, defaults 10 / 500) and `content_provenance_auto` (module,
+`OPENAI_PROVENANCE_AUTO_RPM` / `_RPD`, defaults 10 / 1000) —
+[API_GATEWAY.md](../infra/API_GATEWAY.md). Pricing is not published either.
+
+**Other providers (checked 2026-11-15)**: Google reads SynthID in the Gemini
+app, Lens / Circle to Search and its SynthID Detector portal, but publishes no
+public developer API for images — the "verification API" endpoints quoted by
+third-party blogs could not be found in Google's documentation. Meta (Seal),
+Adobe, Microsoft, Stability and Midjourney expose no hosted verification API;
+their C2PA manifests, when present, are already covered by the local check.

@@ -53,11 +53,11 @@ class OpenAIAdapter(BaseAdapter):
         self._session: Optional[aiohttp.ClientSession] = None
 
     async def start(self) -> None:
+        # No session-wide Content-Type: ``json=`` sets application/json on its
+        # own, and the provenance endpoint is multipart (aiohttp must be free
+        # to set the boundary — a session header would override it).
         self._session = aiohttp.ClientSession(
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            }
+            headers={"Authorization": f"Bearer {self._api_key}"}
         )
         logger.info("OpenAI adapter ready")
 
@@ -73,6 +73,8 @@ class OpenAIAdapter(BaseAdapter):
             return await self._chat(spec)
         if spec.operation == "vision":
             return await self._vision(spec)
+        if spec.operation == "content_provenance":
+            return await self._content_provenance(spec)
         raise ConfigurationError(f"Unsupported OpenAI operation: {spec.operation!r}")
 
     async def _embed(self, spec: CallSpec) -> AdapterResult:
@@ -177,6 +179,40 @@ class OpenAIAdapter(BaseAdapter):
             tokens_completion=usage.get("completion_tokens", 0),
             tokens_total=usage.get("total_tokens", 0),
         )
+
+    async def _content_provenance(self, spec: CallSpec) -> AdapterResult:
+        """``POST /v1/content_provenance_checks`` — OpenAI's C2PA + SynthID check.
+
+        One file per request, multipart field ``file`` with its media type on
+        the part itself; the answer is synchronous. A 400 means *this file* was
+        refused (malformed, unsupported, blocked): it is returned as data
+        (``{"rejected": True}``) instead of raised, so a few odd images can
+        never trip the circuit breaker for everyone. 404 (organization without
+        access) and 5xx stay errors.
+        """
+        if not spec.binary:
+            raise ConfigurationError("content_provenance requires image bytes on CallSpec.binary")
+        payload = spec.payload or {}
+        form = aiohttp.FormData()
+        form.add_field(
+            "file",
+            spec.binary,
+            filename=payload.get("filename") or "image",
+            content_type=payload.get("mime") or "application/octet-stream",
+        )
+        async with self._session.post(
+            f"{_BASE_URL}/content_provenance_checks", data=form
+        ) as resp:
+            if resp.status == 400:
+                try:
+                    body = await resp.text()
+                except Exception:
+                    body = ""
+                logger.debug("OpenAI provenance check refused the file: %s", body[:300])
+                return AdapterResult(data={"rejected": True, "results": []})
+            await self._raise_for_status(resp)
+            data = await resp.json()
+        return AdapterResult(data=data if isinstance(data, dict) else {})
 
     async def _raise_for_status(self, resp: aiohttp.ClientResponse) -> None:
         if resp.status == 429:

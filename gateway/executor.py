@@ -52,6 +52,7 @@ class GatewayExecutor:
             "vision": self._config.timeout_vision,
             "safe_search": self._config.timeout_vision,
             "document_text": self._config.timeout_vision,
+            "content_provenance": self._config.timeout_vision,
             "search": self._config.timeout_search,
             # /link-check: VirusTotal and urlscan.io
             "url_report": self._config.timeout_search,

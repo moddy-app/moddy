@@ -53,6 +53,24 @@ def _openai_rpm_rules(env_name: str, default_rpm: int) -> List[RateRule]:
     return [RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env(env_name, default_rpm))]
 
 
+def _openai_provenance_rules(prefix: str, rpm: int, rpd: int) -> List[RateRule]:
+    """OpenAI Content Provenance checks (``/v1/content_provenance_checks``).
+
+    OpenAI documents the endpoint's limits as *strict* without publishing
+    numbers (they show on the org's *Limits* page; higher limits are granted
+    on application). The defaults stay well below anything plausible: set the
+    env vars to the console values. Two accounting keys share the account —
+    ``content_provenance`` (``/ai-check``, the details button) and
+    ``content_provenance_auto`` (the module, opt-in per server) — so automatic
+    checks can never eat the budget of an explicit request. Keep their sum
+    under the real limit.
+    """
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env(f"{prefix}_RPM", rpm)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env(f"{prefix}_RPD", rpd)),
+    ]
+
+
 def _google_vision_monthly_rules(env_name: str, default: int) -> List[RateRule]:
     """Google Vision free tier: ``default`` units per calendar month, per feature.
 
@@ -151,6 +169,14 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ),
         ("openai", "gpt-5.6-luna"): _openai_rpm_rules("OPENAI_NANO_RPM", 500),
         ("openai", "gpt-4.1-mini"): _openai_rpm_rules("OPENAI_MINI_RPM", 500),
+        # AI detector: OpenAI's C2PA + SynthID check. On-demand and automatic
+        # are accounted separately (see _openai_provenance_rules).
+        ("openai", "content_provenance"): _openai_provenance_rules(
+            "OPENAI_PROVENANCE", 10, 500
+        ),
+        ("openai", "content_provenance_auto"): _openai_provenance_rules(
+            "OPENAI_PROVENANCE_AUTO", 10, 1_000
+        ),
         # Google Vision has no model: rules are keyed on the billed feature.
         ("google_vision", "safe_search"): _google_vision_monthly_rules(
             "GOOGLE_VISION_SAFESEARCH_MONTHLY", 1_000

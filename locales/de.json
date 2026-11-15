@@ -4035,6 +4035,19 @@
           "section_title": "Ignorierte Kanäle",
           "section_description": "Moddy antwortet nie in diesen Kanälen (auch nicht in ihren Threads)",
           "placeholder": "Kein ignorierter Kanal"
+        },
+        "openai": {
+          "section_title": "OpenAI-Prüfung (SynthID)",
+          "section_description": "Erkennt von ChatGPT / OpenAI erzeugte Bilder auch nach einem Screenshot. Wenn aktiviert, werden Bilder ohne Signatur zur Prüfung an OpenAI gesendet. `/ai-check` nutzt sie immer.",
+          "placeholder": "OpenAI-Prüfung",
+          "off": {
+            "label": "Nur Signaturen",
+            "description": "Nur die Metadaten der Datei werden gelesen, Bilder werden nirgendwohin gesendet"
+          },
+          "on": {
+            "label": "Signaturen + OpenAI-Prüfung",
+            "description": "Unsignierte Bilder werden an OpenAI gesendet, um sein Wasserzeichen zu suchen"
+          }
         }
       }
     },
@@ -5729,6 +5742,13 @@
         "title": "Wahrscheinlich von künstlicher Intelligenz erzeugter Inhalt",
         "body": "Dieses Bild enthält Generierungsparameter, die typisch für **{tool}** sind.",
         "footer": "Diese Metadaten sind nicht signiert: ein starkes Indiz, aber kein Beweis. [**Mehr erfahren**]({url})"
+      },
+      "ai_confirmed": {
+        "title": "Von künstlicher Intelligenz erzeugter Inhalt",
+        "body": "Dieses Bild wurde am **{date}** von {tool_part} erzeugt.",
+        "body_no_date": "Dieses Bild wurde von {tool_part} erzeugt.",
+        "footer_synthid": "Der Prüfdienst von OpenAI hat sein unsichtbares SynthID-Wasserzeichen in den Pixeln des Bildes erkannt – eine Markierung, die Screenshots und erneutes Speichern übersteht. [**Mehr erfahren**]({url})",
+        "footer_c2pa": "Der Prüfdienst von OpenAI hat seine in die Datei eingebettete C2PA-Signatur bestätigt. [**Mehr erfahren**]({url})"
       }
     },
     "actions": {
@@ -5786,12 +5806,20 @@
       "prompt_hidden": "Der Prompt wird nie angezeigt.",
       "privacy": "Moddy zeigt niemals den Standort, den Urheber oder andere personenbezogene Daten aus der Datei an.",
       "how_title": "Wie funktioniert das?",
-      "how_body": "C2PA ist ein offener Standard (Adobe, Microsoft, Google, OpenAI, Sony, Leica…): Das Werkzeug oder die Kamera, die ein Bild erzeugt, fügt ein signiertes Manifest hinzu, das seine Herkunft und Bearbeitungen beschreibt. Moddy lädt die Originaldatei herunter, prüft, ob die Signatur intakt ist und ob das Zertifikat des Ausstellers auf der offiziellen C2PA-Vertrauensliste steht, und liest dann die angegebenen Aktionen. Bei PNGs erkennt Moddy außerdem die Parameter, die Stable Diffusion und ComfyUI in die Datei schreiben.",
+      "how_body": "C2PA ist ein offener Standard (Adobe, Microsoft, Google, OpenAI, Sony, Leica…): Das Werkzeug oder die Kamera, die ein Bild erzeugt, fügt ein signiertes Manifest hinzu, das seine Herkunft und Bearbeitungen beschreibt. Moddy lädt die Originaldatei herunter, prüft, ob die Signatur intakt ist und ob das Zertifikat des Ausstellers auf der offiziellen C2PA-Vertrauensliste steht, und liest dann die angegebenen Aktionen. Bei PNGs erkennt Moddy außerdem die Parameter, die Stable Diffusion und ComfyUI in die Datei schreiben. Findet Moddy nichts, kann es zusätzlich den Prüfdienst von OpenAI fragen, der das unsichtbare Wasserzeichen seiner Bilder auch nach einem Screenshot erkennt.",
       "reliability_title": "Wie verlässlich ist dieses Ergebnis?",
       "reliability_c2pa": "Die Signatur garantiert, dass die Datei seit der Signierung unverändert ist und dass ihr Aussteller von der C2PA anerkannt wird: Niemand kann dieses Ergebnis ohne den Schlüssel des Ausstellers erzeugen. Sie gibt wieder, was der Aussteller angegeben hat – und nur das.",
       "reliability_unsigned": "Diese Parameter sind nicht signiert: Jeder kann sie hinzufügen oder entfernen. Ihr Vorhandensein ist ein starkes Indiz für KI-Generierung, kein Beweis.",
       "reliability_photo": "Ein authentifiziertes Foto belegt die Kamera und das Aufnahmedatum, nicht die Wahrheit des Gezeigten (eine gestellte Szene bleibt gestellt).",
-      "absence": "Kein Ergebnis beweist nichts: Ein Bildschirmfoto, erneutes Speichern oder die meisten sozialen Netzwerke entfernen diese Informationen."
+      "absence": "Kein Ergebnis beweist nichts: Ein Bildschirmfoto, erneutes Speichern oder die meisten sozialen Netzwerke entfernen diese Informationen.",
+      "source_openai_synthid": "OpenAI-Prüfung (SynthID-Wasserzeichen)",
+      "source_openai_c2pa": "OpenAI-Prüfung (C2PA-Signatur)",
+      "openai_title": "OpenAI-Prüfung",
+      "openai_signal": "Signal:",
+      "openai_model": "Modell:",
+      "openai_generated_at": "Erzeugt am:",
+      "privacy_openai": "Für die OpenAI-Prüfung wurde das Bild an OpenAI gesendet.",
+      "reliability_openai": "Das SynthID-Wasserzeichen wird von OpenAI bei der Erzeugung eingebettet und von OpenAI selbst ausgelesen: Ein Treffer ist ein starker Beleg dafür, dass das Bild von einem OpenAI-Modell stammt. OpenAI erkennt nur seine eigenen Signale: Andere Generatoren werden nicht abgedeckt."
     },
     "reasons": {
       "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können geprüft werden.",
@@ -5801,7 +5829,9 @@
       "unclassified": "Dieses Bild trägt eine vertrauenswürdige C2PA-Signatur, aber sein Verlauf gibt seine Herkunft (KI oder Aufnahme) nicht an.",
       "trust_unavailable": "Die C2PA-Vertrauensliste ist noch nicht geladen, versuche es gleich noch einmal.",
       "error": "Die C2PA-Signatur dieses Bildes konnte nicht gelesen werden.",
-      "busy": "Es laufen zu viele Analysen, versuche es gleich noch einmal."
+      "busy": "Es laufen zu viele Analysen, versuche es gleich noch einmal.",
+      "provider_not_detected": "Auch der Prüfdienst von OpenAI hat kein OpenAI-Wasserzeichen und keine OpenAI-Signatur gefunden.",
+      "provider_unavailable": "Die OpenAI-Prüfung konnte diesmal nicht durchgeführt werden."
     },
     "errors": {
       "title": "Prüfung nicht möglich",
