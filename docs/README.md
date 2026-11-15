@@ -13,6 +13,7 @@ every document with a "when to read" hint.
 | [`integration/`](integration/) | Contracts with the backend / dashboard: schemas, wire formats, Redis and DB contracts other services depend on | `AUTOMOD_CONFIG`, `TICKETS_INTEGRATION`, `BACKEND-INTEGRATION`, `REDIS_COMMUNICATION`, `TASK_SIGNATURE` |
 | [`infra/`](infra/) | Hosting, gateway, data and monitoring | `RAILWAY`, `API_GATEWAY`, `DATABASE`, `STATS`, `HEALTH_MONITOR`, `TECHNICAL_LOGS` |
 | [`archive/`](archive/) | Point-in-time documents: audits, dated change specs, finished plans, superseded docs | `SECURITY_AUDIT`, `AUTOMOD_V2_PLAN` |
+| [`export/`](export/) | Self-contained kits copied into other repositories (not rules for Moddy) | `design-kit/` |
 | [`sessions/`](sessions/) | One summary per AI work session (see [`sessions/README.md`](sessions/README.md)) | `2026-10-16_*.md` |
 | [`public/`](public/) | User-facing pages published outside the repo (e.g. the token detector page). Do not move or rename files here: external links may depend on them | `token-detector.md` |
 

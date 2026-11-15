@@ -419,7 +419,7 @@ moddy/
 │   └── commands/              #   Slash command names + descriptions, one file per
 │                              #   Discord locale (fr.json, de.json, ja.json… 32 total)
 │
-├── docs/                      # Documentation: guides/ features/ integration/ infra/ archive/ sessions/ public/ (see docs/README.md)
+├── docs/                      # Documentation: guides/ features/ integration/ infra/ archive/ export/ sessions/ public/ (see docs/README.md)
 └── tests/                     # Test files
     ├── automod/               #   pytest suite for the pure-Python detection core
     │                          #   (`pip install -r requirements-dev.txt && pytest`)
@@ -781,6 +781,12 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/infra/RAILWAY.md](docs/infra/RAILWAY.md) | Environment variables, deployment, troubleshooting, **memory footprint & Railway cost** |
 | [docs/infra/STATS.md](docs/infra/STATS.md) | **Statistics** — recording anything (`bot.stats`), the metric registry, what is stored and for how long, the growth/retention/acquisition queries, the backend UTM contract |
 | [docs/infra/TECHNICAL_LOGS.md](docs/infra/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
+
+### Export — kits for other projects
+`docs/export/` — Self-contained packs meant to be copied into another repository. Not rules for Moddy itself.
+| Document | What it is |
+|---|---|
+| [docs/export/design-kit/README.md](docs/export/design-kit/README.md) | **Design kit** (French) — Moddy's design rules, Components V2, Modals V2 and persistent views written for another bot, plus a `/dev jsk` script copying every Moddy emoji to another bot's application (`copy_emojis_jsk.py`) and an id remapper |
 
 ### Archive
 Point-in-time documents kept for reference but superseded or closed —
